@@ -17,21 +17,21 @@ a:hover{color:var(--color-accent-900)}
 </style>
 </helmet>
 
-<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px;background:var(--color-neutral-200);box-sizing:border-box">
+<div style="min-height:100vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:48px;background:var(--color-neutral-200);box-sizing:border-box">
 <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="412px,892px">
-<div style="height:100%;width:100%;display:flex;flex-direction:column;background:var(--color-bg);font-family:var(--font-body);color:var(--color-text)">
+<div class="rainforest-canvas" style="height:100%;width:100%;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text)">
 
 <sc-if value="{{isLanding}}" hint-placeholder-val="{{true}}">
-<div style="height:100%;display:flex;flex-direction:column;background:var(--color-accent);color:#fff;padding:28px 24px;box-sizing:border-box">
+<div class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;background:var(--color-accent);color:#fff;padding:28px 24px;box-sizing:border-box">
   <div style="display:flex;align-items:center;gap:8px">
-    <div style="width:14px;height:14px;background:#fff"></div>
+    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="currentColor"/><path d="M6 18C10 14 14 10 19 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>
     <span style="font-family:var(--font-heading);font-weight:700;font-size:15px;letter-spacing:0.06em;text-transform:uppercase">Cukai</span>
   </div>
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px">
-    <div style="font-family:var(--font-heading);font-weight:700;font-size:42px;line-height:1.08">Tax season, solved — all year round.</div>
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.02em">Tax season, solved — all year round.</div>
     <div style="font-size:15px;line-height:1.5;opacity:0.92;max-width:34ch">Point your camera or forward an email — the AI does the categorising, you just confirm.</div>
   </div>
-  <button type="button" onClick="{{goOnboarding}}" style="background:#fff;color:#201e1d;border:none;padding:16px 20px;font:600 15px var(--font-body);text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;width:100%;box-sizing:border-box">
+  <button type="button" onClick="{{goOnboarding}}" class="pressable" style="background:#fff;color:#201e1d;border:none;border-radius:var(--radius-md);padding:16px 20px;font:600 15px var(--font-body);text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;width:100%;box-sizing:border-box">
     Get started
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
   </button>
@@ -39,97 +39,146 @@ a:hover{color:var(--color-accent-900)}
 </sc-if>
 
 <sc-if value="{{isOnboarding}}" hint-placeholder-val="{{false}}">
-<div style="height:100%;display:flex;flex-direction:column;padding:24px;box-sizing:border-box">
+<div key="{{onbStep}}" class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;padding:24px;box-sizing:border-box;position:relative;z-index:0">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
-    <button type="button" onClick="{{onbBackStep}}" aria-label="Back" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)">
+    <button type="button" onClick="{{onbBackStep}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
     </button>
-    <span style="font:600 11px var(--font-body);letter-spacing:0.1em;opacity:0.5">{{onbProgress}}</span>
+    <span style="font:600 11px var(--font-body);letter-spacing:0.1em;color:var(--color-text-muted)">{{onbProgress}}</span>
   </div>
-  <div style="font-family:var(--font-heading);font-weight:700;font-size:25px;margin-bottom:24px">{{onbLabel}}</div>
+  <div style="font-family:var(--font-heading);font-weight:700;font-size:25px;line-height:1.1;letter-spacing:-0.014em;margin-bottom:24px">{{onbLabel}}</div>
   <div style="display:flex;flex-direction:column;flex:1">
     <sc-for list="{{onbOptions}}" as="opt" hint-placeholder-count="3">
-      <button type="button" onClick="{{opt.select}}" style="text-align:left;padding:16px;border:2px solid var(--color-text);background:none;font:500 15px var(--font-body);color:var(--color-text);cursor:pointer;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box">
+      <button type="button" onClick="{{opt.select}}" class="pressable" style="text-align:left;padding:16px;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);font:500 15px var(--font-body);color:var(--color-text);cursor:pointer;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box">
         {{opt.label}}
         <sc-if value="{{opt.selected}}" hint-placeholder-val="{{false}}">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          <svg class="pop-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
         </sc-if>
       </button>
     </sc-for>
   </div>
-  <button type="button" onClick="{{onbContinue}}" disabled="{{onbContinueDisabled}}" style="width:100%;padding:16px;background:var(--color-accent);color:#fff;border:none;font:600 15px var(--font-body);cursor:pointer;box-sizing:border-box">{{onbButtonLabel}}</button>
+  <button type="button" onClick="{{onbContinue}}" disabled="{{onbContinueDisabled}}" class="pressable" style="width:100%;padding:16px;background:var(--color-accent);color:#fff;border:none;border-radius:var(--radius-md);font:600 15px var(--font-body);cursor:pointer;box-sizing:border-box;transition:opacity .2s ease">{{onbButtonLabel}}</button>
 </div>
 </sc-if>
 
 <sc-if value="{{isApp}}" hint-placeholder-val="{{false}}">
-<div style="height:100%;display:flex;flex-direction:column">
-  <div style="flex:1;overflow:auto;padding:20px 20px 8px;box-sizing:border-box">
+<div style="height:100%;display:flex;flex-direction:column;position:relative">
+  <div style="flex:1;overflow:auto;padding:20px 20px {{contentBottomPad}}px;box-sizing:border-box;position:relative;z-index:0">
 
     <sc-if value="{{tabHome}}" hint-placeholder-val="{{true}}">
+      <div class="{{navClass}}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
         <span style="font-family:var(--font-heading);font-weight:700;font-size:20px;letter-spacing:0.02em">Cukai</span>
-        <div style="width:10px;height:10px;background:var(--color-accent)"></div>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)"/><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>
       </div>
-      <div style="border-top:2px solid var(--color-divider);margin-bottom:20px"></div>
-      <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;opacity:0.5;margin-bottom:6px">This month</div>
-      <div style="font-family:var(--font-heading);font-weight:700;font-size:32px;margin-bottom:4px">{{budgetSpentLabel}} <span style="font-size:16px;font-weight:400;opacity:0.5">/ {{budgetLabel}}</span></div>
-      <div style="height:8px;background:var(--color-neutral-200);margin-bottom:20px"><div style="height:100%;width:{{budgetPct}}%;background:var(--color-accent)"></div></div>
-      <div style="border-top:2px solid var(--color-text)"></div>
-      <sc-for list="{{categories}}" as="cat" hint-placeholder-count="4">
-        <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
-          <span style="font-size:14px">{{cat.name}}</span>
-          <span style="font-size:14px;font-weight:600">{{cat.amount}}</span>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted)">This month</span>
+        <sc-if value="{{showEditBudgetLink}}" hint-placeholder-val="{{true}}">
+          <button type="button" onClick="{{startEditBudget}}" class="pressable" style="background:none;border:none;font:600 11px var(--font-body);letter-spacing:0.04em;color:var(--color-accent-700);cursor:pointer;padding:0">Edit budgets</button>
+        </sc-if>
+      </div>
+      <div class="type-numeric" style="font-family:var(--font-heading);font-weight:700;font-size:32px;line-height:1.08;letter-spacing:-0.018em;margin-bottom:4px">{{budgetSpentLabel}} <span style="font-size:16px;font-weight:400;color:var(--color-text-muted)">/ {{budgetLabel}}</span></div>
+      <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+        <div class="field" style="margin-bottom:16px"><label>Monthly budget (RM)</label><input class="input" value="{{budgetDraft}}" onChange="{{setBudgetDraft}}" /></div>
+      </sc-if>
+      <sc-if value="{{notEditingBudget}}" hint-placeholder-val="{{true}}">
+        <div style="height:8px;background:var(--color-neutral-200);margin-bottom:20px"><div class="bar-fill" style="height:100%;width:{{budgetPct}}%;background:{{budgetBarColor}}"></div></div>
+      </sc-if>
+      <div style="border-top:1px solid var(--color-divider)"></div>
+      <sc-for list="{{categoryRows}}" as="cat" hint-placeholder-count="4">
+        <div style="padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px">{{cat.name}}</span>
+            <sc-if value="{{cat.notEditing}}" hint-placeholder-val="{{true}}">
+              <span style="font-size:14px;font-weight:600;color:{{cat.labelColor}}">{{cat.amountLabel}}</span>
+            </sc-if>
+            <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+              <input class="input" value="{{cat.budgetDraft}}" onChange="{{cat.setBudgetDraft}}" style="width:90px;text-align:right;font-size:13px;padding:6px 8px" />
+            </sc-if>
+          </div>
+          <sc-if value="{{cat.notEditing}}" hint-placeholder-val="{{true}}">
+            <div style="height:5px;background:var(--color-neutral-200);margin-top:8px"><div class="bar-fill" style="height:100%;width:{{cat.pct}}%;background:{{cat.barColor}}"></div></div>
+            <sc-if value="{{cat.overBudget}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-danger-700);margin-top:4px">Over budget by {{cat.overAmountLabel}}</div></sc-if>
+            <sc-if value="{{cat.nearLimit}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">Nearing budget — {{cat.pct}}% used</div></sc-if>
+          </sc-if>
         </div>
       </sc-for>
+      <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button type="button" onClick="{{saveEditBudget}}" class="btn btn-primary" style="flex:1">Save</button>
+          <button type="button" onClick="{{cancelEditBudget}}" class="btn btn-secondary" style="flex:1">Cancel</button>
+        </div>
+      </sc-if>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
-        <button type="button" onClick="{{openCapture}}" style="text-align:left;background:var(--color-accent-100);border:none;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
-          <div><div style="font-weight:600;font-size:14px">3 receipts awaiting confirmation</div><div style="font-size:12px;opacity:0.6;margin-top:2px">Tap to review</div></div>
+        <sc-if value="{{showGmailCard}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{openGmail}}" class="pressable" style="text-align:left;background:var(--color-accent-100);border:1.5px solid var(--color-accent-300);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">{{gmailQuickLabel}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">Detected in Gmail — tap to review</div></div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
         </button>
-        <button type="button" onClick="{{openRecurring}}" style="text-align:left;background:var(--color-neutral-100);border:none;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
-          <div><div style="font-weight:600;font-size:14px">Recurring payments</div><div style="font-size:12px;opacity:0.6;margin-top:2px">RM392.80 / month</div></div>
+        </sc-if>
+        <button type="button" onClick="{{openRecurring}}" class="pressable" style="text-align:left;background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">Recurring payments</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{recurringTotalLabel}}</div></div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
         </button>
-        <button type="button" onClick="{{openExceptions}}" style="text-align:left;background:var(--color-neutral-100);border:none;padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
-          <div><div style="font-weight:600;font-size:14px">Exceptions</div><div style="font-size:12px;opacity:0.6;margin-top:2px">1 flagged transaction</div></div>
+        <button type="button" onClick="{{openExceptions}}" class="pressable" style="text-align:left;background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">Exceptions</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{exceptionsSummaryLabel}}</div></div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
         </button>
+      </div>
       </div>
     </sc-if>
 
     <sc-if value="{{tabTax}}" hint-placeholder-val="{{false}}">
-      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;margin-bottom:4px">Tax dashboard</div>
-      <div style="font-size:12px;opacity:0.5;margin-bottom:16px">Year of Assessment 2026</div>
-      <div style="border-top:2px solid var(--color-divider);margin-bottom:20px"></div>
+      <div class="{{navClass}}">
+      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Tax dashboard</div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Year of Assessment 2026</div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
+      <sc-if value="{{taxPackReady}}" hint-placeholder-val="{{false}}">
+        <div style="border:1.5px solid var(--color-accent-300);background:var(--color-accent-100);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:20px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">Tax pack ready</div>
+          <div style="font-size:12px;color:var(--color-text-muted);line-height:1.5">{{taxPackReceiptCount}} receipts across {{taxPackCategoryCount}} relief categories, consolidated for YA2026 e-Filing.</div>
+          <button type="button" onClick="{{resetTaxPack}}" class="pressable" style="background:none;border:none;font:600 12px var(--font-body);color:var(--color-accent-700);cursor:pointer;padding:8px 0 0">Regenerate</button>
+        </div>
+      </sc-if>
       <sc-for list="{{reliefRows}}" as="r" hint-placeholder-count="5">
         <div style="margin-bottom:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:6px"><span style="font-weight:600">{{r.name}}</span><span style="display:flex;align-items:center;gap:8px">{{r.spentLabel}} / {{r.capLabel}}<span class="tag tag-outline" style="font-size:10px">{{r.pct}}%</span></span></div>
-          <div style="height:6px;background:var(--color-neutral-200)"><div style="height:100%;width:{{r.pct}}%;background:var(--color-accent)"></div></div>
-          <div style="font-size:11px;opacity:0.5;margin-top:4px">{{r.remainingLabel}}</div>
+          <div style="height:6px;background:var(--color-neutral-200)"><div class="bar-fill" style="height:100%;width:{{r.pct}}%;background:var(--color-accent)"></div></div>
+          <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">{{r.remainingLabel}}</div>
         </div>
       </sc-for>
-      <button type="button" class="btn btn-primary btn-block" style="margin-top:8px">Generate tax pack</button>
+      </div>
     </sc-if>
 
     <sc-if value="{{tabAssistant}}" hint-placeholder-val="{{false}}">
-      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;margin-bottom:4px">Assistant</div>
-      <div style="font-size:12px;opacity:0.5;margin-bottom:16px">Ask about spending or tax reliefs</div>
-      <div style="border-top:2px solid var(--color-divider);margin-bottom:20px"></div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <div style="background:var(--color-text);color:#fff;padding:12px 14px;max-width:80%;font-size:14px">Am I on track for my tax reliefs?</div>
-      </div>
-      <div style="display:flex;justify-content:flex-start;margin-bottom:10px">
-        <div style="background:var(--color-neutral-100);padding:12px 14px;max-width:85%;font-size:14px;line-height:1.5">You've used RM3,200 of your RM4,000 EPF / Insurance relief and RM1,180 of your RM2,500 Lifestyle relief — both close to the cap. Medical, Education and Parents' medical still have plenty of headroom. Overall you're in good shape for YA2026.</div>
+      <div class="{{navClass}}">
+      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Assistant</div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Ask about spending or tax reliefs</div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
+      <sc-for list="{{chatMessages}}" as="msg" hint-placeholder-count="2">
+        <sc-if value="{{msg.fromUser}}" hint-placeholder-val="{{false}}">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <div style="background:var(--color-text);color:#fff;padding:12px 14px;max-width:80%;font-size:14px">{{msg.text}}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{msg.fromAi}}" hint-placeholder-val="{{true}}">
+          <div style="display:flex;justify-content:flex-start;margin-bottom:10px">
+            <div style="background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);padding:12px 14px;max-width:85%;font-size:14px;line-height:1.5">{{msg.text}}</div>
+          </div>
+        </sc-if>
+      </sc-for>
       </div>
     </sc-if>
 
     <sc-if value="{{tabReceipts}}" hint-placeholder-val="{{false}}">
+      <div class="{{navClass}}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span style="font-family:var(--font-heading);font-weight:700;font-size:22px">Receipts</span>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em">Receipts</span>
         <button type="button" onClick="{{openCapture}}" class="btn btn-primary btn-icon" aria-label="Add receipt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
       </div>
-      <div style="font-size:12px;opacity:0.5;margin-bottom:16px">Organised by LHDN relief category</div>
-      <div style="border-top:2px solid var(--color-divider);margin-bottom:20px"></div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Organised by LHDN relief category</div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
         <select class="input" value="{{receiptMonth}}" onChange="{{setReceiptMonth}}" style="flex:1">
           <sc-for list="{{monthOptions}}" as="opt" hint-placeholder-count="4">
@@ -143,28 +192,30 @@ a:hover{color:var(--color-accent-900)}
         </select>
       </div>
       <sc-for list="{{filteredReceipts}}" as="grp" hint-placeholder-count="5">
-        <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;opacity:0.5;margin:16px 0 6px">{{grp.category}}</div>
-        <div style="border-top:2px solid var(--color-text)"></div>
+        <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin:16px 0 6px">{{grp.category}}</div>
+        <div style="border-top:1px solid var(--color-divider)"></div>
         <sc-for list="{{grp.items}}" as="it" hint-placeholder-count="2">
           <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
-            <div><div style="font-size:14px;font-weight:600">{{it.vendor}}</div><div style="font-size:12px;opacity:0.5">{{it.date}}</div></div>
+            <div><div style="font-size:14px;font-weight:600">{{it.vendor}}</div><div style="font-size:12px;color:var(--color-text-muted)">{{it.date}}</div></div>
             <span style="font-size:14px;font-weight:600">{{it.amount}}</span>
           </div>
         </sc-for>
       </sc-for>
       <sc-if value="{{noFilteredReceipts}}" hint-placeholder-val="{{false}}">
-        <div style="padding:24px 4px;font-size:14px;opacity:0.6">No receipts match these filters.</div>
+        <div style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">No receipts match these filters.</div>
       </sc-if>
+      </div>
     </sc-if>
 
     <sc-if value="{{tabSettings}}" hint-placeholder-val="{{false}}">
-      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;margin-bottom:4px">Settings &amp; consent</div>
-      <div style="font-size:12px;opacity:0.5;margin-bottom:16px">Manage connected accounts, backups and consent</div>
-      <div style="border-top:2px solid var(--color-divider);margin-bottom:20px"></div>
+      <div class="{{navClass}}">
+      <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Settings &amp; consent</div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Manage connected accounts, backups and consent</div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
       <sc-for list="{{settingsList}}" as="item" hint-placeholder-count="5">
         <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-            <div><div style="font-size:14px;font-weight:600">{{item.label}}</div><div style="font-size:12px;opacity:0.55;margin-top:2px">{{item.sub}}</div></div>
+            <div><div style="font-size:14px;font-weight:600">{{item.label}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{item.sub}}</div></div>
             <div class="seg" style="flex-shrink:0">
               <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.onChecked}}" onChange="{{item.setOn}}" />On</label>
               <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.offChecked}}" onChange="{{item.setOff}}" />Off</label>
@@ -173,36 +224,67 @@ a:hover{color:var(--color-accent-900)}
         </div>
       </sc-for>
       <button type="button" class="btn btn-ghost" style="margin-top:20px">Sign out</button>
+      </div>
     </sc-if>
 
     <sc-if value="{{subCapture}}" hint-placeholder-val="{{false}}">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        <button type="button" onClick="{{closeSub}}" aria-label="Back" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
-        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px">Add receipt</span>
+        <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Add receipt</span>
       </div>
 
       <sc-if value="{{addChoose}}" hint-placeholder-val="{{true}}">
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <button type="button" onClick="{{chooseCamera}}" style="text-align:left;border:2px solid var(--color-text);background:none;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
+        <div class="{{navClass}}" style="display:flex;flex-direction:column;gap:10px">
+          <button type="button" onClick="{{chooseCamera}}" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-            <div><div style="font-weight:600;font-size:15px">Take a photo</div><div style="font-size:12px;opacity:0.6;margin-top:2px">AI reads the receipt and proposes the fields</div></div>
+            <div><div style="font-weight:600;font-size:15px">Take a photo</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">AI reads the receipt and proposes the fields</div></div>
           </button>
-          <button type="button" onClick="{{chooseManual}}" style="text-align:left;border:2px solid var(--color-text);background:none;padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
+          <button type="button" onClick="{{chooseManual}}" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
-            <div><div style="font-weight:600;font-size:15px">Enter manually</div><div style="font-size:12px;opacity:0.6;margin-top:2px">Type in vendor, amount and category yourself</div></div>
+            <div><div style="font-weight:600;font-size:15px">Enter manually</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">Type in vendor, amount and category yourself</div></div>
           </button>
+          <label for="statementFileInput" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 15h6"></path><path d="M9 11h1"></path></svg>
+            <div><div style="font-weight:600;font-size:15px">Upload statement</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">PDF or CSV from your bank or e-wallet — AI parses each line item</div></div>
+          </label>
+          <input type="file" id="statementFileInput" accept=".pdf,.csv,application/pdf,text/csv" onChange="{{handleStatementFile}}" style="display:none" />
+        </div>
+      </sc-if>
+
+      <sc-if value="{{addStatementReview}}" hint-placeholder-val="{{false}}">
+        <div class="{{navClass}}">
+        <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">{{statementFileLabel}} — parsed line items</div>
+        <sc-for list="{{statementRows}}" as="row" hint-placeholder-count="4">
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-neutral-300)">
+            <input type="checkbox" checked="{{row.include}}" onChange="{{row.toggle}}" style="margin-top:4px" />
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;gap:8px">
+                <span style="font-size:14px;font-weight:600">{{row.vendor}}</span>
+                <span style="font-size:14px;font-weight:600;flex-shrink:0">{{row.amount}}</span>
+              </div>
+              <div style="font-size:12px;color:var(--color-text-muted);margin:2px 0 6px">{{row.date}}</div>
+              <select class="input" value="{{row.category}}" onChange="{{row.setCategory}}" style="font-size:13px;padding:6px 8px">
+                <sc-for list="{{categoryOptions}}" as="opt" hint-placeholder-count="8">
+                  <option value="{{opt}}">{{opt}}</option>
+                </sc-for>
+              </select>
+            </div>
+          </div>
+        </sc-for>
+        <div style="font-size:12px;color:var(--color-text-muted);margin:14px 0">{{statementIncludedLabel}}</div>
+        <button type="button" onClick="{{confirmStatement}}" class="btn btn-primary" style="width:100%">{{statementConfirmLabel}}</button>
         </div>
       </sc-if>
 
       <sc-if value="{{addCameraReview}}" hint-placeholder-val="{{false}}">
-        <div style="border:2px solid var(--color-text);padding:16px">
-          <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;opacity:0.5;margin-bottom:10px">From camera capture</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:12px">Guardian Pharmacy</div>
-          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="opacity:0.6">Date</span><span>3 Jul 2026</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="opacity:0.6">Amount</span><span style="font-weight:600">RM128.50</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="opacity:0.6">Category</span><span>Medical</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0"><span style="opacity:0.6">LHDN relief</span><span>Medical relief — RM10,000 cap</span></div>
-          <div style="font-size:13px;margin:14px 0;opacity:0.75">Is this correct?</div>
+        <div class="{{navClass}}" style="border:1px solid var(--color-divider);background:var(--color-surface);border-radius:var(--radius-md);padding:16px">
+          <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">From camera capture</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:12px">{{cameraVendor}}</div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Date</span><span>{{cameraDate}}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Amount</span><span style="font-weight:600">{{cameraAmountLabel}}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Category</span><span>{{cameraCategory}}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0"><span style="color:var(--color-text-muted)">LHDN relief</span><span>{{cameraReliefTag}}</span></div>
+          <div style="font-size:13px;margin:14px 0;color:var(--color-text-muted)">Is this correct?</div>
           <div style="display:flex;gap:10px">
             <button type="button" onClick="{{confirmCamera}}" class="btn btn-primary" style="flex:1">Yes, confirm</button>
             <button type="button" onClick="{{editFromCamera}}" class="btn btn-secondary" style="flex:1">Edit</button>
@@ -211,6 +293,7 @@ a:hover{color:var(--color-accent-900)}
       </sc-if>
 
       <sc-if value="{{addManualForm}}" hint-placeholder-val="{{false}}">
+        <div class="{{navClass}}">
         <div class="field"><label>Vendor</label><input class="input" value="{{manualVendor}}" onChange="{{setManualVendor}}" placeholder="e.g. Shopee" /></div>
         <div class="field" style="margin-top:12px"><label>Date</label><input class="input" value="{{manualDate}}" onChange="{{setManualDate}}" placeholder="e.g. 9 Aug 2026" /></div>
         <div class="field" style="margin-top:12px"><label>Amount (RM)</label><input class="input" value="{{manualAmount}}" onChange="{{setManualAmount}}" placeholder="0.00" /></div>
@@ -222,27 +305,31 @@ a:hover{color:var(--color-accent-900)}
             </sc-for>
           </select>
         </div>
-        <div style="font-size:12px;opacity:0.55;margin:10px 0 18px">LHDN relief: {{manualReliefTag}}</div>
-        <button type="button" onClick="{{saveManual}}" class="btn btn-primary btn-block">Save receipt</button>
+        <div style="font-size:12px;color:var(--color-text-muted);margin:10px 0 18px">LHDN relief: {{manualReliefTag}}</div>
+        </div>
       </sc-if>
 
       <sc-if value="{{addDone}}" hint-placeholder-val="{{false}}">
-        <div style="padding:24px 4px 8px;font-size:14px;opacity:0.75">Saved to your receipts repository.</div>
+        <div class="{{navClass}}">
+        <div style="padding:24px 4px 8px;font-size:14px;color:var(--color-text-muted)">Saved to your receipts repository.</div>
         <div style="display:flex;gap:10px;margin-top:8px">
           <button type="button" onClick="{{addAnother}}" class="btn btn-secondary" style="flex:1">Add another</button>
           <button type="button" onClick="{{closeSub}}" class="btn btn-primary" style="flex:1">Done</button>
+        </div>
         </div>
       </sc-if>
     </sc-if>
 
     <sc-if value="{{subRecurring}}" hint-placeholder-val="{{false}}">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        <button type="button" onClick="{{closeSub}}" aria-label="Back" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
-        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px">Recurring payments</span>
+        <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Recurring payments</span>
       </div>
+      <div class="{{navClass}}">
       <sc-for list="{{recurring}}" as="rp" hint-placeholder-count="3">
         <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
           <sc-if value="{{rp.isEditing}}" hint-placeholder-val="{{false}}">
+            <div class="pop-in">
             <div style="font-weight:600;font-size:14px;margin-bottom:8px">{{rp.name}}</div>
             <div class="field"><label>Amount</label><input class="input" value="{{editAmount}}" onChange="{{setEditAmount}}" /></div>
             <div class="field" style="margin-top:10px"><label>Next due</label><input class="input" value="{{editDue}}" onChange="{{setEditDue}}" /></div>
@@ -250,82 +337,149 @@ a:hover{color:var(--color-accent-900)}
               <button type="button" onClick="{{saveEditRecurring}}" class="btn btn-primary" style="flex:1">Save</button>
               <button type="button" onClick="{{cancelEditRecurring}}" class="btn btn-secondary" style="flex:1">Cancel</button>
             </div>
+            </div>
           </sc-if>
           <sc-if value="{{rp.notEditing}}" hint-placeholder-val="{{true}}">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
               <div>
                 <div style="font-weight:600;font-size:14px">{{rp.name}}</div>
-                <div style="font-size:12px;opacity:0.55;margin-top:2px">{{rp.account}} · {{rp.due}}</div>
-                <div style="font-size:11px;opacity:0.5;margin-top:4px">{{rp.detectedNote}}</div>
-                <sc-if value="{{rp.hasFlag}}" hint-placeholder-val="{{false}}"><div style="font-size:12px;color:var(--color-accent-700);margin-top:4px">⚠ {{rp.flag}}</div></sc-if>
+                <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{rp.account}} · {{rp.due}}</div>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">{{rp.detectedNote}}</div>
+                <sc-if value="{{rp.hasFlag}}" hint-placeholder-val="{{false}}"><div style="font-size:12px;color:var(--color-danger-700);margin-top:4px">⚠ {{rp.flag}}</div></sc-if>
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-size:14px;font-weight:600;margin-bottom:8px">{{rp.amount}}</div>
                 <div style="display:flex;gap:6px;justify-content:flex-end">
-                  <button type="button" onClick="{{rp.startEdit}}" aria-label="Edit" style="background:none;border:2px solid var(--color-text);padding:6px;cursor:pointer;color:var(--color-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg></button>
-                  <button type="button" onClick="{{rp.del}}" aria-label="Not recurring / delete" style="background:none;border:2px solid var(--color-accent);padding:6px;cursor:pointer;color:var(--color-accent-700)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg></button>
+                  <button type="button" onClick="{{rp.startEdit}}" aria-label="Edit" class="pressable" style="background:none;border:1px solid var(--color-neutral-500);border-radius:var(--radius-sm);padding:6px;cursor:pointer;color:var(--color-text)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg></button>
+                  <button type="button" onClick="{{rp.del}}" aria-label="Not recurring / delete" class="pressable" style="background:none;border:1px solid var(--color-danger);border-radius:var(--radius-sm);padding:6px;cursor:pointer;color:var(--color-danger-700)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg></button>
                 </div>
               </div>
             </div>
           </sc-if>
         </div>
       </sc-for>
-      <sc-if value="{{noRecurring}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;opacity:0.6">No recurring payments detected.</div></sc-if>
+      <sc-if value="{{noRecurring}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">No recurring payments detected.</div></sc-if>
+      </div>
     </sc-if>
 
     <sc-if value="{{subExceptions}}" hint-placeholder-val="{{false}}">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        <button type="button" onClick="{{closeSub}}" aria-label="Back" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
-        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px">Exceptions &amp; anomalies</span>
+        <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Exceptions &amp; anomalies</span>
       </div>
-      <sc-if value="{{exceptionPending}}" hint-placeholder-val="{{true}}">
-        <div style="border:2px solid var(--color-accent);padding:16px">
-          <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:10px">Possible duplicate charge</div>
-          <div style="font-weight:700;font-size:16px;margin-bottom:6px">GrabFood — RM45.00</div>
-          <div style="font-size:13px;opacity:0.65;margin-bottom:14px">Two charges 5 Aug 2026, 12:04pm &amp; 12:05pm — same amount, same merchant.</div>
+      <sc-if value="{{exceptionPending}}" hint-placeholder-val="{{false}}">
+        <div class="{{navClass}}" style="border:1px solid var(--color-danger);border-radius:var(--radius-md);padding:16px">
+          <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-danger-700);margin-bottom:10px">Possible duplicate charge</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:6px">{{exceptionTitleLabel}}</div>
+          <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:14px">{{exceptionDescLabel}}</div>
           <div style="display:flex;gap:10px">
             <button type="button" onClick="{{resolveDup}}" class="btn btn-primary" style="flex:1">Confirm duplicate</button>
             <button type="button" onClick="{{resolveNotDup}}" class="btn btn-secondary" style="flex:1">Not a duplicate</button>
           </div>
         </div>
       </sc-if>
-      <sc-if value="{{exceptionResolvedDup}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;opacity:0.7">Duplicate removed from your spending total.</div></sc-if>
-      <sc-if value="{{exceptionResolvedNotDup}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;opacity:0.7">Both charges kept — thanks for confirming.</div></sc-if>
+      <sc-if value="{{exceptionResolvedDup}}" hint-placeholder-val="{{false}}"><div class="{{navClass}}" style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">Duplicate removed from your spending total.</div></sc-if>
+      <sc-if value="{{exceptionResolvedNotDup}}" hint-placeholder-val="{{false}}"><div class="{{navClass}}" style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">Both charges kept — thanks for confirming.</div></sc-if>
+      <sc-if value="{{noException}}" hint-placeholder-val="{{true}}"><div class="{{navClass}}" style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">No flagged transactions.</div></sc-if>
+    </sc-if>
+
+    <sc-if value="{{subGmail}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Gmail invoices</span>
+      </div>
+      <div class="{{navClass}}">
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Detected from your inbox — confirm or edit before they're added</div>
+      <sc-for list="{{gmailPending}}" as="gi" hint-placeholder-count="2">
+        <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
+          <sc-if value="{{gi.isEditing}}" hint-placeholder-val="{{false}}">
+            <div class="pop-in">
+            <div class="field"><label>Vendor</label><input class="input" value="{{gmailEditVendor}}" onChange="{{setGmailEditVendor}}" /></div>
+            <div class="field" style="margin-top:10px"><label>Date</label><input class="input" value="{{gmailEditDate}}" onChange="{{setGmailEditDate}}" /></div>
+            <div class="field" style="margin-top:10px"><label>Amount (RM)</label><input class="input" value="{{gmailEditAmount}}" onChange="{{setGmailEditAmount}}" /></div>
+            <div class="field" style="margin-top:10px">
+              <label>Category</label>
+              <select class="input" value="{{gmailEditCategory}}" onChange="{{setGmailEditCategory}}">
+                <sc-for list="{{categoryOptions}}" as="opt" hint-placeholder-count="8">
+                  <option value="{{opt}}">{{opt}}</option>
+                </sc-for>
+              </select>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:12px">
+              <button type="button" onClick="{{saveEditGmail}}" class="btn btn-primary" style="flex:1">Save</button>
+              <button type="button" onClick="{{cancelEditGmail}}" class="btn btn-secondary" style="flex:1">Cancel</button>
+            </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{gi.notEditing}}" hint-placeholder-val="{{true}}">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
+                <div>
+                  <div style="font-weight:600;font-size:14px">{{gi.vendor}}</div>
+                  <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{gi.date}} · {{gi.category}}</div>
+                </div>
+                <div style="font-size:14px;font-weight:600;flex-shrink:0">{{gi.amount}}</div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button type="button" onClick="{{gi.confirm}}" class="btn btn-primary" style="flex:1">Confirm</button>
+                <button type="button" onClick="{{gi.edit}}" class="btn btn-secondary" style="flex:1">Edit</button>
+                <button type="button" onClick="{{gi.dismiss}}" aria-label="Not mine" class="pressable" style="background:none;border:1px solid var(--color-neutral-500);border-radius:var(--radius-sm);padding:0 12px;cursor:pointer;color:var(--color-text-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+      <sc-if value="{{noGmailPending}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">All caught up — no new invoices detected.</div></sc-if>
+      </div>
     </sc-if>
 
   </div>
 
+  <div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
   <sc-if value="{{tabAssistant}}" hint-placeholder-val="{{false}}">
-    <div style="display:flex;gap:8px;padding:12px 16px;border-top:2px solid var(--color-text);box-sizing:border-box;flex-shrink:0">
-      <input class="input" placeholder="Ask about your spending or reliefs…" style="flex:1" />
-      <button type="button" class="btn btn-primary btn-icon" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+    <div class="material-chrome" style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+      <input class="input" value="{{chatDraft}}" onChange="{{setChatDraft}}" placeholder="Ask about your spending or reliefs…" style="flex:1" />
+      <button type="button" onClick="{{sendChat}}" disabled="{{chatSendDisabled}}" class="btn btn-primary btn-icon" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{tabTax}}" hint-placeholder-val="{{false}}">
+    <div class="material-chrome" style="padding:12px 20px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+      <button type="button" onClick="{{generateTaxPack}}" disabled="{{taxPackButtonDisabled}}" class="btn btn-primary btn-lg">{{taxPackButtonLabel}}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showManualSaveBar}}" hint-placeholder-val="{{false}}">
+    <div class="material-chrome" style="padding:12px 20px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+      <button type="button" onClick="{{saveManual}}" class="btn btn-primary btn-lg">Save receipt</button>
     </div>
   </sc-if>
 
   <sc-if value="{{showTabBar}}" hint-placeholder-val="{{true}}">
-    <div style="display:flex;border-top:2px solid var(--color-text);flex-shrink:0">
-      <button type="button" onClick="{{setTabHome}}" style="flex:1;background:none;border:none;border-top:3px solid {{tabHomeBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabHomeColor}};opacity:{{tabHomeOpacity}}">
+    <div class="material-chrome" style="display:flex;border-top:1px solid var(--color-divider);flex-shrink:0">
+      <button type="button" onClick="{{setTabHome}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabHomeBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabHomeColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-6h-4v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
         <span style="font-size:10px">Home</span>
       </button>
-      <button type="button" onClick="{{setTabTax}}" style="flex:1;background:none;border:none;border-top:3px solid {{tabTaxBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabTaxColor}};opacity:{{tabTaxOpacity}}">
+      <button type="button" onClick="{{setTabTax}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabTaxBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabTaxColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="3"></circle><circle cx="17" cy="17" r="3"></circle><line x1="19" y1="5" x2="5" y2="19"></line></svg>
         <span style="font-size:10px">Tax</span>
       </button>
-      <button type="button" onClick="{{setTabAssistant}}" style="flex:1;background:none;border:none;border-top:3px solid {{tabAssistantBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabAssistantColor}};opacity:{{tabAssistantOpacity}}">
+      <button type="button" onClick="{{setTabAssistant}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabAssistantBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabAssistantColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
         <span style="font-size:10px">Assistant</span>
       </button>
-      <button type="button" onClick="{{setTabReceipts}}" style="flex:1;background:none;border:none;border-top:3px solid {{tabReceiptsBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabReceiptsColor}};opacity:{{tabReceiptsOpacity}}">
+      <button type="button" onClick="{{setTabReceipts}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabReceiptsBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabReceiptsColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
         <span style="font-size:10px">Receipts</span>
       </button>
-      <button type="button" onClick="{{setTabSettings}}" style="flex:1;background:none;border:none;border-top:3px solid {{tabSettingsBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabSettingsColor}};opacity:{{tabSettingsOpacity}}">
+      <button type="button" onClick="{{setTabSettings}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabSettingsBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabSettingsColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span style="font-size:10px">Settings</span>
       </button>
     </div>
   </sc-if>
+  </div>
 </div>
 </sc-if>
 
@@ -348,16 +502,27 @@ class Component extends DCLogic {
     manualAmount: '',
     manualCategory: 'Medical',
     exceptionResolved: null,
-    recurringItems: [
-      { key: 'netflix', name: 'Netflix', account: 'Visa Card', amount: 'RM54.90 / mo', due: 'Next: 18 Aug', flag: null, detectedMonths: 4 },
-      { key: 'spotify', name: 'Spotify', account: 'Visa Card', amount: 'RM17.90 / mo', due: 'Next: 22 Aug', flag: null, detectedMonths: 6 },
-      { key: 'insurance', name: 'Great Eastern Insurance', account: 'Bank Account', amount: 'RM320.00 / mo', due: 'Next: 1 Sep', flag: 'Price increased RM15 since July', detectedMonths: 3 },
-    ],
+    hasException: false,
+    navDir: 'fwd',
+    recurringItems: [],
     editingKey: null,
     editDraft: { amount: '', due: '' },
     settings: { gmail: true, cloud: true, retention: true, biometric: false, notifications: true },
     receiptMonth: 'All',
     receiptType: 'All',
+    gmailInvoices: [],
+    editingGmailKey: null,
+    gmailEditDraft: { vendor: '', date: '', amount: '', category: 'Medical' },
+    statementFileLabel: '',
+    statementRows: [],
+    budget: 0,
+    categories: [],
+    editingBudget: false,
+    budgetDraft: '',
+    categoryBudgetDraft: {},
+    taxPackStatus: 'idle',
+    chatMessages: [],
+    chatDraft: '',
   };
 
   steps = [
@@ -369,22 +534,17 @@ class Component extends DCLogic {
   ];
 
   relief = [
-    { name: 'Medical', spent: 1450, cap: 10000 },
-    { name: 'Education', spent: 650, cap: 7000 },
-    { name: 'Lifestyle', spent: 1180, cap: 2500 },
-    { name: 'EPF / Insurance', spent: 3200, cap: 4000 },
+    { name: 'Medical', spent: 0, cap: 10000 },
+    { name: 'Education', spent: 0, cap: 7000 },
+    { name: 'Lifestyle', spent: 0, cap: 2500 },
+    { name: 'EPF / Insurance', spent: 0, cap: 4000 },
     { name: "Parents' medical", spent: 0, cap: 8000 },
   ];
 
+  mockCameraReceipt = { vendor: '', date: '', amount: 0, category: '' };
+  mockException = { vendor: '', amount: 0, date: '', time1: '', time2: '' };
 
-
-  receipts = [
-    { category: 'Medical', items: [{ vendor: 'Guardian Pharmacy', date: '3 Jul 2026', month: 'Jul 2026', amount: 'RM128.50' }, { vendor: 'Klinik Sihat', date: '22 Jun 2026', month: 'Jun 2026', amount: 'RM90.00' }] },
-    { category: 'Education', items: [{ vendor: 'MPHOnline', date: '14 May 2026', month: 'May 2026', amount: 'RM145.00' }] },
-    { category: 'Lifestyle', items: [{ vendor: 'Shopee', date: '29 Jul 2026', month: 'Jul 2026', amount: 'RM89.90' }] },
-    { category: 'EPF / Insurance', items: [{ vendor: 'Great Eastern', date: '1 Aug 2026', month: 'Aug 2026', amount: 'RM320.00' }] },
-    { category: "Parents' medical", items: [] },
-  ];
+  receipts = [];
 
   monthOptions = ['All', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'];
   typeOptions = ['All', 'Medical', 'Education', 'Lifestyle', 'EPF / Insurance', "Parents' medical"];
@@ -398,47 +558,52 @@ class Component extends DCLogic {
     "Parents' medical": "Parents' medical relief — RM8,000 cap",
   }[cat] || 'No relief category — budgeting only');
 
-  categories = [
-    { name: 'Groceries', amount: 'RM1,240.00' },
-    { name: 'Transport', amount: 'RM380.00' },
-    { name: 'Dining', amount: 'RM610.00' },
-    { name: 'Shopping', amount: 'RM890.00' },
-  ];
-
   componentDidMount() {
     if (this.props.skipOnboarding) {
       this.setState({ view: 'app', tab: this.props.startTab || 'home' });
     }
   }
 
-  goOnboarding = () => this.setState({ view: 'onboarding', onbStep: 0 });
+  tabOrder = ['home', 'tax', 'assistant', 'receipts', 'settings'];
+
+  goOnboarding = () => this.setState({ view: 'onboarding', onbStep: 0, navDir: 'fwd' });
   onbSelect = (opt) => {
     const key = this.steps[this.state.onbStep].key;
     this.setState(s => ({ onbAnswers: { ...s.onbAnswers, [key]: opt } }));
   };
   onbBackStep = () => {
-    if (this.state.onbStep === 0) this.setState({ view: 'landing' });
-    else this.setState(s => ({ onbStep: s.onbStep - 1 }));
+    if (this.state.onbStep === 0) this.setState({ view: 'landing', navDir: 'back' });
+    else this.setState(s => ({ onbStep: s.onbStep - 1, navDir: 'back' }));
   };
   onbContinue = () => {
-    if (this.state.onbStep === this.steps.length - 1) this.setState({ view: 'app', tab: 'home' });
-    else this.setState(s => ({ onbStep: s.onbStep + 1 }));
+    if (this.state.onbStep === this.steps.length - 1) this.setState({ view: 'app', tab: 'home', navDir: 'fwd' });
+    else this.setState(s => ({ onbStep: s.onbStep + 1, navDir: 'fwd' }));
   };
-  setTab = (tab) => this.setState({ tab, subpage: null });
-  openSub = (subpage) => this.setState({ subpage });
-  openCapture = () => this.setState({ subpage: 'capture', addStep: 'choose' });
-  closeSub = () => this.setState({ subpage: null });
-  chooseCamera = () => this.setState({ addStep: 'camera-review' });
-  chooseManual = () => this.setState({ addStep: 'manual-form', manualVendor: '', manualDate: '', manualAmount: '', manualCategory: 'Medical' });
-  editFromCamera = () => this.setState({ addStep: 'manual-form', manualVendor: 'Guardian Pharmacy', manualDate: '3 Jul 2026', manualAmount: '128.50', manualCategory: 'Medical' });
-  confirmCamera = () => this.setState({ addStep: 'done' });
-  saveManual = () => this.setState({ addStep: 'done' });
-  addAnother = () => this.setState({ addStep: 'choose' });
+  setTab = (tab) => this.setState(s => ({
+    tab, subpage: null,
+    navDir: this.tabOrder.indexOf(tab) >= this.tabOrder.indexOf(s.tab) ? 'fwd' : 'back',
+  }));
+  openSub = (subpage) => this.setState({ subpage, navDir: 'fwd' });
+  openCapture = () => this.setState({ subpage: 'capture', addStep: 'choose', navDir: 'fwd' });
+  closeSub = () => this.setState({ subpage: null, navDir: 'back' });
+  chooseCamera = () => this.setState({ addStep: 'camera-review', navDir: 'fwd' });
+  chooseManual = () => this.setState({ addStep: 'manual-form', manualVendor: '', manualDate: '', manualAmount: '', manualCategory: 'Medical', navDir: 'fwd' });
+  editFromCamera = () => this.setState({
+    addStep: 'manual-form',
+    manualVendor: this.mockCameraReceipt.vendor,
+    manualDate: this.mockCameraReceipt.date,
+    manualAmount: String(this.mockCameraReceipt.amount),
+    manualCategory: this.mockCameraReceipt.category,
+    navDir: 'fwd',
+  });
+  confirmCamera = () => this.setState({ addStep: 'done', navDir: 'fwd' });
+  saveManual = () => this.setState({ addStep: 'done', navDir: 'fwd' });
+  addAnother = () => this.setState({ addStep: 'choose', navDir: 'back' });
   setManualVendor = (e) => this.setState({ manualVendor: e.target.value });
   setManualDate = (e) => this.setState({ manualDate: e.target.value });
   setManualAmount = (e) => this.setState({ manualAmount: e.target.value });
   setManualCategory = (e) => this.setState({ manualCategory: e.target.value });
-  resolveException = (val) => this.setState({ exceptionResolved: val });
+  resolveException = (val) => this.setState({ exceptionResolved: val, navDir: 'fwd' });
   startEditRecurring = (key) => {
     const item = this.state.recurringItems.find(i => i.key === key);
     this.setState({ editingKey: key, editDraft: { amount: item.amount, due: item.due } });
@@ -454,12 +619,123 @@ class Component extends DCLogic {
   setReceiptMonth = (e) => this.setState({ receiptMonth: e.target.value });
   setReceiptType = (e) => this.setState({ receiptType: e.target.value });
 
+  openGmail = () => this.openSub('gmail');
+  confirmGmail = (key) => this.setState(s => ({ gmailInvoices: s.gmailInvoices.map(i => i.key === key ? { ...i, status: 'confirmed' } : i) }));
+  dismissGmail = (key) => this.setState(s => ({ gmailInvoices: s.gmailInvoices.map(i => i.key === key ? { ...i, status: 'dismissed' } : i) }));
+  startEditGmail = (key) => {
+    const item = this.state.gmailInvoices.find(i => i.key === key);
+    this.setState({ editingGmailKey: key, gmailEditDraft: { vendor: item.vendor, date: item.date, amount: item.amount, category: item.category } });
+  };
+  setGmailEditVendor = (e) => this.setState(s => ({ gmailEditDraft: { ...s.gmailEditDraft, vendor: e.target.value } }));
+  setGmailEditDate = (e) => this.setState(s => ({ gmailEditDraft: { ...s.gmailEditDraft, date: e.target.value } }));
+  setGmailEditAmount = (e) => this.setState(s => ({ gmailEditDraft: { ...s.gmailEditDraft, amount: e.target.value } }));
+  setGmailEditCategory = (e) => this.setState(s => ({ gmailEditDraft: { ...s.gmailEditDraft, category: e.target.value } }));
+  saveEditGmail = () => this.setState(s => ({
+    gmailInvoices: s.gmailInvoices.map(i => i.key === s.editingGmailKey ? { ...i, ...s.gmailEditDraft, status: 'confirmed' } : i),
+    editingGmailKey: null,
+  }));
+  cancelEditGmail = () => this.setState({ editingGmailKey: null });
+
+  handleStatementFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    this.setState({
+      statementFileLabel: file.name,
+      statementRows: [
+        { key: 'st-' + Date.now(), vendor: 'Needs review — auto-parse unavailable', date: today, amount: 'RM0.00', category: 'Other', include: false },
+      ],
+      addStep: 'statement-review',
+      navDir: 'fwd',
+    });
+  };
+  toggleStatementRow = (key) => this.setState(s => ({ statementRows: s.statementRows.map(r => r.key === key ? { ...r, include: !r.include } : r) }));
+  setStatementRowCategory = (key, val) => this.setState(s => ({ statementRows: s.statementRows.map(r => r.key === key ? { ...r, category: val } : r) }));
+  confirmStatement = () => this.setState({ addStep: 'done', navDir: 'fwd' });
+
+  startEditBudget = () => this.setState(s => ({
+    editingBudget: true,
+    budgetDraft: String(s.budget),
+    categoryBudgetDraft: Object.fromEntries(s.categories.map(c => [c.name, String(c.budget)])),
+  }));
+  setBudgetDraft = (e) => this.setState({ budgetDraft: e.target.value });
+  setCategoryBudgetDraft = (name, val) => this.setState(s => ({ categoryBudgetDraft: { ...s.categoryBudgetDraft, [name]: val } }));
+  cancelEditBudget = () => this.setState({ editingBudget: false });
+  saveEditBudget = () => this.setState(s => ({
+    budget: Number(s.budgetDraft) || s.budget,
+    categories: s.categories.map(c => ({ ...c, budget: Number(s.categoryBudgetDraft[c.name]) || c.budget })),
+    editingBudget: false,
+  }));
+
+  generateTaxPack = () => {
+    this.setState({ taxPackStatus: 'generating' });
+    setTimeout(() => this.setState({ taxPackStatus: 'ready' }), 900);
+  };
+  resetTaxPack = () => this.setState({ taxPackStatus: 'idle' });
+
+  setChatDraft = (e) => this.setState({ chatDraft: e.target.value });
+  replyFor = (text) => {
+    const q = text.toLowerCase();
+    const cat = this.state.categories.find(c => q.includes(c.name.toLowerCase()));
+    if (cat) {
+      const remaining = cat.budget - cat.spent;
+      return remaining >= 0
+        ? `You've spent ${this.fmt(cat.spent)} on ${cat.name} this month, out of a ${this.fmt(cat.budget)} budget — ${this.fmt(remaining)} left.`
+        : `You've spent ${this.fmt(cat.spent)} on ${cat.name} this month, which is ${this.fmt(-remaining)} over your ${this.fmt(cat.budget)} budget.`;
+    }
+    const rel = this.relief.find(r => q.includes(r.name.toLowerCase()) || (r.name === 'EPF / Insurance' && (q.includes('epf') || q.includes('insurance'))));
+    if (rel || q.includes('relief') || q.includes('tax')) {
+      const r = rel || this.relief.reduce((a, b) => (a.spent / a.cap) > (b.spent / b.cap) ? a : b);
+      const remaining = r.cap - r.spent;
+      return `You've used ${this.fmt(r.spent)} of your ${this.fmt(r.cap)} ${r.name} relief — ${this.fmt(remaining)} of headroom left for YA2026.`;
+    }
+    if (q.includes('budget')) {
+      const spent = this.state.categories.reduce((sum, c) => sum + c.spent, 0);
+      return `You've spent ${this.fmt(spent)} of your ${this.fmt(this.state.budget)} monthly budget so far.`;
+    }
+    return "I can help with questions about your spending by category (e.g. \"how much on groceries?\") or your LHDN tax reliefs (e.g. \"how's my medical relief?\").";
+  };
+  sendChat = () => {
+    const text = this.state.chatDraft.trim();
+    if (!text) return;
+    const reply = this.replyFor(text);
+    this.setState(s => ({
+      chatMessages: [
+        ...s.chatMessages,
+        { key: 'u' + Date.now(), from: 'user', text },
+        { key: 'a' + Date.now(), from: 'ai', text: reply },
+      ],
+      chatDraft: '',
+    }));
+  };
+
   fmt = (n) => 'RM' + n.toLocaleString('en-MY', { minimumFractionDigits: 0 });
+  parseAmount = (str) => parseFloat(String(str).replace(/[^0-9.]/g, '')) || 0;
 
   renderVals() {
     const s = this.state;
     const step = this.steps[s.onbStep];
-    const budgetSpent = 6480, budget = 8000;
+    const budgetSpent = s.categories.reduce((sum, c) => sum + c.spent, 0);
+    const budget = s.budget;
+
+    const categoryRows = s.categories.map(c => {
+      const pct = Math.min(100, Math.round((c.spent / c.budget) * 100));
+      const overBudget = c.spent > c.budget;
+      return {
+        name: c.name,
+        amountLabel: this.fmt(c.spent) + ' / ' + this.fmt(c.budget),
+        labelColor: overBudget ? 'var(--color-danger-700)' : 'var(--color-text)',
+        pct,
+        barColor: overBudget ? 'var(--color-danger)' : 'var(--color-accent)',
+        overBudget,
+        overAmountLabel: this.fmt(c.spent - c.budget),
+        nearLimit: !overBudget && pct >= 90,
+        notEditing: !s.editingBudget,
+        budgetDraft: s.categoryBudgetDraft[c.name] ?? String(c.budget),
+        setBudgetDraft: (e) => this.setCategoryBudgetDraft(c.name, e.target.value),
+      };
+    });
 
     const reliefRows = this.relief.map(r => ({
       name: r.name,
@@ -468,6 +744,17 @@ class Component extends DCLogic {
       pct: Math.min(100, Math.round((r.spent / r.cap) * 100)),
       remainingLabel: this.fmt(Math.max(0, r.cap - r.spent)) + ' remaining',
     }));
+
+    const gmailPending = s.gmailInvoices
+      .filter(i => i.status === 'pending')
+      .map(i => ({
+        ...i,
+        isEditing: s.editingGmailKey === i.key,
+        notEditing: s.editingGmailKey !== i.key,
+        confirm: () => this.confirmGmail(i.key),
+        edit: () => this.startEditGmail(i.key),
+        dismiss: () => this.dismissGmail(i.key),
+      }));
 
     const recurringRows = s.recurringItems.map(r => ({
       ...r,
@@ -498,16 +785,17 @@ class Component extends DCLogic {
       .map(g => ({ ...g, items: g.items.filter(it => s.receiptMonth === 'All' || !s.receiptMonth || it.month === s.receiptMonth) }))
       .filter(g => g.items.length > 0);
 
-    const tabColor = (name) => s.tab === name ? 'var(--color-accent)' : 'var(--color-text)';
-    const tabOpacity = (name) => s.tab === name ? 1 : 0.45;
+    const tabColor = (name) => s.tab === name ? 'var(--color-accent)' : 'var(--color-text-muted)';
     const tabBorder = (name) => s.tab === name ? 'var(--color-accent)' : 'transparent';
 
     return {
+      navClass: s.navDir === 'back' ? 'slide-in-left' : 'slide-in-right',
       isLanding: s.view === 'landing',
       isOnboarding: s.view === 'onboarding',
       isApp: s.view === 'app',
       goOnboarding: this.goOnboarding,
 
+      onbStep: s.onbStep,
       onbProgress: `0${s.onbStep + 1} / 0${this.steps.length}`,
       onbLabel: step.label,
       onbOptions: step.options.map(o => ({ label: o, selected: o === s.onbAnswers[step.key], select: () => this.onbSelect(o) })),
@@ -527,33 +815,67 @@ class Component extends DCLogic {
       setTabAssistant: () => this.setTab('assistant'),
       setTabReceipts: () => this.setTab('receipts'),
       setTabSettings: () => this.setTab('settings'),
-      tabHomeColor: tabColor('home'), tabHomeOpacity: tabOpacity('home'),
-      tabTaxColor: tabColor('tax'), tabTaxOpacity: tabOpacity('tax'),
-      tabAssistantColor: tabColor('assistant'), tabAssistantOpacity: tabOpacity('assistant'),
-      tabReceiptsColor: tabColor('receipts'), tabReceiptsOpacity: tabOpacity('receipts'),
-      tabSettingsColor: tabColor('settings'), tabSettingsOpacity: tabOpacity('settings'),
+      tabHomeColor: tabColor('home'),
+      tabTaxColor: tabColor('tax'),
+      tabAssistantColor: tabColor('assistant'),
+      tabReceiptsColor: tabColor('receipts'),
+      tabSettingsColor: tabColor('settings'),
       tabHomeBorder: tabBorder('home'), tabTaxBorder: tabBorder('tax'), tabAssistantBorder: tabBorder('assistant'),
       tabReceiptsBorder: tabBorder('receipts'), tabSettingsBorder: tabBorder('settings'),
       showTabBar: !s.subpage,
+      showManualSaveBar: s.subpage === 'capture' && s.addStep === 'manual-form',
+      contentBottomPad: s.subpage === 'capture' && s.addStep === 'manual-form' ? 96
+        : s.subpage ? 24
+        : s.tab === 'assistant' ? 132
+        : s.tab === 'tax' ? 160
+        : 72,
 
       subCapture: s.subpage === 'capture',
       subRecurring: s.subpage === 'recurring',
       subExceptions: s.subpage === 'exceptions',
+      subGmail: s.subpage === 'gmail',
       openCapture: this.openCapture,
       openRecurring: () => this.openSub('recurring'),
       openExceptions: () => this.openSub('exceptions'),
+      openGmail: this.openGmail,
       closeSub: this.closeSub,
+
+      showGmailCard: s.settings.gmail && gmailPending.length > 0,
+      gmailQuickLabel: gmailPending.length === 1 ? '1 invoice detected from Gmail' : `${gmailPending.length} invoices detected from Gmail`,
+      gmailPending,
+      noGmailPending: gmailPending.length === 0,
+      gmailEditVendor: s.gmailEditDraft.vendor,
+      gmailEditDate: s.gmailEditDraft.date,
+      gmailEditAmount: s.gmailEditDraft.amount,
+      gmailEditCategory: s.gmailEditDraft.category,
+      setGmailEditVendor: this.setGmailEditVendor,
+      setGmailEditDate: this.setGmailEditDate,
+      setGmailEditAmount: this.setGmailEditAmount,
+      setGmailEditCategory: this.setGmailEditCategory,
+      saveEditGmail: this.saveEditGmail,
+      cancelEditGmail: this.cancelEditGmail,
 
       addChoose: s.addStep === 'choose',
       addCameraReview: s.addStep === 'camera-review',
       addManualForm: s.addStep === 'manual-form',
+      addStatementReview: s.addStep === 'statement-review',
       addDone: s.addStep === 'done',
       chooseCamera: this.chooseCamera,
       chooseManual: this.chooseManual,
+      handleStatementFile: this.handleStatementFile,
       editFromCamera: this.editFromCamera,
       confirmCamera: this.confirmCamera,
       saveManual: this.saveManual,
       addAnother: this.addAnother,
+      statementFileLabel: s.statementFileLabel,
+      statementRows: s.statementRows.map(r => ({
+        ...r,
+        toggle: () => this.toggleStatementRow(r.key),
+        setCategory: (e) => this.setStatementRowCategory(r.key, e.target.value),
+      })),
+      statementIncludedLabel: `${s.statementRows.filter(r => r.include).length} of ${s.statementRows.length} items selected`,
+      statementConfirmLabel: `Add ${s.statementRows.filter(r => r.include).length} items`,
+      confirmStatement: this.confirmStatement,
       manualVendor: s.manualVendor,
       manualDate: s.manualDate,
       manualAmount: s.manualAmount,
@@ -567,11 +889,21 @@ class Component extends DCLogic {
 
       budgetSpentLabel: this.fmt(budgetSpent),
       budgetLabel: this.fmt(budget),
-      budgetPct: Math.round((budgetSpent / budget) * 100),
-      categories: this.categories,
+      budgetPct: budget > 0 ? Math.min(100, Math.round((budgetSpent / budget) * 100)) : 0,
+      budgetBarColor: budgetSpent > budget ? 'var(--color-danger)' : 'var(--color-accent)',
+      editingBudget: s.editingBudget,
+      notEditingBudget: !s.editingBudget,
+      showEditBudgetLink: !s.editingBudget,
+      budgetDraft: s.budgetDraft,
+      setBudgetDraft: this.setBudgetDraft,
+      startEditBudget: this.startEditBudget,
+      cancelEditBudget: this.cancelEditBudget,
+      saveEditBudget: this.saveEditBudget,
+      categoryRows,
 
       recurring: recurringRows,
       noRecurring: s.recurringItems.length === 0,
+      recurringTotalLabel: this.fmt(s.recurringItems.reduce((sum, r) => sum + this.parseAmount(r.amount), 0)) + ' / month',
       editAmount: s.editDraft.amount,
       editDue: s.editDraft.due,
       setEditAmount: this.setEditAmount,
@@ -579,15 +911,41 @@ class Component extends DCLogic {
       saveEditRecurring: this.saveEditRecurring,
       cancelEditRecurring: this.cancelEditRecurring,
 
-      exceptionPending: s.exceptionResolved === null,
-      exceptionResolvedDup: s.exceptionResolved === 'duplicate',
-      exceptionResolvedNotDup: s.exceptionResolved === 'not-duplicate',
+      exceptionPending: s.hasException && s.exceptionResolved === null,
+      exceptionResolvedDup: s.hasException && s.exceptionResolved === 'duplicate',
+      exceptionResolvedNotDup: s.hasException && s.exceptionResolved === 'not-duplicate',
+      noException: !s.hasException,
       resolveDup: () => this.resolveException('duplicate'),
       resolveNotDup: () => this.resolveException('not-duplicate'),
+      exceptionsSummaryLabel: s.hasException && s.exceptionResolved === null ? '1 flagged transaction' : 'No flagged transactions',
+      exceptionTitleLabel: `${this.mockException.vendor} — ${this.fmt(this.mockException.amount)}`,
+      exceptionDescLabel: `Two charges ${this.mockException.date}, ${this.mockException.time1} & ${this.mockException.time2} — same amount, same merchant.`,
+
+      cameraVendor: this.mockCameraReceipt.vendor,
+      cameraDate: this.mockCameraReceipt.date,
+      cameraAmountLabel: this.fmt(this.mockCameraReceipt.amount),
+      cameraCategory: this.mockCameraReceipt.category,
+      cameraReliefTag: this.reliefTagFor(this.mockCameraReceipt.category),
 
       reliefRows,
       receipts: this.receipts,
       settingsList,
+
+      taxPackIdle: s.taxPackStatus === 'idle',
+      taxPackGenerating: s.taxPackStatus === 'generating',
+      taxPackReady: s.taxPackStatus === 'ready',
+      taxPackButtonLabel: s.taxPackStatus === 'generating' ? 'Generating…' : s.taxPackStatus === 'ready' ? 'Tax pack ready' : 'Generate tax pack',
+      taxPackButtonDisabled: s.taxPackStatus !== 'idle',
+      generateTaxPack: this.generateTaxPack,
+      resetTaxPack: this.resetTaxPack,
+      taxPackReceiptCount: this.receipts.reduce((sum, g) => sum + g.items.length, 0),
+      taxPackCategoryCount: this.receipts.filter(g => g.items.length > 0).length,
+
+      chatMessages: s.chatMessages.map(m => ({ ...m, fromUser: m.from === 'user', fromAi: m.from === 'ai' })),
+      chatDraft: s.chatDraft,
+      setChatDraft: this.setChatDraft,
+      sendChat: this.sendChat,
+      chatSendDisabled: !s.chatDraft.trim(),
 
       monthOptions: this.monthOptions,
       typeOptions: this.typeOptions,
