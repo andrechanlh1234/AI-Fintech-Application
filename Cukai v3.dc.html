@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-64b7d426-cc43-4b97-ae03-592b82f3d18e/styles.css" />
+<script src="_ds/modernist-64b7d426-cc43-4b97-ae03-592b82f3d18e/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-neutral-200);font-family:var(--font-body)}
+a{color:var(--color-accent-700);text-decoration:none}
+a:hover{color:var(--color-accent-800)}
+input[type="radio"]{accent-color:var(--color-accent)}
+@keyframes scanSweep{0%{top:8%;opacity:.95}50%{opacity:.45}100%{top:90%;opacity:.95}}
+@keyframes dotBlink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:48px;background:var(--color-neutral-200);box-sizing:border-box">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;width:100%;display:flex;flex-direction:column;position:relative;background:var(--color-neutral-200);font-family:var(--font-body);color:var(--color-text)">
+
+<sc-if value="{{isOnboarding}}" hint-placeholder-val="{{false}}">
+<div class="screen-in" style="position:absolute;inset:0;z-index:50;background:var(--color-bg);display:flex;flex-direction:column;padding:58px 22px 24px;box-sizing:border-box;overflow:auto">
+
+  <sc-if value="{{obIsLogin}}" hint-placeholder-val="{{true}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px">
+    <svg width="30" height="30" viewBox="0 0 24 24" style="margin-bottom:6px"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)"></path><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"></path></svg>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:26px">Welcome to Cukai</div>
+    <div style="font-size:13.5px;color:var(--color-text-muted);max-width:28ch;line-height:1.5;margin-bottom:28px">Your personal financial operating system — with an intelligent tax assistant built in.</div>
+    <button type="button" onClick="{{obNext}}" class="pressable" style="width:100%;padding:15px;background:#fff;border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:10px;font:600 14px var(--font-body);cursor:pointer;margin-bottom:10px;box-sizing:border-box">
+      <svg width="17" height="17" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.67-2.26 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A10.98 10.98 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.09a6.6 6.6 0 0 1 0-4.19V7.06H2.18a11 11 0 0 0 0 9.87l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a10.98 10.98 0 0 0-9.82 6.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+      Continue with Google
+    </button>
+    <button type="button" onClick="{{obNext}}" class="pressable" style="width:100%;padding:15px;background:#000;color:#fff;border:none;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;gap:10px;font:600 14px var(--font-body);cursor:pointer;box-sizing:border-box">
+      <svg width="15" height="17" viewBox="0 0 17 20" fill="#fff"><path d="M14.1 10.6c0-1.6.8-2.8 2.4-3.7-1-1.3-2.5-2-4.3-2.1-1.7-.1-3.2.9-4 .9-.9 0-2.2-.9-3.6-.9C2 4.9.3 6.7.3 9.6c0 1.5.3 3.1 1 4.6.9 2 2.6 5 4.5 4.9 1 0 1.7-.6 2.9-.6 1.2 0 1.8.6 2.9.6 1.9 0 3.5-2.7 4.4-4.7-2.6-1.3-3-1-2.9-3.8zM11 2.9c.8-1 1.4-2.3 1.2-3.6-1.2.1-2.6.9-3.4 1.9-.7.9-1.4 2.2-1.2 3.5 1.3.1 2.6-.7 3.4-1.8z"/></svg>
+      Continue with Apple
+    </button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsSource}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:6px">How did you hear about us?</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:22px">Just curious — helps us know what's working.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{sourceOptions}}" as="opt" hint-placeholder-count="8">
+        <button type="button" onClick="{{opt.onClick}}" class="pressable" style="padding:10px 16px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button>
+      </sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsPrivacy}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="width:52px;height:52px;border-radius:50%;background:var(--color-accent-100);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:20px">Your data stays private</div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:20px">
+      <div style="display:flex;gap:12px;align-items:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><rect width="18" height="11" x="3" y="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><div style="font-size:13.5px;line-height:1.5">Bank-level 256-bit encryption on everything you connect and scan.</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M20 6 9 17l-5-5"></path></svg><div style="font-size:13.5px;line-height:1.5">We never sell your financial data to advertisers. Ever.</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><div style="font-size:13.5px;line-height:1.5">You can disconnect any account, anytime, in one tap.</div></div>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">I understand</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsAbout}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:6px">Tell us about yourself</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:20px">A few basics so we can personalise things.</div>
+    <div class="field" style="margin-bottom:12px"><label>Name</label><input class="input" value="{{obName}}" onChange="{{setObName}}" placeholder="Aina Natasha" /></div>
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div class="field" style="flex:1"><label>Age</label><input class="input" value="{{obAge}}" onChange="{{setObAge}}" placeholder="29" /></div>
+      <div class="field" style="flex:1"><label>Country</label>
+        <select class="input" value="{{obCountry}}" onChange="{{setObCountry}}">
+          <option value="Malaysia">Malaysia</option><option value="Singapore">Singapore</option><option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Occupation</label><input class="input" value="{{obOccupation}}" onChange="{{setObOccupation}}" placeholder="e.g. Product designer" /></div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Monthly income</label>
+      <select class="input" value="{{obIncome}}" onChange="{{setObIncome}}">
+        <sc-for list="{{incomeRangeOptions}}" as="opt" hint-placeholder-count="5"><option value="{{opt}}">{{opt}}</option></sc-for>
+      </select>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsTxPersonal}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div class="tag tag-tax" style="align-self:flex-start;margin-bottom:10px">Tax Setup</div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:6px">A bit about your tax situation</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:20px">This personalises your Tax Center.</div>
+    <div style="font:600 12px var(--font-body);margin-bottom:8px">Tax residency</div>
+    <div style="display:flex;gap:10px;margin-bottom:18px">
+      <sc-for list="{{residencyOptions}}" as="opt" hint-placeholder-count="2"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="flex:1;padding:10px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="font:600 12px var(--font-body);margin-bottom:8px">Marital status</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <sc-for list="{{maritalOptions}}" as="opt" hint-placeholder-count="3"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="padding:9px 14px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="font:600 12px var(--font-body);margin-bottom:8px">Dependants</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{dependantOptions}}" as="opt" hint-placeholder-count="5"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="width:42px;height:42px;border-radius:50%;cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsTxEmployment}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:20px">Employment</div>
+    <div style="font:600 12px var(--font-body);margin-bottom:8px">Employment status</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <sc-for list="{{employmentOptions}}" as="opt" hint-placeholder-count="4"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="padding:9px 14px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div class="field" style="margin-bottom:14px"><label>Employer / source of income (optional)</label><input class="input" value="{{obEmployer}}" onChange="{{setObEmployer}}" placeholder="e.g. Petronas, or your business name" /></div>
+    <div class="field" style="margin-bottom:18px">
+      <label>Approximate monthly income</label>
+      <select class="input" value="{{obApproxIncome}}" onChange="{{setObApproxIncome}}">
+        <sc-for list="{{incomeRangeOptions}}" as="opt" hint-placeholder-count="5"><option value="{{opt}}">{{opt}}</option></sc-for>
+      </select>
+    </div>
+    <div style="font:600 12px var(--font-body);margin-bottom:8px">Do you have income besides your salary?</div>
+    <div style="display:flex;gap:10px">
+      <sc-for list="{{multiIncomeOptions}}" as="opt" hint-placeholder-count="2"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="flex:1;padding:10px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsTxIncomeTypes}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:6px">What other income do you have?</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:20px">Select all that apply.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{incomeTypeOptions}}" as="opt" hint-placeholder-count="5"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="padding:10px 16px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsTxReliefs}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="display:flex;flex-direction:column;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <button type="button" onClick="{{obBack}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font:600 11px var(--font-body);letter-spacing:0.08em;color:var(--color-text-muted)">{{obProgress}}</span>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:23px;margin-bottom:6px">Which of these apply to you?</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:20px">We'll use this to flag deductible spending automatically. Nothing here is final.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <sc-for list="{{reliefOptions}}" as="opt" hint-placeholder-count="10"><button type="button" onClick="{{opt.onClick}}" class="pressable" style="padding:10px 16px;border-radius:var(--radius-md);cursor:pointer;font:600 13px var(--font-body);border:1.5px solid {{opt.borderColor}};background:{{opt.bg}};color:{{opt.color}}">{{opt.label}}</button></sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{obNext}}" class="btn btn-primary btn-lg">Continue</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{obIsTxDone}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div class="pop-in" style="width:72px;height:72px;border-radius:50%;background:var(--color-accent-100);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:800;font-size:22px;margin-bottom:8px">You're all set</div>
+    <div style="font-size:13.5px;color:var(--color-text-muted);max-width:26ch;line-height:1.5;margin-bottom:30px">{{obDoneSubtitle}}</div>
+    <button type="button" onClick="{{obFinish}}" class="btn btn-primary btn-lg" style="width:100%">Go to Home</button>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{isApp}}" hint-placeholder-val="{{true}}">
+
+<sc-if value="{{reviewOpen}}" hint-placeholder-val="{{false}}">
+<div class="screen-in" style="position:absolute;inset:0;z-index:45;background:var(--color-bg);display:flex;flex-direction:column;padding:58px 20px 24px;box-sizing:border-box">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <button type="button" onClick="{{closeReview}}" aria-label="Close" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+    <span style="font-family:var(--font-heading);font-weight:700;font-size:17px">Review</span>
+    <span style="font:600 12px var(--font-body);color:var(--color-text-muted)">{{reviewRemaining}} left</span>
+  </div>
+
+  <sc-if value="{{reviewHasCurrent}}" hint-placeholder-val="{{true}}">
+  <div style="flex:1;position:relative">
+    <sc-if value="{{reviewHasNext}}" hint-placeholder-val="{{false}}">
+    <div class="card" style="position:absolute;inset:8px 14px;transform:scale(0.96) translateY(10px);opacity:0.6;display:flex;flex-direction:column;padding:22px">
+      <div style="width:38px;height:38px;border-radius:50%;background:{{nextItem.badgeBg}};color:{{nextItem.badgeFg}};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;margin-bottom:14px">{{nextItem.badgeLetter}}</div>
+      <div style="font-weight:700;font-size:17px">{{nextItem.merchant}}</div>
+    </div>
+    </sc-if>
+    <div onPointerDown="{{curItem.onDown}}" onPointerMove="{{curItem.onMove}}" onPointerUp="{{curItem.onUp}}" onPointerCancel="{{curItem.onUp}}" class="card elev-md" style="position:absolute;inset:0 6px;display:flex;flex-direction:column;padding:26px;box-sizing:border-box;cursor:grab;touch-action:pan-y;transform:translateX({{curItem.dragX}}px) rotate({{curItem.rotate}}deg);transition:{{curItem.transition}}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+        <div style="width:44px;height:44px;border-radius:50%;background:{{curItem.badgeBg}};color:{{curItem.badgeFg}};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px">{{curItem.badgeLetter}}</div>
+        <span class="tag tag-neutral">{{curItem.catLabel}}</span>
+      </div>
+      <div style="font-weight:700;font-size:19px;margin-bottom:4px">{{curItem.merchant}}</div>
+      <div style="font-size:12.5px;color:var(--color-text-muted);margin-bottom:20px">{{curItem.dateLabel}}</div>
+      <div class="type-numeric" style="font-family:var(--font-heading);font-weight:800;font-size:30px;margin-bottom:auto">−RM {{curItem.amountLabel}}</div>
+      <div style="height:1px;background:var(--color-neutral-300);margin:14px 0"></div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--color-text-muted);margin-bottom:6px"><span>Suggested category</span><span style="color:var(--color-text);font-weight:600">{{curItem.catLabel}}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--color-text-muted)"><span>Paid with</span><span style="color:var(--color-text);font-weight:600">{{curItem.payment}}</span></div>
+      <div style="position:absolute;top:24px;left:24px;padding:5px 12px;border:3px solid var(--color-accent);color:var(--color-accent);font-weight:800;font-size:14px;letter-spacing:0.05em;border-radius:8px;transform:rotate(-12deg);opacity:{{curItem.acceptOpacity}}">ADD</div>
+      <div style="position:absolute;top:24px;right:24px;padding:5px 12px;border:3px solid var(--color-danger);color:var(--color-danger);font-weight:800;font-size:14px;letter-spacing:0.05em;border-radius:8px;transform:rotate(12deg);opacity:{{curItem.rejectOpacity}}">SKIP</div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:22px;padding:20px 0 6px">
+    <button type="button" onClick="{{rejectCurrent}}" aria-label="Reject" class="pressable" style="width:56px;height:56px;border-radius:50%;background:var(--color-surface);border:1.5px solid var(--color-danger);color:var(--color-danger);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+    <button type="button" onClick="{{acceptCurrent}}" aria-label="Accept" class="pressable" style="width:56px;height:56px;border-radius:50%;background:var(--color-accent);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></button>
+  </div>
+  <div style="text-align:center;font-size:11.5px;color:var(--color-text-muted)">Swipe right to add, left to skip</div>
+  </sc-if>
+
+  <sc-if value="{{reviewAllDone}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div class="pop-in" style="width:64px;height:64px;border-radius:50%;background:var(--color-accent-100);display:flex;align-items:center;justify-content:center;margin-bottom:18px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:19px;margin-bottom:6px">All caught up</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:26px">Nothing left to review right now.</div>
+    <button type="button" onClick="{{closeReview}}" class="btn btn-primary" style="padding:14px 28px">Back to Home</button>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{scanOpen}}" hint-placeholder-val="{{false}}">
+<div class="screen-in" style="position:absolute;inset:0;z-index:40;background:var(--color-bg);display:flex;flex-direction:column;padding-top:58px;box-sizing:border-box">
+
+  <sc-if value="{{scanIsCapture}}" hint-placeholder-val="{{true}}">
+  <div style="flex:1;display:flex;flex-direction:column;background:linear-gradient(160deg,#2a2c2b,#0f100f);position:relative;overflow:hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;position:relative;z-index:5">
+      <button type="button" onClick="{{closeScan}}" aria-label="Close" class="pressable" style="background:rgba(255,255,255,0.12);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+      <span style="font:600 13px var(--font-body);color:rgba(255,255,255,0.85);letter-spacing:0.02em">Scan a receipt</span>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.85)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path></svg></div>
+    </div>
+    <div style="flex:1;position:relative;margin:8px 24px 0;display:flex;align-items:center;justify-content:center">
+      <div style="position:absolute;top:0;left:0;width:34px;height:34px;border-top:3px solid rgba(255,255,255,0.85);border-left:3px solid rgba(255,255,255,0.85);border-radius:8px 0 0 0"></div>
+      <div style="position:absolute;top:0;right:0;width:34px;height:34px;border-top:3px solid rgba(255,255,255,0.85);border-right:3px solid rgba(255,255,255,0.85);border-radius:0 8px 0 0"></div>
+      <div style="position:absolute;bottom:0;left:0;width:34px;height:34px;border-bottom:3px solid rgba(255,255,255,0.85);border-left:3px solid rgba(255,255,255,0.85);border-radius:0 0 0 8px"></div>
+      <div style="position:absolute;bottom:0;right:0;width:34px;height:34px;border-bottom:3px solid rgba(255,255,255,0.85);border-right:3px solid rgba(255,255,255,0.85);border-radius:0 0 8px 0"></div>
+      <span style="font:500 13px var(--font-body);color:rgba(255,255,255,0.55)">Align the receipt within the frame</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:22px 0 34px">
+      <button type="button" onClick="{{capturePhoto}}" aria-label="Capture" class="pressable" style="width:74px;height:74px;border-radius:50%;background:transparent;border:4px solid #fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><div style="width:60px;height:60px;border-radius:50%;background:#fff"></div></button>
+      <button type="button" onClick="{{chooseManual}}" class="pressable" style="background:none;border:none;color:rgba(255,255,255,0.75);font:600 13px var(--font-body);cursor:pointer">Enter details manually instead</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{scanIsProcessing}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;background:linear-gradient(160deg,#2a2c2b,#0f100f);position:relative;overflow:hidden">
+    <div style="flex:1;position:relative;margin:24px 32px;background:#fff;border-radius:6px;box-shadow:0 20px 50px rgba(0,0,0,0.4);overflow:hidden">
+      <div style="position:absolute;left:14px;right:14px;top:14px">
+        <div style="height:9px;background:#e7e5e2;width:70%;margin-bottom:8px"></div>
+        <div style="height:5px;background:#eee;width:90%;margin-bottom:5px"></div>
+        <div style="height:5px;background:#eee;width:82%;margin-bottom:5px"></div>
+        <div style="height:5px;background:#eee;width:86%;margin-bottom:16px"></div>
+        <div style="height:5px;background:#eee;width:60%;margin-bottom:5px"></div>
+        <div style="height:5px;background:#eee;width:70%"></div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:8%;height:3px;background:linear-gradient(90deg,transparent,var(--color-accent-500),transparent);animation:scanSweep 1.3s ease-in-out infinite"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0 40px">
+      <span style="font:600 14px var(--font-body);color:#fff">Reading your receipt<span style="animation:dotBlink 1.4s infinite">.</span><span style="animation:dotBlink 1.4s infinite .2s">.</span><span style="animation:dotBlink 1.4s infinite .4s">.</span></span>
+      <span style="font:400 12px var(--font-body);color:rgba(255,255,255,0.5)">Cukai is finding the merchant, amount and category</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{scanIsConfirm}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;padding:16px 20px 24px;box-sizing:border-box;overflow:auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <button type="button" onClick="{{closeScan}}" aria-label="Back" class="pressable" style="background:none;border:none;padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+      <span style="font-family:var(--font-heading);font-weight:700;font-size:18px">Confirm details</span>
+    </div>
+    <div class="tag tag-accent" style="align-self:flex-start;margin-bottom:16px">Read from your photo — check it's right</div>
+    <div class="field" style="margin-bottom:14px"><label>Merchant</label><input class="input" value="{{scanMerchant}}" onChange="{{setScanMerchant}}" /></div>
+    <div style="display:flex;gap:12px;margin-bottom:14px">
+      <div class="field" style="flex:1"><label>Amount (RM)</label><input class="input" value="{{scanAmount}}" onChange="{{setScanAmount}}" /></div>
+      <div class="field" style="flex:1"><label>Date</label><input class="input" value="{{scanDate}}" onChange="{{setScanDate}}" /></div>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Category</label>
+      <select class="input" value="{{scanCategory}}" onChange="{{setScanCategory}}">
+        <sc-for list="{{categoryOptions}}" as="opt" hint-placeholder-count="8">
+          <option value="{{opt}}">{{opt}}</option>
+        </sc-for>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Payment method</label>
+      <select class="input" value="{{scanPaymentMethod}}" onChange="{{setScanPaymentMethod}}">
+        <sc-for list="{{paymentMethods}}" as="opt" hint-placeholder-count="6">
+          <option value="{{opt}}">{{opt}}</option>
+        </sc-for>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:14px">
+      <div class="field" style="flex:1"><label>Tax amount (RM)</label><input class="input" value="{{scanTaxAmount}}" onChange="{{setScanTaxAmount}}" /></div>
+      <div class="field" style="flex:1"><label>Tax rate (%)</label><input class="input" value="{{scanTaxRate}}" onChange="{{setScanTaxRate}}" /></div>
+    </div>
+    <div class="field" style="margin-bottom:18px"><label>Receipt tag (optional)</label><input class="input" value="{{scanTag}}" onChange="{{setScanTag}}" placeholder="e.g. Work trip, gift" /></div>
+    <div style="border:1.5px solid {{scanDeductibleBorder}};background:{{scanDeductibleBg}};border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:2px">Tax deductible?</div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px">Cukai thinks this qualifies for a relief this year</div>
+      <div class="seg">
+        <label class="seg-opt"><input type="radio" name="deductible" checked="{{scanDeductibleYesChecked}}" onChange="{{setScanDeductibleYes}}" />Yes</label>
+        <label class="seg-opt"><input type="radio" name="deductible" checked="{{scanDeductibleNoChecked}}" onChange="{{setScanDeductibleNo}}" />No</label>
+      </div>
+      <sc-if value="{{scanDeductible}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{toggleWhyDeductible}}" class="pressable" style="background:none;border:none;padding:12px 0 0;margin:0;font:600 12.5px var(--font-body);color:var(--color-tax-700);cursor:pointer;display:flex;align-items:center;gap:5px">
+          Why does this qualify?
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:{{whyChevronRotate}};transition:transform .2s ease"><path d="m9 18 6-6-6-6"></path></svg>
+        </button>
+        <sc-if value="{{showWhyDeductible}}" hint-placeholder-val="{{false}}">
+          <div class="pop-in" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--color-tax-300)">
+            <div style="font-size:12.5px;line-height:1.5;color:var(--color-tax-900);margin-bottom:12px">{{reliefWhy}}</div>
+            <sc-if value="{{hasReliefInfo}}" hint-placeholder-val="{{false}}">
+              <div style="font-weight:700;font-size:12.5px;margin-bottom:6px">{{reliefName}} · cap RM {{reliefCapLabel}}</div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-tax-700);margin-bottom:4px"><span>Before this purchase</span><span>RM {{reliefBeforeLabel}}</span></div>
+              <div style="height:6px;background:var(--color-tax-200);border-radius:4px;overflow:hidden;margin-bottom:8px"><div class="bar-fill" style="height:100%;width:{{reliefBeforePct}}%;background:var(--color-tax-500);border-radius:4px"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-tax-800);margin-bottom:4px;font-weight:600"><span>After this purchase</span><span>RM {{reliefAfterLabel}}</span></div>
+              <div style="height:6px;background:var(--color-tax-200);border-radius:4px;overflow:hidden;margin-bottom:8px"><div class="bar-fill" style="height:100%;width:{{reliefAfterPct}}%;background:var(--color-tax-700);border-radius:4px"></div></div>
+              <div style="font-size:11px;color:var(--color-tax-700)">RM {{reliefRemainingLabel}} of your cap will remain</div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </sc-if>
+    </div>
+    <div style="flex:1"></div>
+    <button type="button" onClick="{{saveScan}}" class="btn btn-primary btn-lg">Save receipt</button>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{scanIsSaved}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in" style="flex:1;display:flex;flex-direction:column;align-items:center;padding:48px 24px 24px;box-sizing:border-box;text-align:center">
+    <div class="pop-in" style="width:72px;height:72px;border-radius:50%;background:var(--color-accent-100);display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+    </div>
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;margin-bottom:6px">Saved</div>
+    <div style="font-size:13px;color:var(--color-text-muted);margin-bottom:24px;max-width:26ch">Linked to a new transaction in your Finance tab.</div>
+    <div class="card elev-sm" style="width:100%;text-align:left;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;font-size:15px">{{scanMerchant}}</div>
+          <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{scanCategory}} · {{scanDate}}</div>
+        </div>
+        <div style="font-weight:700;font-size:15px" class="type-numeric">−RM {{scanAmount}}</div>
+      </div>
+      <sc-if value="{{scanDeductible}}" hint-placeholder-val="{{true}}">
+        <div class="tag tag-tax" style="align-self:flex-start;margin-top:6px">Tax deductible</div>
+      </sc-if>
+    </div>
+    <sc-if value="{{scanDeductible}}" hint-placeholder-val="{{true}}">
+      <button type="button" onClick="{{viewInTax}}" class="pressable" style="width:100%;text-align:left;background:var(--color-tax-100);border:1.5px solid var(--color-tax-300);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-sizing:border-box">
+        <div><div style="font-weight:700;font-size:13px;color:var(--color-tax-800)">Added to your {{scanTaxYear}} deductions</div><div style="font-size:11px;color:var(--color-tax-700);margin-top:2px">Tap to see it in your Tax Center</div></div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-tax-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+      </button>
+    </sc-if>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:10px;width:100%">
+      <button type="button" onClick="{{scanAnother}}" class="btn btn-secondary" style="flex:1">Scan another</button>
+      <button type="button" onClick="{{closeScan}}" class="btn btn-primary" style="flex:1">Done</button>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{showMainApp}}" hint-placeholder-val="{{true}}">
+<div style="flex:1;overflow:auto;padding:56px 20px 100px;box-sizing:border-box;position:relative">
+
+  <sc-if value="{{isHome}}" hint-placeholder-val="{{true}}">
+  <div class="screen-in">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)"></path><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"></path></svg>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:17px;letter-spacing:0.01em">Cukai</span>
+      </div>
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--color-surface);border:1.5px solid var(--color-neutral-400);display:flex;align-items:center;justify-content:center;color:var(--color-text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg></div>
+    </div>
+
+    <button type="button" onClick="{{openReview}}" class="pressable" style="all:unset;display:block;width:100%;cursor:pointer;margin-bottom:20px;box-sizing:border-box">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+        <span style="font-family:var(--font-heading);font-weight:800;font-size:19px">{{reviewCount}} items to review</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{reviewPreview}}" as="rv" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-neutral-300)">
+            <div style="width:26px;height:26px;border-radius:50%;background:{{rv.badgeBg}};color:{{rv.badgeFg}};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0">{{rv.badgeLetter}}</div>
+            <div style="flex:1;font-size:13px;font-weight:600">{{rv.merchant}}</div>
+            <div class="type-numeric" style="font-size:13px;font-weight:600;color:var(--color-text-muted)">RM {{rv.amountLabel}}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--color-tax-700);display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+        2 invoices detected from Gmail — tap to review
+      </div>
+    </button>
+    <div style="border-top:1px solid var(--color-divider);margin-bottom:18px"></div>
+
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:20px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-tax-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
+      <div><div style="font-weight:600;font-size:13px">Lifestyle relief 87% used</div><div style="font-size:12px;color:var(--color-text-muted)">RM 320 of your RM 2,500 cap left this year</div></div>
+    </div>
+
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted)">Monthly budget</span>
+        <button type="button" onClick="{{goFinanceBudgets}}" class="pressable" style="background:none;border:none;font:600 11px var(--font-body);color:var(--color-accent-700);cursor:pointer;padding:0">Details</button>
+      </div>
+      <div class="type-numeric" style="font-weight:700;font-size:19px;margin-bottom:8px">RM {{homeBudgetSpentLabel}} <span style="font-size:13px;font-weight:400;color:var(--color-text-muted)">/ RM {{homeBudgetTotalLabel}}</span></div>
+      <div style="height:6px;background:var(--color-neutral-300);border-radius:4px;overflow:hidden"><div class="bar-fill" style="height:100%;width:{{homeBudgetPct}}%;background:var(--color-accent);border-radius:4px"></div></div>
+    </div>
+
+    <button type="button" onClick="{{goTax}}" class="pressable" style="all:unset;display:block;width:100%;text-align:left;background:var(--color-tax-100);border:1.5px solid var(--color-tax-300);border-radius:var(--radius-md);padding:16px;cursor:pointer;box-sizing:border-box;margin-bottom:18px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-tax-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path></svg>
+        <div>
+          <div style="font-weight:700;font-size:13.5px;color:var(--color-tax-800);margin-bottom:3px">You're pacing well this month</div>
+          <div style="font-size:12.5px;color:var(--color-tax-700);line-height:1.5">RM 540 under budget with a week left, and your Popular Bookstore purchase looks eligible for Lifestyle relief. See it in the Tax Center →</div>
+        </div>
+      </div>
+    </button>
+
+    <button type="button" onClick="{{goFinanceTransactions}}" class="pressable" style="all:unset;display:block;font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px;cursor:pointer">Recent activity</button>
+    <sc-for list="{{recentTx}}" as="tx" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--color-neutral-300)">
+        <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:12.5px;background:{{tx.badgeBg}};color:{{tx.badgeFg}}">
+          <sc-if value="{{tx.hasBrand}}" hint-placeholder-val="{{false}}">{{tx.badgeLetter}}</sc-if>
+          <sc-if value="{{tx.isCar}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path><circle cx="6.5" cy="16.5" r="2.5"></circle><circle cx="16.5" cy="16.5" r="2.5"></circle></svg></sc-if>
+          <sc-if value="{{tx.isCoffee}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" y1="2" x2="6" y2="4"></line><line x1="10" y1="2" x2="10" y2="4"></line><line x1="14" y1="2" x2="14" y2="4"></line></svg></sc-if>
+          <sc-if value="{{tx.isBag}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></sc-if>
+          <sc-if value="{{tx.isZap}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg></sc-if>
+          <sc-if value="{{tx.isMedical}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></sc-if>
+          <sc-if value="{{tx.isBook}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg></sc-if>
+          <sc-if value="{{tx.isArrowUp}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></sc-if>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13.5px;font-weight:600">{{tx.merchant}}</div>
+          <div style="font-size:11.5px;color:var(--color-text-muted)">{{tx.catLabel}} · {{tx.dateLabel}} · {{tx.payment}}</div>
+        </div>
+        <sc-if value="{{tx.tax}}" hint-placeholder-val="{{false}}"><span class="tag tag-tax" style="flex-shrink:0">Tax</span></sc-if>
+        <div class="type-numeric" style="font-weight:600;font-size:13.5px;flex-shrink:0;color:{{tx.amountColor}}">{{tx.amountLabel}}</div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{isFinance}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in">
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;margin-bottom:14px">Finance</div>
+    <div class="seg" style="width:100%;margin-bottom:18px">
+      <label class="seg-opt" style="flex:1;justify-content:center;padding:7px 4px;font-size:11.5px"><input type="radio" name="finsec" checked="{{isFinNetWorth}}" onChange="{{goFinanceNetWorth}}" />Net Worth</label>
+      <label class="seg-opt" style="flex:1;justify-content:center;padding:7px 4px;font-size:11.5px"><input type="radio" name="finsec" checked="{{isFinTransactions}}" onChange="{{goFinanceTransactions}}" />Activity</label>
+      <label class="seg-opt" style="flex:1;justify-content:center;padding:7px 4px;font-size:11.5px"><input type="radio" name="finsec" checked="{{isFinBudgets}}" onChange="{{goFinanceBudgets}}" />Budgets</label>
+      <label class="seg-opt" style="flex:1;justify-content:center;padding:7px 4px;font-size:11.5px"><input type="radio" name="finsec" checked="{{isFinHistory}}" onChange="{{goFinanceHistory}}" />History</label>
+    </div>
+
+    <sc-if value="{{isFinNetWorth}}" hint-placeholder-val="{{true}}">
+    <div class="screen-in">
+      <div style="font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted)">Net worth</div>
+      <div class="type-numeric" style="font-family:var(--font-heading);font-weight:800;font-size:32px;letter-spacing:-0.02em;line-height:1;margin:4px 0 6px">RM {{netWorthLabel}}</div>
+      <div style="display:flex;align-items:center;gap:6px;color:var(--color-accent-700);font-weight:600;font-size:12.5px;margin-bottom:14px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+        +RM {{netWorthDeltaLabel}} ({{netWorthDeltaPct}}%) · {{netWorthRangeLabel}}
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <sc-for list="{{rangeOptions}}" as="rg" hint-placeholder-count="6">
+          <button type="button" onClick="{{rg.onClick}}" class="pressable" style="padding:6px 10px;border-radius:999px;border:none;cursor:pointer;font:700 11px var(--font-body);background:{{rg.bg}};color:{{rg.color}}">{{rg.label}}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{nwHasSelection}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0 -2px">
+          <span style="font-size:12px;color:var(--color-text-muted)">{{nwSelectedLabel}}</span>
+          <span class="type-numeric" style="font-weight:700;font-size:13px">RM {{nwSelectedValueLabel}}</span>
+          <button type="button" onClick="{{clearNwSelection}}" aria-label="Clear" class="pressable" style="background:none;border:none;color:var(--color-text-muted);cursor:pointer;padding:2px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+        </div>
+      </sc-if>
+      <svg width="100%" height="150" viewBox="0 0 300 140" preserveAspectRatio="none" style="margin:6px 0 4px;display:block">
+        <defs><linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.16"></stop><stop offset="100%" stop-color="var(--color-accent)" stop-opacity="0"></stop></linearGradient></defs>
+        <line x1="0" y1="128" x2="300" y2="128" stroke="var(--color-neutral-400)" stroke-width="1" stroke-dasharray="3,4"></line>
+        <polygon points="{{netWorthAreaPoints}}" fill="url(#nwFill)"></polygon>
+        <polyline points="{{netWorthLinePoints}}" fill="none" stroke="var(--color-accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        <sc-for list="{{chartPoints}}" as="pt" hint-placeholder-count="12">
+          <circle cx="{{pt.cx}}" cy="{{pt.cy}}" r="9" fill="transparent" onClick="{{pt.onClick}}" style="cursor:pointer"></circle>
+        </sc-for>
+      </svg>
+      <div style="display:flex;gap:28px;margin:10px 0 20px">
+        <div><div style="font-size:11px;color:var(--color-text-muted)">Total assets</div><div class="type-numeric" style="font-weight:700;font-size:15px">RM {{assetsLabel}}</div></div>
+        <div><div style="font-size:11px;color:var(--color-text-muted)">Liabilities</div><div class="type-numeric" style="font-weight:700;font-size:15px">RM {{liabilitiesLabel}}</div></div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider)"></div>
+      <sc-for list="{{netWorthGroups}}" as="grp" hint-placeholder-count="3">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 4px">
+          <span style="font-weight:700;font-size:14px">{{grp.label}}</span>
+          <span class="type-numeric" style="font-weight:700;font-size:14px">RM {{grp.totalLabel}}</span>
+        </div>
+        <sc-for list="{{grp.rows}}" as="row" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--color-neutral-300)">
+            <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;background:{{row.badgeBg}};color:{{row.badgeFg}}">
+              <sc-if value="{{row.hasBrand}}" hint-placeholder-val="{{true}}">{{row.badgeLetter}}</sc-if>
+              <sc-if value="{{row.isArrowUp}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></sc-if>
+            </div>
+            <div style="flex:1"><div style="font-size:13.5px;font-weight:600">{{row.name}}</div><div style="font-size:11.5px;color:var(--color-text-muted);margin-top:2px">Synced {{row.synced}}</div></div>
+            <div class="type-numeric" style="font-size:14px;font-weight:600">RM {{row.balanceLabel}}</div>
+          </div>
+        </sc-for>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{isFinTransactions}}" hint-placeholder-val="{{false}}">
+    <div class="screen-in">
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="position:relative;flex:1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:11px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input class="input" value="{{txSearch}}" onChange="{{setTxSearch}}" placeholder="Search transactions" style="padding-left:32px" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:6px">
+        <sc-for list="{{categoryChips}}" as="chip" hint-placeholder-count="6">
+          <button type="button" onClick="{{chip.onClick}}" class="tag pressable" style="flex-shrink:0;cursor:pointer;border:1px solid {{chip.borderColor}};background:{{chip.bg}};color:{{chip.color}}">{{chip.label}}</button>
+        </sc-for>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:10px;font-style:italic">Swipe a transaction left to confirm its category</div>
+      <sc-for list="{{filteredTx}}" as="grp" hint-placeholder-count="3">
+        <div style="font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin:12px 0 4px">{{grp.label}}</div>
+        <sc-for list="{{grp.items}}" as="tx" hint-placeholder-count="2">
+          <div style="position:relative;overflow:hidden;border-bottom:1px solid var(--color-neutral-300)">
+            <div style="position:absolute;inset:0;background:var(--color-accent);display:flex;align-items:center;justify-content:flex-end;padding-right:18px;color:#fff">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{tx.checkOpacity}}"><path d="M20 6 9 17l-5-5"></path></svg>
+            </div>
+            <div onPointerDown="{{tx.onDown}}" onPointerMove="{{tx.onMove}}" onPointerUp="{{tx.onUp}}" onPointerCancel="{{tx.onUp}}" style="position:relative;display:flex;align-items:center;gap:12px;padding:12px 0;background:var(--color-neutral-200);touch-action:pan-y;transform:{{tx.rowTransform}};transition:{{tx.rowTransition}}">
+              <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11.5px;background:{{tx.badgeBg}};color:{{tx.badgeFg}}">
+                <sc-if value="{{tx.hasBrand}}" hint-placeholder-val="{{false}}">{{tx.badgeLetter}}</sc-if>
+                <sc-if value="{{tx.isCar}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path><circle cx="6.5" cy="16.5" r="2.5"></circle><circle cx="16.5" cy="16.5" r="2.5"></circle></svg></sc-if>
+                <sc-if value="{{tx.isCoffee}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" y1="2" x2="6" y2="4"></line><line x1="10" y1="2" x2="10" y2="4"></line><line x1="14" y1="2" x2="14" y2="4"></line></svg></sc-if>
+                <sc-if value="{{tx.isBag}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></sc-if>
+                <sc-if value="{{tx.isZap}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg></sc-if>
+                <sc-if value="{{tx.isMedical}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></sc-if>
+                <sc-if value="{{tx.isBook}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg></sc-if>
+                <sc-if value="{{tx.isArrowUp}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></sc-if>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13.5px;font-weight:600">{{tx.merchant}}</div>
+                <div style="font-size:11.5px;color:var(--color-text-muted)">{{tx.catLabel}} · {{tx.payment}}</div>
+              </div>
+              <sc-if value="{{tx.tax}}" hint-placeholder-val="{{false}}"><span class="tag tag-tax" style="flex-shrink:0">Tax</span></sc-if>
+              <sc-if value="{{tx.confirmed}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
+              <div class="type-numeric" style="font-weight:600;font-size:13.5px;flex-shrink:0;color:{{tx.amountColor}}">{{tx.amountLabel}}</div>
+            </div>
+          </div>
+        </sc-for>
+      </sc-for>
+      <sc-if value="{{noFilteredTx}}" hint-placeholder-val="{{false}}"><div style="padding:24px 4px;font-size:14px;color:var(--color-text-muted)">No transactions match these filters.</div></sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{isFinBudgets}}" hint-placeholder-val="{{false}}">
+    <div class="screen-in">
+      <sc-for list="{{buckets}}" as="b" hint-placeholder-count="3">
+        <div class="card" style="margin-bottom:12px">
+          <button type="button" onClick="{{b.onToggle}}" class="pressable" style="all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-family:var(--font-heading);font-weight:700;font-size:15px">{{b.name}}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:{{b.chevronRotate}};transition:transform .2s ease"><path d="m9 18 6-6-6-6"></path></svg>
+            </div>
+            <div class="type-numeric" style="font-weight:700;font-size:17px">RM {{b.spentLabel}} <span style="font-size:12.5px;font-weight:400;color:var(--color-text-muted)">/ RM {{b.totalLabel}}</span></div>
+            <div style="height:7px;background:var(--color-neutral-300);border-radius:4px;overflow:hidden"><div class="bar-fill" style="height:100%;width:{{b.pct}}%;background:var(--color-accent);border-radius:4px"></div></div>
+          </button>
+          <sc-if value="{{b.expanded}}" hint-placeholder-val="{{false}}">
+          <div class="pop-in" style="display:flex;flex-direction:column;gap:12px;margin-top:6px;padding-top:10px;border-top:1px solid var(--color-neutral-300)">
+            <sc-for list="{{b.categories}}" as="c" hint-placeholder-count="3">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span style="font-weight:600">{{c.name}}</span><span class="type-numeric">RM {{c.spentLabel}} / RM {{c.totalLabel}}</span></div>
+                <div style="height:5px;background:var(--color-neutral-300);border-radius:3px;overflow:hidden"><div class="bar-fill" style="height:100%;width:{{c.pct}}%;background:{{c.barColor}};border-radius:3px"></div></div>
+                <sc-if value="{{c.note}}" hint-placeholder-val="{{false}}"><div style="font-size:10.5px;color:{{c.noteColor}};margin-top:4px">{{c.note}}</div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{isFinHistory}}" hint-placeholder-val="{{false}}">
+    <div class="screen-in">
+      <div style="font-weight:700;font-size:15px;margin-bottom:12px">2026</div>
+      <div style="display:flex;gap:6px;overflow:auto;padding-bottom:6px;margin-bottom:18px">
+        <sc-for list="{{monthPills}}" as="m" hint-placeholder-count="8">
+          <button type="button" onClick="{{m.onClick}}" class="pressable" style="flex-shrink:0;padding:8px 14px;border-radius:999px;border:none;cursor:pointer;font:700 12px var(--font-body);background:{{m.bg}};color:{{m.color}}">{{m.label}}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:26px;margin-bottom:18px">
+        <div><div style="font-size:11px;color:var(--color-text-muted)">Income</div><div class="type-numeric" style="font-weight:700;font-size:16px;color:var(--color-accent-700)">+RM {{histIncomeLabel}}</div></div>
+        <div><div style="font-size:11px;color:var(--color-text-muted)">Expenses</div><div class="type-numeric" style="font-weight:700;font-size:16px">−RM {{histExpenseLabel}}</div></div>
+        <div><div style="font-size:11px;color:var(--color-text-muted)">Net</div><div class="type-numeric" style="font-weight:700;font-size:16px;color:{{histNetColor}}">{{histNetSign}}RM {{histNetLabel}}</div></div>
+      </div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:4px"></div>
+      <sc-if value="{{histHasTx}}" hint-placeholder-val="{{true}}">
+        <sc-for list="{{histTx}}" as="tx" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--color-neutral-300)">
+            <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:11px;background:{{tx.badgeBg}};color:{{tx.badgeFg}}">
+              <sc-if value="{{tx.hasBrand}}" hint-placeholder-val="{{false}}">{{tx.badgeLetter}}</sc-if>
+              <sc-if value="{{tx.isCar}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path><circle cx="6.5" cy="16.5" r="2.5"></circle><circle cx="16.5" cy="16.5" r="2.5"></circle></svg></sc-if>
+              <sc-if value="{{tx.isCoffee}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"></path><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"></path><line x1="6" y1="2" x2="6" y2="4"></line><line x1="10" y1="2" x2="10" y2="4"></line><line x1="14" y1="2" x2="14" y2="4"></line></svg></sc-if>
+              <sc-if value="{{tx.isBag}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></sc-if>
+              <sc-if value="{{tx.isZap}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg></sc-if>
+              <sc-if value="{{tx.isMedical}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></sc-if>
+              <sc-if value="{{tx.isBook}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg></sc-if>
+              <sc-if value="{{tx.isArrowUp}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg></sc-if>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600">{{tx.merchant}}</div>
+              <div style="font-size:11px;color:var(--color-text-muted)">{{tx.catLabel}} · {{tx.payment}}</div>
+            </div>
+            <div class="type-numeric" style="font-weight:600;font-size:13px;flex-shrink:0;color:{{tx.amountColor}}">{{tx.amountLabel}}</div>
+          </div>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{noHistTx}}" hint-placeholder-val="{{false}}"><div style="padding:20px 4px;font-size:13px;color:var(--color-text-muted)">Detailed transactions aren't available for this month in this prototype.</div></sc-if>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{isTax}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px">
+      <div style="font-family:var(--font-heading);font-weight:700;font-size:19px;white-space:nowrap;flex-shrink:0">Tax Center</div>
+      <div class="seg" style="flex-shrink:0">
+        <label class="seg-opt" style="padding:7px 9px;font-size:12px"><input type="radio" name="taxyear" checked="{{isYA2026}}" onChange="{{setYA2026}}" />2026</label>
+        <label class="seg-opt" style="padding:7px 9px;font-size:12px"><input type="radio" name="taxyear" checked="{{isYA2025}}" onChange="{{setYA2025}}" />2025</label>
+      </div>
+    </div>
+
+    <sc-if value="{{hasReliefProfile}}" hint-placeholder-val="{{false}}">
+      <div style="font-size:11.5px;color:var(--color-tax-700);margin-bottom:12px">Personalised from your Tax Setup — focused on {{reliefProfileSummary}}</div>
+    </sc-if>
+
+    <div class="card elev-md" style="margin-bottom:14px;background:var(--color-tax-100);border:1.5px solid var(--color-tax-300);gap:10px">
+      <div style="font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-tax-700)">{{taxHeroLabel}}</div>
+      <div class="type-numeric" style="font-family:var(--font-heading);font-weight:800;font-size:34px;letter-spacing:-0.02em;line-height:1;color:var(--color-tax-900)">RM {{taxYtdLabel}}</div>
+      <sc-if value="{{isYA2026}}" hint-placeholder-val="{{true}}">
+        <div style="display:flex;align-items:center;gap:6px;color:var(--color-tax-800);font-weight:600;font-size:12px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+          {{taxDeltaLabel}}% ahead of this time last year
+        </div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          <div style="flex:1;height:6px;border-radius:4px;background:var(--color-tax-600)"></div>
+          <div style="width:{{benchmarkLastShare}}%;height:6px;border-radius:4px;background:var(--color-tax-200)"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isYA2025}}" hint-placeholder-val="{{false}}">
+        <span class="tag tag-outline" style="align-self:flex-start;border-color:var(--color-tax-600);color:var(--color-tax-700)">Filed — year closed</span>
+      </sc-if>
+    </div>
+
+    <div class="card elev-sm" style="margin-bottom:14px;align-items:center">
+      <div style="width:150px;height:150px;border-radius:50%;background:{{donutGradient}};display:flex;align-items:center;justify-content:center;position:relative;margin:6px 0 14px">
+        <div style="width:96px;height:96px;border-radius:50%;background:var(--color-surface);display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div class="type-numeric" style="font-weight:700;font-size:14px">RM {{taxYtdLabel}}</div>
+          <div style="font-size:9.5px;color:var(--color-text-muted);letter-spacing:0.05em;text-transform:uppercase">{{taxYear}}</div>
+        </div>
+      </div>
+      <div style="width:100%;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{taxCategories}}" as="c" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:9px;height:9px;border-radius:50%;background:{{c.swatch}};flex-shrink:0"></div>
+            <div style="flex:1;font-size:12.5px">{{c.name}}</div>
+            <div class="type-numeric" style="font-size:12.5px;font-weight:600">RM {{c.amountLabel}}</div>
+            <div style="font-size:11px;color:var(--color-text-muted);width:30px;text-align:right">{{c.pct}}%</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="font:600 11px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px">Receipts &amp; documents</div>
+    <div class="card" style="padding:4px 14px;margin-bottom:20px">
+      <sc-for list="{{taxReceipts}}" as="r" hint-placeholder-count="5">
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--color-neutral-300)">
+          <div style="width:34px;height:34px;border-radius:8px;background:var(--color-tax-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--color-tax-700)">
+            <sc-if value="{{r.isBook}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg></sc-if>
+            <sc-if value="{{r.isMedical}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></sc-if>
+            <sc-if value="{{r.isCap}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.92 12.83 8.02a2 2 0 0 0-1.66 0L2.58 10.92a1 1 0 0 0 0 1.85l8.59 3.06a2 2 0 0 0 1.66 0l8.59-3.06a1 1 0 0 0 0-1.85Z"></path><path d="M6 12.5V17c0 1.5 2.5 3 6 3s6-1.5 6-3v-4.5"></path></svg></sc-if>
+            <sc-if value="{{r.isShield}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg></sc-if>
+            <sc-if value="{{r.isUsers}}" hint-placeholder-val="{{false}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></sc-if>
+          </div>
+          <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">{{r.merchant}}</div><div style="font-size:11.5px;color:var(--color-text-muted)">{{r.catLabel}} · {{r.dateLabel}}</div></div>
+          <div class="type-numeric" style="font-weight:600;font-size:13.5px;flex-shrink:0">RM {{r.amountLabel}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{isMore}}" hint-placeholder-val="{{false}}">
+  <div class="screen-in">
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:19px;margin-bottom:18px">More</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--color-accent-100);color:var(--color-accent-800);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">{{obInitials}}</div>
+      <div><div style="font-weight:700;font-size:15px">{{obDisplayName}}</div><div style="font-size:12px;color:var(--color-text-muted)">{{obDisplayEmail}}</div></div>
+    </div>
+
+    <div style="font:600 10.5px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:4px">Account</div>
+    <div style="border-top:1px solid var(--color-divider)"></div>
+    <button type="button" class="pressable" style="all:unset;display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--color-neutral-300);cursor:pointer;width:100%;box-sizing:border-box">
+      <div><div style="font-size:13.5px;font-weight:600">Linked accounts</div><div style="font-size:11.5px;color:var(--color-text-muted);margin-top:2px">6 accounts connected</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+    <button type="button" class="pressable" style="all:unset;display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--color-neutral-300);cursor:pointer;width:100%;box-sizing:border-box">
+      <div><div style="font-size:13.5px;font-weight:600">Tax profile</div><div style="font-size:11.5px;color:var(--color-text-muted);margin-top:2px">{{obTaxProfileSummary}}</div></div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+    <button type="button" class="pressable" style="all:unset;display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--color-neutral-300);cursor:pointer;width:100%;box-sizing:border-box">
+      <div style="font-size:13.5px;font-weight:600">Subscription</div>
+      <span class="tag tag-neutral">Free</span>
+    </button>
+
+    <div style="font:600 10.5px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin:20px 0 4px">Notifications</div>
+    <div style="border-top:1px solid var(--color-divider)"></div>
+    <sc-for list="{{settingsList}}" as="item" hint-placeholder-count="3">
+      <div style="padding:13px 0;border-bottom:1px solid var(--color-neutral-300)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div><div style="font-size:13.5px;font-weight:600">{{item.label}}</div><div style="font-size:11.5px;color:var(--color-text-muted);margin-top:2px">{{item.sub}}</div></div>
+          <div class="seg" style="flex-shrink:0">
+            <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.onChecked}}" onChange="{{item.setOn}}" />On</label>
+            <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.offChecked}}" onChange="{{item.setOff}}" />Off</label>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="font:600 10.5px var(--font-body);letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin:20px 0 4px">Security &amp; support</div>
+    <div style="border-top:1px solid var(--color-divider)"></div>
+    <button type="button" class="pressable" style="all:unset;display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--color-neutral-300);cursor:pointer;width:100%;box-sizing:border-box">
+      <div style="font-size:13.5px;font-weight:600">Privacy &amp; security</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+    <button type="button" class="pressable" style="all:unset;display:flex;justify-content:space-between;align-items:center;padding:13px 0;cursor:pointer;width:100%;box-sizing:border-box">
+      <div style="font-size:13.5px;font-weight:600">Help &amp; support</div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+    </button>
+
+    <button type="button" class="btn btn-ghost" style="margin-top:26px;color:var(--color-danger-700)">Sign out</button>
+  </div>
+  </sc-if>
+
+</div>
+
+<div style="position:relative;flex-shrink:0">
+  <div class="material-chrome" style="display:flex;border-top:1.5px solid var(--color-divider);padding-bottom:22px">
+    <button type="button" onClick="{{goHome}}" class="tab-btn" style="flex:1;background:none;border:none;padding:9px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabHomeColor}}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-6h-4v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
+      <span style="font-size:10.5px;font-weight:{{tabHomeWeight}}">Home</span>
+    </button>
+    <button type="button" onClick="{{goFinance}}" class="tab-btn" style="flex:1;background:none;border:none;padding:9px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabFinanceColor}}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"></path><path d="M21 12a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4h3a1 1 0 0 1 1 1z"></path></svg>
+      <span style="font-size:10.5px;font-weight:{{tabFinanceWeight}}">Finance</span>
+    </button>
+    <div style="flex:1;position:relative">
+      <button type="button" onClick="{{openScan}}" aria-label="Scan receipt" class="pressable" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:var(--color-accent);border:4px solid var(--color-bg);box-shadow:var(--shadow-lg);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+      </button>
+    </div>
+    <button type="button" onClick="{{goTax}}" class="tab-btn" style="flex:1;background:none;border:none;padding:9px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabTaxColor}}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="3"></circle><circle cx="17" cy="17" r="3"></circle><line x1="19" y1="5" x2="5" y2="19"></line></svg>
+      <span style="font-size:10.5px;font-weight:{{tabTaxWeight}}">Tax</span>
+    </button>
+    <button type="button" onClick="{{goMore}}" class="tab-btn" style="flex:1;background:none;border:none;padding:9px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabMoreColor}}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"></circle><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"></circle></svg>
+      <span style="font-size:10.5px;font-weight:{{tabMoreWeight}}">More</span>
+    </button>
+  </div>
+</div>
+
+</sc-if>
+
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:500,&quot;height&quot;:950},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;finance&quot;,&quot;tax&quot;,&quot;more&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo shortcuts&quot;},&quot;taxYearDefault&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;YA2026&quot;,&quot;options&quot;:[&quot;YA2026&quot;,&quot;YA2025&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo shortcuts&quot;},&quot;skipOnboarding&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo shortcuts&quot;}}">
+const CAT_ICON = {
+  'Transport': 'isCar', 'Food & Drink': 'isCoffee', 'Shopping': 'isBag',
+  'Bills': 'isZap', 'Health': 'isMedical', 'Income': 'isArrowUp', 'Lifestyle': 'isBook',
+};
+function iconFlags(cat) {
+  const key = CAT_ICON[cat];
+  const flags = { isCar:false, isCoffee:false, isBag:false, isZap:false, isMedical:false, isBook:false, isArrowUp:false };
+  if (key) flags[key] = true;
+  return flags;
+}
+function money(n) {
+  const abs = Math.abs(n);
+  const parts = abs.toFixed(2).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+function moneyWhole(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+const TAX_CAT_ICON = { 'Lifestyle':'isBook', 'Medical':'isMedical', 'Education':'isCap', 'EPF & Insurance':'isShield', "Parents' Medical":'isUsers' };
+function taxIconFlags(cat) {
+  const flags = { isBook:false, isMedical:false, isCap:false, isShield:false, isUsers:false };
+  const key = TAX_CAT_ICON[cat];
+  if (key) flags[key] = true;
+  return flags;
+}
+function chipStyle(active) {
+  return {
+    bg: active ? 'var(--color-accent)' : 'var(--color-surface)',
+    color: active ? '#fff' : 'var(--color-text)',
+    borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+  };
+}
+
+const ALL_TX = [
+  { id:1, merchant:'Grab', cat:'Transport', dateLabel:'Today, 8:12 AM', dateGroup:'Today', month:'Aug', amount:-18.50, tax:false, brand:'grab', payment:'GrabPay' },
+  { id:2, merchant:'Tealive', cat:'Food & Drink', dateLabel:'Today, 7:35 AM', dateGroup:'Today', month:'Aug', amount:-9.90, tax:false, brand:'tealive', payment:'Maybank Visa' },
+  { id:3, merchant:'Popular Bookstore', cat:'Lifestyle', dateLabel:'Yesterday', dateGroup:'Yesterday', month:'Aug', amount:-86.00, tax:true, payment:'CIMB Credit Card' },
+  { id:4, merchant:'Guardian Pharmacy', cat:'Health', dateLabel:'Yesterday', dateGroup:'Yesterday', month:'Aug', amount:-43.20, tax:true, brand:'guardian', payment:"Touch 'n Go eWallet" },
+  { id:5, merchant:'Shopee', cat:'Shopping', dateLabel:'Yesterday', dateGroup:'Yesterday', month:'Aug', amount:-129.00, tax:false, brand:'shopee', payment:'CIMB Credit Card' },
+  { id:6, merchant:'TNB', cat:'Bills', dateLabel:'Mon', dateGroup:'This week', month:'Aug', amount:-142.30, tax:false, payment:'Maybank Savings' },
+  { id:7, merchant:'Astro', cat:'Bills', dateLabel:'Mon', dateGroup:'This week', month:'Aug', amount:-99.90, tax:false, payment:'Maybank Savings' },
+  { id:8, merchant:'Salary', cat:'Income', dateLabel:'1 Aug', dateGroup:'This week', month:'Aug', amount:6200.00, tax:false, payment:'Bank Transfer' },
+  { id:9, merchant:'Grab', cat:'Transport', dateLabel:'Sun', dateGroup:'This week', month:'Aug', amount:-24.00, tax:false, brand:'grab', payment:'GrabPay' },
+  { id:10, merchant:'Mr DIY', cat:'Shopping', dateLabel:'28 Jul', dateGroup:'Earlier', month:'Jul', amount:-35.50, tax:false, payment:"Touch 'n Go eWallet" },
+  { id:11, merchant:'Klinik Mediviron', cat:'Health', dateLabel:'26 Jul', dateGroup:'Earlier', month:'Jul', amount:-120.00, tax:true, payment:'Cash' },
+  { id:12, merchant:"Touch 'n Go Reload", cat:'Transport', dateLabel:'24 Jul', dateGroup:'Earlier', month:'Jul', amount:-50.00, tax:false, payment:'Maybank Visa' },
+];
+
+const NETWORTH_GROUPS = [
+  { label:'Cash', rows:[
+    { name:'Maybank Savings', balance:18240.55, synced:'2m ago', brand:'maybank' },
+    { name:'CIMB Current', balance:4120.10, synced:'1h ago', brand:'cimb' },
+    { name:"Touch 'n Go eWallet", balance:86.40, synced:'Just now', brand:'tng' },
+    { name:'GrabPay', balance:214.75, synced:'Just now', brand:'grab' },
+  ]},
+  { label:'Investments', rows:[
+    { name:'ASB', balance:28400.00, synced:'Today', cat:'Income' },
+    { name:'Public Mutual', balance:13900.00, synced:'Today', cat:'Income' },
+    { name:'Moomoo', balance:8500.00, synced:'Today', brand:'moomoo' },
+  ]},
+  { label:'Credit cards', rows:[
+    { name:'Maybank Ikhwan Visa', balance:1240.30, synced:'5m ago', brand:'maybank' },
+    { name:'CIMB Cash Rebate Visa', balance:386.00, synced:'3h ago', brand:'cimb' },
+    { name:'UOB Preferred Visa', balance:620.00, synced:'2h ago', brand:'uob' },
+  ]},
+];
+const NETWORTH_SERIES = [44100,45300,46800,47600,49500,51200,52400,54100,56600,60200,63900,67100,71216];
+const NETWORTH_1M = [67100,67550,68200,69100,69800,70500,71216];
+
+const BUCKETS_DATA = [
+  { key:'fixed', name:'Fixed', spent:3200, total:3400, categories:[
+    { name:'Rent / Mortgage', spent:1800, total:1800 },
+    { name:'Utilities (TNB, Astro, internet)', spent:320, total:350 },
+    { name:'Insurance', spent:1080, total:1250 },
+  ]},
+  { key:'flexible', name:'Flexible', spent:2940, total:3400, categories:[
+    { name:'Food & Drink', spent:780, total:900 },
+    { name:'Transport', spent:310, total:400 },
+    { name:'Shopping', spent:950, total:800 },
+    { name:'Lifestyle', spent:900, total:1300 },
+  ]},
+  { key:'goals', name:'Goals', spent:820, total:1700, categories:[
+    { name:'Emergency fund', spent:500, total:500 },
+    { name:'New laptop fund', spent:320, total:1200 },
+  ]},
+];
+
+const TAX_DATA = {
+  YA2026: {
+    total: 8240, deltaPct: 12,
+    categories: [
+      { name:'Lifestyle', amount:2180, pct:26 },
+      { name:'Medical (self & family)', amount:1940, pct:24 },
+      { name:'Education fees', amount:1600, pct:19 },
+      { name:'EPF & life insurance', amount:1520, pct:18 },
+      { name:"Parents' medical treatment", amount:1000, pct:13 },
+    ],
+    receipts: [
+      { merchant:'Popular Bookstore', amount:86.00, cat:'Lifestyle', dateLabel:'9 Aug 2026' },
+      { merchant:'Klinik Mediviron', amount:120.00, cat:'Medical', dateLabel:'6 Aug 2026' },
+      { merchant:'Guardian Pharmacy', amount:43.20, cat:'Medical', dateLabel:'5 Aug 2026' },
+      { merchant:'UNITAR Course Fees', amount:1600.00, cat:'Education', dateLabel:'2 Aug 2026' },
+      { merchant:'Prudential Premium', amount:540.00, cat:'EPF & Insurance', dateLabel:'1 Aug 2026' },
+      { merchant:"Mum's Clinic Visit", amount:380.00, cat:"Parents' Medical", dateLabel:'28 Jul 2026' },
+    ],
+  },
+  YA2025: {
+    total: 7350, deltaPct: null,
+    categories: [
+      { name:'Lifestyle', amount:1850, pct:25 },
+      { name:'Medical (self & family)', amount:1700, pct:23 },
+      { name:'Education fees', amount:1400, pct:19 },
+      { name:'EPF & life insurance', amount:1500, pct:20 },
+      { name:"Parents' medical treatment", amount:900, pct:13 },
+    ],
+    receipts: [
+      { merchant:'Kinokuniya Bookstore', amount:72.00, cat:'Lifestyle', dateLabel:'12 Dec 2025' },
+      { merchant:'Klinik Famili', amount:95.00, cat:'Medical', dateLabel:'8 Dec 2025' },
+      { merchant:'Watsons Pharmacy', amount:38.50, cat:'Medical', dateLabel:'3 Dec 2025' },
+      { merchant:'INTI College Fees', amount:1400.00, cat:'Education', dateLabel:'1 Dec 2025' },
+      { merchant:'AIA Premium', amount:480.00, cat:'EPF & Insurance', dateLabel:'28 Nov 2025' },
+      { merchant:"Dad's Physiotherapy", amount:310.00, cat:"Parents' Medical", dateLabel:'20 Nov 2025' },
+    ],
+  },
+};
+
+const CATEGORY_OPTIONS = ['Food & Drink','Transport','Shopping','Bills','Health','Lifestyle','Income','Other'];
+const TAX_SHADES = ['var(--color-tax-700)','var(--color-tax-600)','var(--color-tax-500)','var(--color-tax-400)','var(--color-tax-300)'];
+
+const BRAND = {
+  grab:{ bg:'#00874E', letter:'G', fg:'#fff' }, tealive:{ bg:'#C8102E', letter:'T', fg:'#fff' },
+  guardian:{ bg:'#003DA5', letter:'G', fg:'#fff' }, shopee:{ bg:'#EE4D2D', letter:'S', fg:'#fff' },
+  gmail:{ bg:'var(--color-neutral-500)', letter:'✉', fg:'#fff' },
+  maybank:{ bg:'#FFC72C', letter:'M', fg:'#1a1a1a' }, cimb:{ bg:'#7A1F2B', letter:'C', fg:'#fff' },
+  uob:{ bg:'#0b3b8c', letter:'U', fg:'#fff' }, tng:{ bg:'#1B5FAA', letter:'T', fg:'#fff' },
+  moomoo:{ bg:'#1a1a2e', letter:'M', fg:'#fff' },
+};
+function rowBadge(item) {
+  const b = item.brand && BRAND[item.brand];
+  if (b) return { hasBrand:true, badgeBg:b.bg, badgeLetter:b.letter, badgeFg:b.fg, ...iconFlags(null) };
+  return { hasBrand:false, badgeBg:'var(--color-neutral-200)', badgeLetter:'', badgeFg:'var(--color-text-muted)', ...iconFlags(item.cat) };
+}
+const PAYMENT_METHODS = ['Maybank Visa','CIMB Credit Card','UOB Preferred Visa',"Touch 'n Go eWallet",'GrabPay','Bank Transfer','DuitNow','Cash'];
+const RELIEF_INFO = {
+  'Lifestyle': { name:'Lifestyle Relief', cap:2500, before:2180, why:"Books, personal computers/smartphones, sports equipment and internet subscriptions qualify under LHDN's Lifestyle relief." },
+  'Health': { name:'Medical Expenses Relief', cap:8000, before:1940, why:'Medical treatment for yourself, your spouse or child is deductible under the Medical Expenses relief.' },
+};
+const MONTH_SUMMARIES = {
+  Jan:{income:9200,expenses:6800}, Feb:{income:9200,expenses:6100}, Mar:{income:9500,expenses:7200},
+  Apr:{income:9500,expenses:6400}, May:{income:9800,expenses:6900}, Jun:{income:9800,expenses:6300},
+  Jul:{income:9800,expenses:6960}, Aug:{income:9800,expenses:6960},
+};
+const MONTH_ORDER = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug'];
+const NETWORTH_MONTH_LABELS = ['Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26','Jul 26','Aug 26'];
+const REVIEW_ITEMS = [
+  { id:'r1', merchant:'Grab', amount:18.50, cat:'Transport', dateLabel:'Today, 8:12 AM', brand:'grab', payment:'GrabPay' },
+  { id:'r2', merchant:'Tealive', amount:12.90, cat:'Food & Drink', dateLabel:'Today, 7:35 AM', brand:'tealive', payment:'Maybank Visa' },
+  { id:'r3', merchant:'Guardian', amount:56.40, cat:'Health', dateLabel:'Yesterday', brand:'guardian', payment:"Touch 'n Go eWallet" },
+  { id:'r4', merchant:'Shopee', amount:89.90, cat:'Shopping', dateLabel:'Yesterday', brand:'shopee', payment:'CIMB Credit Card' },
+  { id:'r5', merchant:'Astro Invoice', amount:240.00, cat:'Bills', dateLabel:'Detected from Gmail', brand:'gmail', payment:'Bank Transfer' },
+];
+
+const SOURCE_OPTS = ['Friend or family','TikTok','Instagram','YouTube','Google','Reddit','Advertisement','Other'];
+const RELIEF_OPTS = ['Insurance','Medical expenses','Education','Lifestyle expenses','Internet / mobile','Books','Sports / fitness','Donations','EPF / retirement','Parents / dependants'];
+const INCOME_TYPE_OPTS = ['Bonus','Freelance / side income','Investment income','Rental income','Other'];
+const INCOME_RANGE_OPTS = ['Below RM 3,000','RM 3,000–6,000','RM 6,000–10,000','RM 10,000–20,000','RM 20,000+'];
+const EMPLOYMENT_OPTS = ['Employed','Self-employed','Business owner','Not working'];
+const OB_ORDER = ['login','source','privacy','about','txPersonal','txEmployment','txIncomeTypes','txReliefs','txDone'];
+
+class Component extends DCLogic {
+  state = {
+    appStage: this.props.skipOnboarding ? 'app' : 'onboarding',
+    obStep: 'login',
+    ob: { name:'', age:'', country:'Malaysia', occupation:'', income:'', source:null,
+      residency:null, marital:null, dependants:null, employment:null, employer:'',
+      approxIncome:'', multipleIncome:null, incomeTypes:[], reliefs:[] },
+
+    tab: this.props.startTab || 'home',
+    financeSection: 'networth',
+    netWorthRange: '1Y',
+    nwSelectedIdx: null,
+    historyMonth: 'Aug',
+    showWhyDeductible: false,
+    scanTaxAmount: '0.70', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
+    expandedBucket: null,
+    txSearch: '',
+    txFilter: 'All',
+    swipeId: null, swipeDX: 0, swipeStartX: 0,
+    confirmedIds: {},
+    reviewOpen: false, reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
+    scanOpen: false, scanStep: 'capture', scanFrom: 'home',
+    scanMerchant: 'Popular Bookstore', scanAmount: '86.00', scanDate: '9 Aug 2026',
+    scanCategory: 'Lifestyle', scanDeductible: true,
+    taxYear: this.props.taxYearDefault || 'YA2026',
+    mounted: false,
+  };
+
+  componentDidMount() {
+    setTimeout(() => this.setState({ mounted: true }), 60);
+  }
+
+  setOb = (field, value) => this.setState(st => ({ ob: { ...st.ob, [field]: value } }));
+  toggleObArray = (field, value) => this.setState(st => {
+    const arr = st.ob[field];
+    const next = arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value];
+    return { ob: { ...st.ob, [field]: next } };
+  });
+  visibleObSteps() { return OB_ORDER.filter(k => k !== 'txIncomeTypes' || this.state.ob.multipleIncome === 'Yes'); }
+  obNext = () => {
+    const order = this.visibleObSteps();
+    const i = order.indexOf(this.state.obStep);
+    if (i < order.length - 1) this.setState({ obStep: order[i + 1] });
+    else this.obFinish();
+  };
+  obBack = () => {
+    const order = this.visibleObSteps();
+    const i = order.indexOf(this.state.obStep);
+    if (i > 0) this.setState({ obStep: order[i - 1] });
+  };
+  obFinish = () => this.setState({ appStage: 'app', tab: 'home' });
+
+  goHome = () => this.setState({ tab: 'home' });
+  goFinance = () => this.setState({ tab: 'finance' });
+  goTax = () => this.setState({ tab: 'tax' });
+  goMore = () => this.setState({ tab: 'more' });
+  goFinanceNetWorth = () => this.setState({ tab: 'finance', financeSection: 'networth' });
+  goFinanceTransactions = () => this.setState({ tab: 'finance', financeSection: 'transactions' });
+  goFinanceBudgets = () => this.setState({ tab: 'finance', financeSection: 'budgets' });
+  setNetWorthRange = (r) => this.setState({ netWorthRange: r, nwSelectedIdx: null });
+  selectNwPoint = (i) => this.setState({ nwSelectedIdx: i });
+  clearNwSelection = () => this.setState({ nwSelectedIdx: null });
+  goFinanceHistory = () => this.setState({ tab: 'finance', financeSection: 'history' });
+  setHistoryMonth = (m) => this.setState({ historyMonth: m });
+  toggleWhyDeductible = () => this.setState(s => ({ showWhyDeductible: !s.showWhyDeductible }));
+  setScanPaymentMethod = (e) => this.setState({ scanPaymentMethod: e.target.value });
+  setScanTaxAmount = (e) => this.setState({ scanTaxAmount: e.target.value });
+  setScanTaxRate = (e) => this.setState({ scanTaxRate: e.target.value });
+  setScanTag = (e) => this.setState({ scanTag: e.target.value });
+  toggleBucket = (key) => this.setState((st) => ({ expandedBucket: st.expandedBucket === key ? null : key }));
+  setTxSearch = (e) => this.setState({ txSearch: e.target.value });
+  setTxFilter = (label) => this.setState({ txFilter: label });
+  setYA2026 = () => this.setState({ taxYear: 'YA2026' });
+  setYA2025 = () => this.setState({ taxYear: 'YA2025' });
+
+  handleSwipeDown = (id, e) => {
+    if (this.state.confirmedIds[id]) return;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    this.setState({ swipeId: id, swipeStartX: e.clientX, swipeDX: 0 });
+  };
+  handleSwipeMove = (id, e) => {
+    if (this.state.swipeId !== id) return;
+    const dx = clamp(e.clientX - this.state.swipeStartX, -84, 0);
+    this.setState({ swipeDX: dx });
+  };
+  handleSwipeUp = (id) => {
+    if (this.state.swipeId !== id) return;
+    if (this.state.swipeDX <= -60) {
+      this.setState((st) => ({ confirmedIds: { ...st.confirmedIds, [id]: true }, swipeId: null, swipeDX: 0 }));
+    } else {
+      this.setState({ swipeId: null, swipeDX: 0 });
+    }
+  };
+
+  openReview = () => this.setState({ reviewOpen: true });
+  closeReview = () => this.setState({ reviewOpen: false });
+  currentReviewId() {
+    const item = REVIEW_ITEMS.find(i => !this.state.reviewDecisions[i.id]);
+    return item ? item.id : null;
+  }
+  reviewDecide = (dir) => {
+    const id = this.currentReviewId();
+    if (!id) return;
+    this.setState(st => ({ reviewDecisions: { ...st.reviewDecisions, [id]: dir }, reviewDragging: false, reviewDragX: 0 }));
+  };
+  acceptCurrent = () => this.reviewDecide('accept');
+  rejectCurrent = () => this.reviewDecide('reject');
+  reviewDown = (e) => {
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    this.setState({ reviewDragging: true, reviewDragStartX: e.clientX, reviewDragX: 0 });
+  };
+  reviewMove = (e) => {
+    if (!this.state.reviewDragging) return;
+    this.setState({ reviewDragX: clamp(e.clientX - this.state.reviewDragStartX, -160, 160) });
+  };
+  reviewUp = () => {
+    if (!this.state.reviewDragging) return;
+    if (this.state.reviewDragX > 90) this.reviewDecide('accept');
+    else if (this.state.reviewDragX < -90) this.reviewDecide('reject');
+    else this.setState({ reviewDragging: false, reviewDragX: 0 });
+  };
+
+  openScan = () => this.setState({ scanOpen: true, scanStep: 'capture', scanFrom: this.state.tab, showWhyDeductible: false });
+  closeScan = () => this.setState({ scanOpen: false });
+  chooseManual = () => this.setState({ scanStep: 'confirm' });
+  capturePhoto = () => {
+    this.setState({ scanStep: 'processing' });
+    setTimeout(() => this.setState({ scanStep: 'confirm' }), 1500);
+  };
+  setScanMerchant = (e) => this.setState({ scanMerchant: e.target.value });
+  setScanAmount = (e) => this.setState({ scanAmount: e.target.value });
+  setScanDate = (e) => this.setState({ scanDate: e.target.value });
+  setScanCategory = (e) => this.setState({ scanCategory: e.target.value });
+  setScanDeductibleYes = () => this.setState({ scanDeductible: true });
+  setScanDeductibleNo = () => this.setState({ scanDeductible: false });
+  saveScan = () => this.setState({ scanStep: 'saved' });
+  scanAnother = () => this.setState({ scanStep: 'capture' });
+  viewInTax = () => this.setState({ scanOpen: false, tab: 'tax' });
+
+  renderVals() {
+    const st = this.state;
+    const mounted = st.mounted;
+    const ob = st.ob;
+
+    // ---- onboarding ----
+    const obOrder = this.visibleObSteps();
+    const obIdx = obOrder.indexOf(st.obStep);
+    const obProgress = 'Step ' + (obIdx + 1) + ' of ' + obOrder.length;
+    const mkOpts = (list, field, multi) => list.map(label => {
+      const active = multi ? ob[field].includes(label) : ob[field] === label;
+      return {
+        label,
+        onClick: multi ? (() => this.toggleObArray(field, label)) : (() => this.setOb(field, label)),
+        ...chipStyle(active),
+      };
+    });
+    const dependantOpts = mkOpts(['0','1','2','3','4+'], 'dependants', false);
+
+    // ---- net worth groups (computed first so Home + Finance stay in sync) ----
+    const netWorthGroups = NETWORTH_GROUPS.map(g => ({
+      label: g.label,
+      totalLabel: money(g.rows.reduce((s,r)=>s+r.balance,0)),
+      rows: g.rows.map(r => ({ name:r.name, synced:r.synced, balanceLabel: money(r.balance), ...rowBadge(r) })),
+    }));
+    const assets = NETWORTH_GROUPS[0].rows.reduce((s,r)=>s+r.balance,0) + NETWORTH_GROUPS[1].rows.reduce((s,r)=>s+r.balance,0);
+    const liabilities = NETWORTH_GROUPS[2].rows.reduce((s,r)=>s+r.balance,0);
+    const netWorth = assets - liabilities;
+
+    const homeBudgetSpent = 6960, homeBudgetTotal = 8500;
+    const homeBudgetPct = mounted ? Math.round((homeBudgetSpent/homeBudgetTotal)*100) : 0;
+
+    const recentTx = ALL_TX.filter(t => t.dateGroup === 'Today' || t.dateGroup === 'Yesterday').slice(0,5).map(t => ({
+      ...t, ...rowBadge(t), catLabel: t.cat,
+      amountLabel: (t.amount>=0?'+':'\u2212')+'RM '+money(Math.abs(t.amount)),
+      amountColor: t.amount>=0 ? 'var(--color-accent-700)' : 'var(--color-text)',
+    }));
+
+    // ---- review ----
+    const reviewCount = REVIEW_ITEMS.filter(i => !st.reviewDecisions[i.id]).length;
+    const reviewPreview = REVIEW_ITEMS.slice(0,4).map(i => ({
+      merchant: i.merchant, amountLabel: money(i.amount),
+      badgeBg: BRAND[i.brand].bg, badgeLetter: BRAND[i.brand].letter, badgeFg: BRAND[i.brand].fg,
+    }));
+    const pending = REVIEW_ITEMS.filter(i => !st.reviewDecisions[i.id]);
+    const curId = pending[0] ? pending[0].id : null;
+    const nextId = pending[1] ? pending[1].id : null;
+    const mkReviewCard = (item, isCurrent) => {
+      const dx = isCurrent && st.reviewDragging ? st.reviewDragX : 0;
+      return {
+        merchant: item.merchant, catLabel: item.cat, dateLabel: item.dateLabel, payment: item.payment,
+        amountLabel: money(item.amount),
+        badgeBg: BRAND[item.brand].bg, badgeLetter: BRAND[item.brand].letter, badgeFg: BRAND[item.brand].fg,
+        dragX: dx, rotate: (dx/14).toFixed(1),
+        transition: (isCurrent && st.reviewDragging) ? 'none' : 'transform .3s cubic-bezier(.34,1.56,.64,1)',
+        acceptOpacity: isCurrent ? clamp(dx/90,0,1) : 0,
+        rejectOpacity: isCurrent ? clamp(-dx/90,0,1) : 0,
+        onDown: (e) => this.reviewDown(e), onMove: (e) => this.reviewMove(e), onUp: () => this.reviewUp(),
+      };
+    };
+    const curItem = curId ? mkReviewCard(REVIEW_ITEMS.find(i=>i.id===curId), true) : null;
+    const nextItem = nextId ? mkReviewCard(REVIEW_ITEMS.find(i=>i.id===nextId), false) : null;
+
+    // ---- finance / net worth chart ----
+    const rangeSlice = (n) => ({ series: NETWORTH_SERIES.slice(-n), labels: NETWORTH_MONTH_LABELS.slice(-n) });
+    const chartData = st.netWorthRange === '1M' ? { series: NETWORTH_1M, labels: null }
+      : st.netWorthRange === '3M' ? rangeSlice(3)
+      : st.netWorthRange === '6M' ? rangeSlice(6)
+      : st.netWorthRange === '1Y' ? rangeSlice(12)
+      : { series: NETWORTH_SERIES, labels: NETWORTH_MONTH_LABELS };
+    const series = chartData.series, seriesLabels = chartData.labels;
+    const minV = Math.min(...series), maxV = Math.max(...series);
+    const range = Math.max(1, maxV - minV);
+    const pts = series.map((v,i) => {
+      const x = (i/(series.length-1))*292 + 4;
+      const y = 118 - ((v-minV)/range)*100;
+      return [x.toFixed(1), y.toFixed(1)];
+    });
+    const netWorthLinePoints = pts.map(p=>p.join(',')).join(' ');
+    const netWorthAreaPoints = pts.map(p=>p.join(',')).join(' ') + ' ' + pts[pts.length-1][0] + ',128 ' + pts[0][0] + ',128';
+    const nwDelta = series[series.length-1] - series[0];
+    const nwDeltaPct = ((nwDelta/series[0])*100).toFixed(1);
+    const rangeLabelMap = { '1M':'1 month', '3M':'3 months', '6M':'6 months', '1Y':'1 year', '3Y':'3 years', 'ALL':'all time' };
+    const rangeOptions = ['1M','3M','6M','1Y','3Y','ALL'].map(r => ({
+      label: r, onClick: () => this.setNetWorthRange(r),
+      bg: st.netWorthRange===r ? 'var(--color-text)' : 'transparent',
+      color: st.netWorthRange===r ? '#fff' : 'var(--color-text-muted)',
+    }));
+    const chartPoints = seriesLabels ? pts.map((p,i) => ({
+      cx: p[0], cy: p[1], onClick: () => this.selectNwPoint(i),
+    })) : [];
+    const selIdx = st.nwSelectedIdx != null && st.nwSelectedIdx < series.length ? st.nwSelectedIdx : null;
+    const nwHasSelection = selIdx != null && !!seriesLabels;
+    const nwSelectedLabel = nwHasSelection ? seriesLabels[selIdx] : '';
+    const nwSelectedValueLabel = nwHasSelection ? moneyWhole(series[selIdx]) : '';
+
+    const categoryChips = ['All', ...Object.keys(CAT_ICON)].map(label => {
+      const active = st.txFilter === label;
+      return { label, onClick: () => this.setTxFilter(label), ...chipStyle(active) };
+    });
+
+    const q = st.txSearch.trim().toLowerCase();
+    const groupsMap = {};
+    const groupOrder = ['Today','Yesterday','This week','Earlier'];
+    ALL_TX.forEach(t => {
+      if (st.txFilter !== 'All' && t.cat !== st.txFilter) return;
+      if (q && !t.merchant.toLowerCase().includes(q)) return;
+      (groupsMap[t.dateGroup] = groupsMap[t.dateGroup] || []).push(t);
+    });
+    const filteredTx = groupOrder.filter(g => groupsMap[g]).map(g => ({
+      label: g,
+      items: groupsMap[g].map(t => {
+        const dragging = st.swipeId === t.id;
+        const dx = dragging ? st.swipeDX : 0;
+        return {
+          ...t, ...rowBadge(t), catLabel: t.cat,
+          confirmed: !!st.confirmedIds[t.id],
+          amountLabel: (t.amount>=0?'+':'\u2212')+'RM '+money(Math.abs(t.amount)),
+          amountColor: t.amount>=0 ? 'var(--color-accent-700)' : 'var(--color-text)',
+          checkOpacity: dragging ? clamp(-dx/60,0,1) : 0,
+          rowTransform: 'translateX('+dx+'px)',
+          rowTransition: dragging ? 'none' : 'transform .25s cubic-bezier(.34,1.56,.64,1)',
+          onDown: (e) => this.handleSwipeDown(t.id, e),
+          onMove: (e) => this.handleSwipeMove(t.id, e),
+          onUp: () => this.handleSwipeUp(t.id),
+        };
+      }),
+    }));
+
+    const buckets = BUCKETS_DATA.map(b => {
+      const pct = mounted ? Math.round((b.spent/b.total)*100) : 0;
+      return {
+        key: b.key, name: b.name,
+        spentLabel: moneyWhole(b.spent), totalLabel: moneyWhole(b.total), pct,
+        expanded: st.expandedBucket === b.key,
+        onToggle: () => this.toggleBucket(b.key),
+        chevronRotate: st.expandedBucket === b.key ? 'rotate(90deg)' : 'rotate(0deg)',
+        categories: b.categories.map(c => {
+          const cpct = Math.round((c.spent/c.total)*100);
+          const over = c.spent > c.total;
+          const met = b.key === 'goals' && c.spent >= c.total;
+          let note = null, noteColor = 'var(--color-text-muted)';
+          if (over) { note = 'Over budget by RM '+moneyWhole(c.spent-c.total); noteColor = 'var(--color-danger-700)'; }
+          else if (met) { note = 'Goal reached'; noteColor = 'var(--color-accent-700)'; }
+          else if (cpct >= 90) { note = cpct+'% used'; }
+          return {
+            name: c.name, spentLabel: moneyWhole(c.spent), totalLabel: moneyWhole(c.total),
+            pct: mounted ? Math.min(cpct,100) : 0,
+            barColor: over ? 'var(--color-danger)' : 'var(--color-accent)',
+            note, noteColor,
+          };
+        }),
+      };
+    });
+
+    // ---- tax ----
+    const taxData = TAX_DATA[st.taxYear];
+    const donutStops = [];
+    let acc = 0;
+    taxData.categories.forEach((c,i) => {
+      const start = acc, end = acc + c.pct;
+      donutStops.push(TAX_SHADES[i%TAX_SHADES.length]+' '+start+'% '+end+'%');
+      acc = end;
+    });
+    const donutGradient = 'conic-gradient('+donutStops.join(', ')+')';
+    const taxCategories = taxData.categories.map((c,i) => ({
+      name: c.name, amountLabel: moneyWhole(c.amount), pct: c.pct, swatch: TAX_SHADES[i%TAX_SHADES.length],
+    }));
+    const taxReceipts = taxData.receipts.map(r => ({
+      merchant: r.merchant, catLabel: r.cat, dateLabel: r.dateLabel, amountLabel: money(r.amount),
+      ...taxIconFlags(r.cat),
+    }));
+    const benchmarkLastShare = mounted ? Math.round((TAX_DATA.YA2025.total/TAX_DATA.YA2026.total)*100) : 0;
+    const hasReliefProfile = ob.reliefs.length > 0;
+    const reliefProfileSummary = ob.reliefs.slice(0,3).join(', ') + (ob.reliefs.length>3 ? ' and more' : '');
+
+    // ---- why-deductible / relief impact (scan confirm) ----
+    const scanAmountNum = parseFloat(st.scanAmount) || 0;
+    const reliefInfo = RELIEF_INFO[st.scanCategory] || null;
+    let reliefBeforePct = 0, reliefAfterPct = 0, reliefRemainingLabel = '', reliefAfterLabel = '', reliefBeforeLabel = '';
+    if (reliefInfo) {
+      reliefBeforePct = mounted ? Math.min(100, Math.round((reliefInfo.before/reliefInfo.cap)*100)) : 0;
+      const after = Math.min(reliefInfo.cap, reliefInfo.before + scanAmountNum);
+      reliefAfterPct = mounted ? Math.min(100, Math.round((after/reliefInfo.cap)*100)) : 0;
+      reliefRemainingLabel = moneyWhole(Math.max(0, reliefInfo.cap - after));
+      reliefBeforeLabel = moneyWhole(reliefInfo.before);
+      reliefAfterLabel = moneyWhole(after);
+    }
+
+    // ---- historical finance ----
+    const monthPills = MONTH_ORDER.map(m => ({
+      label: m, onClick: () => this.setHistoryMonth(m),
+      bg: st.historyMonth===m ? 'var(--color-text)' : 'transparent',
+      color: st.historyMonth===m ? '#fff' : 'var(--color-text-muted)',
+    }));
+    const histSum = MONTH_SUMMARIES[st.historyMonth];
+    const histNet = histSum.income - histSum.expenses;
+    const histTxRaw = ALL_TX.filter(t => t.month === st.historyMonth);
+    const histHasTx = histTxRaw.length > 0;
+    const histTx = histTxRaw.map(t => ({
+      ...t, ...rowBadge(t), catLabel: t.cat,
+      amountLabel: (t.amount>=0?'+':'\u2212')+'RM '+money(Math.abs(t.amount)),
+      amountColor: t.amount>=0 ? 'var(--color-accent-700)' : 'var(--color-text)',
+    }));
+
+    const tabColor = (name) => st.tab === name ? 'var(--color-accent-700)' : 'var(--color-text-muted)';
+    const tabWeight = (name) => st.tab === name ? '700' : '500';
+
+    const settingsList = [
+      { key:'budgetAlerts', label:'Budget alerts', sub:'Notify when a bucket is close to its limit', on: true },
+      { key:'taxReminders', label:'Tax deadline reminders', sub:'LHDN filing dates and relief updates', on: true },
+      { key:'weeklySummary', label:'Weekly summary', sub:'A short recap every Monday morning', on: false },
+    ].map(item => ({ ...item, onChecked: item.on, offChecked: !item.on, setOn: () => {}, setOff: () => {} }));
+
+    const obInitials = ob.name ? ob.name.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('') : 'AN';
+    const obDisplayName = ob.name || 'Aina Natasha';
+    const obDisplayEmail = ob.name ? (ob.name.split(' ')[0].toLowerCase()+'@gmail.com') : 'aina.natasha@gmail.com';
+    const obTaxProfileSummary = (ob.residency||'Resident')+' · '+(ob.marital||'Single')+' · '+st.taxYear;
+
+    return {
+      isOnboarding: st.appStage==='onboarding', isApp: st.appStage==='app',
+      obIsLogin: st.obStep==='login', obIsSource: st.obStep==='source', obIsPrivacy: st.obStep==='privacy',
+      obIsAbout: st.obStep==='about', obIsTxPersonal: st.obStep==='txPersonal', obIsTxEmployment: st.obStep==='txEmployment',
+      obIsTxIncomeTypes: st.obStep==='txIncomeTypes', obIsTxReliefs: st.obStep==='txReliefs', obIsTxDone: st.obStep==='txDone',
+      obProgress, obNext: this.obNext, obBack: this.obBack, obFinish: this.obFinish,
+      sourceOptions: mkOpts(SOURCE_OPTS, 'source', false),
+      residencyOptions: mkOpts(['Resident','Non-resident'], 'residency', false),
+      maritalOptions: mkOpts(['Single','Married','Divorced'], 'marital', false),
+      dependantOptions: dependantOpts,
+      employmentOptions: mkOpts(EMPLOYMENT_OPTS, 'employment', false),
+      multiIncomeOptions: mkOpts(['Yes','No'], 'multipleIncome', false),
+      incomeTypeOptions: mkOpts(INCOME_TYPE_OPTS, 'incomeTypes', true),
+      reliefOptions: mkOpts(RELIEF_OPTS, 'reliefs', true),
+      incomeRangeOptions: INCOME_RANGE_OPTS,
+      obName: ob.name, setObName: (e)=>this.setOb('name', e.target.value),
+      obAge: ob.age, setObAge: (e)=>this.setOb('age', e.target.value),
+      obCountry: ob.country, setObCountry: (e)=>this.setOb('country', e.target.value),
+      obOccupation: ob.occupation, setObOccupation: (e)=>this.setOb('occupation', e.target.value),
+      obIncome: ob.income, setObIncome: (e)=>this.setOb('income', e.target.value),
+      obEmployer: ob.employer, setObEmployer: (e)=>this.setOb('employer', e.target.value),
+      obApproxIncome: ob.approxIncome, setObApproxIncome: (e)=>this.setOb('approxIncome', e.target.value),
+      obDoneSubtitle: hasReliefProfile ? ('Your Tax Center is personalised for '+ob.reliefs.length+' relief '+(ob.reliefs.length===1?'category':'categories')+'.') : 'Your Tax Center is ready — you can refine this anytime.',
+
+      tab: st.tab, isHome: st.tab==='home', isFinance: st.tab==='finance', isTax: st.tab==='tax', isMore: st.tab==='more',
+      showMainApp: !st.scanOpen && !st.reviewOpen,
+      scanOpen: st.scanOpen,
+      scanIsCapture: st.scanStep==='capture', scanIsProcessing: st.scanStep==='processing',
+      scanIsConfirm: st.scanStep==='confirm', scanIsSaved: st.scanStep==='saved',
+      goHome: this.goHome, goFinance: this.goFinance, goTax: this.goTax, goMore: this.goMore,
+      goFinanceNetWorth: this.goFinanceNetWorth, goFinanceTransactions: this.goFinanceTransactions, goFinanceBudgets: this.goFinanceBudgets,
+      tabHomeColor: tabColor('home'), tabFinanceColor: tabColor('finance'), tabTaxColor: tabColor('tax'), tabMoreColor: tabColor('more'),
+      tabHomeWeight: tabWeight('home'), tabFinanceWeight: tabWeight('finance'), tabTaxWeight: tabWeight('tax'), tabMoreWeight: tabWeight('more'),
+      openScan: this.openScan, closeScan: this.closeScan, chooseManual: this.chooseManual, capturePhoto: this.capturePhoto,
+      scanMerchant: st.scanMerchant, setScanMerchant: this.setScanMerchant,
+      scanAmount: st.scanAmount, setScanAmount: this.setScanAmount,
+      scanDate: st.scanDate, setScanDate: this.setScanDate,
+      scanCategory: st.scanCategory, setScanCategory: this.setScanCategory,
+      categoryOptions: CATEGORY_OPTIONS,
+      scanDeductible: st.scanDeductible,
+      scanDeductibleYesChecked: st.scanDeductible, scanDeductibleNoChecked: !st.scanDeductible,
+      setScanDeductibleYes: this.setScanDeductibleYes, setScanDeductibleNo: this.setScanDeductibleNo,
+      scanDeductibleBorder: st.scanDeductible ? 'var(--color-tax-300)' : 'var(--color-neutral-400)',
+      scanDeductibleBg: st.scanDeductible ? 'var(--color-tax-100)' : 'var(--color-surface)',
+      saveScan: this.saveScan, scanAnother: this.scanAnother, viewInTax: this.viewInTax,
+      scanTaxYear: st.taxYear,
+      scanTaxAmount: st.scanTaxAmount, setScanTaxAmount: this.setScanTaxAmount,
+      scanTaxRate: st.scanTaxRate, setScanTaxRate: this.setScanTaxRate,
+      scanTag: st.scanTag, setScanTag: this.setScanTag,
+      scanPaymentMethod: st.scanPaymentMethod, setScanPaymentMethod: this.setScanPaymentMethod,
+      paymentMethods: PAYMENT_METHODS,
+      hasReliefInfo: !!reliefInfo, reliefName: reliefInfo ? reliefInfo.name : '',
+      reliefWhy: reliefInfo ? reliefInfo.why : 'This may qualify depending on your tax setup — check LHDN guidance for this category.',
+      reliefBeforePct, reliefAfterPct, reliefBeforeLabel, reliefAfterLabel, reliefCapLabel: reliefInfo ? moneyWhole(reliefInfo.cap) : '',
+      reliefRemainingLabel,
+      showWhyDeductible: st.showWhyDeductible, toggleWhyDeductible: this.toggleWhyDeductible,
+      whyChevronRotate: st.showWhyDeductible ? 'rotate(90deg)' : 'rotate(0deg)',
+
+      openReview: this.openReview, closeReview: this.closeReview, reviewOpen: st.reviewOpen,
+      reviewCount, reviewPreview, reviewRemaining: reviewCount,
+      reviewHasCurrent: !!curItem, reviewHasNext: !!nextItem, reviewAllDone: !curItem,
+      curItem, nextItem, acceptCurrent: this.acceptCurrent, rejectCurrent: this.rejectCurrent,
+
+      homeBudgetSpentLabel: moneyWhole(homeBudgetSpent), homeBudgetTotalLabel: moneyWhole(homeBudgetTotal), homeBudgetPct,
+      recentTx,
+
+      isFinNetWorth: st.financeSection==='networth', isFinTransactions: st.financeSection==='transactions',
+      isFinBudgets: st.financeSection==='budgets', isFinHistory: st.financeSection==='history',
+      goFinanceHistory: this.goFinanceHistory,
+      netWorthLabel: money(netWorth), netWorthDeltaLabel: moneyWhole(Math.abs(nwDelta)), netWorthDeltaPct: nwDeltaPct,
+      netWorthRangeLabel: rangeLabelMap[st.netWorthRange], rangeOptions,
+      netWorthLinePoints, netWorthAreaPoints, netWorthGroups, chartPoints,
+      nwHasSelection, nwSelectedLabel, nwSelectedValueLabel, clearNwSelection: this.clearNwSelection,
+      assetsLabel: moneyWhole(assets), liabilitiesLabel: moneyWhole(liabilities),
+      txSearch: st.txSearch, setTxSearch: this.setTxSearch, categoryChips, filteredTx, noFilteredTx: filteredTx.length===0,
+      buckets,
+      monthPills, historyMonth: st.historyMonth,
+      histIncomeLabel: moneyWhole(histSum.income), histExpenseLabel: moneyWhole(histSum.expenses),
+      histNetLabel: moneyWhole(Math.abs(histNet)), histNetSign: histNet>=0?'+':'\u2212',
+      histNetColor: histNet>=0 ? 'var(--color-accent-700)' : 'var(--color-text)',
+      histHasTx, histTx, noHistTx: !histHasTx,
+
+      isYA2026: st.taxYear==='YA2026', isYA2025: st.taxYear==='YA2025',
+      setYA2026: this.setYA2026, setYA2025: this.setYA2025, taxYear: st.taxYear,
+      taxHeroLabel: st.taxYear==='YA2026' ? 'Deductible expenses YTD' : 'Total deductible expenses',
+      taxYtdLabel: moneyWhole(taxData.total), taxDeltaLabel: taxData.deltaPct,
+      donutGradient, taxCategories, taxReceipts, benchmarkLastShare,
+      hasReliefProfile, reliefProfileSummary,
+
+      settingsList, obInitials, obDisplayName, obDisplayEmail, obTaxProfileSummary,
+    };
+  }
+}
+</script>
+</body>
+</html>
