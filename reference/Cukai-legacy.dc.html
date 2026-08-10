@@ -18,32 +18,18 @@ a:hover{color:var(--color-accent-900)}
 </helmet>
 
 <div style="min-height:100vh;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:48px;background:var(--color-neutral-200);box-sizing:border-box">
-<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" hint-size="412px,892px">
 <div class="rainforest-canvas" style="height:100%;width:100%;display:flex;flex-direction:column;font-family:var(--font-body);color:var(--color-text)">
 
 <sc-if value="{{isLanding}}" hint-placeholder-val="{{true}}">
-<div data-screen-label="Landing" class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;background:var(--color-accent);color:#fff;padding:68px 24px 28px;box-sizing:border-box">
+<div class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;background:var(--color-accent);color:#fff;padding:28px 24px;box-sizing:border-box">
   <div style="display:flex;align-items:center;gap:8px">
     <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="currentColor"/><path d="M6 18C10 14 14 10 19 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>
     <span style="font-family:var(--font-heading);font-weight:700;font-size:15px;letter-spacing:0.06em;text-transform:uppercase">Cukai</span>
   </div>
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px">
-    <div style="font-family:var(--font-heading);font-weight:700;font-size:40px;line-height:1.06;letter-spacing:-0.02em">Tax season, solved — all year round.</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px">
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:42px;line-height:1.05;letter-spacing:-0.02em">Tax season, solved — all year round.</div>
     <div style="font-size:15px;line-height:1.5;opacity:0.92;max-width:34ch">Point your camera or forward an email — the AI does the categorising, you just confirm.</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
-      <div style="display:flex;align-items:center;gap:10px;font-size:13px;opacity:0.95">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-        AI reads your receipt in seconds
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:13px;opacity:0.95">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-        Sorted straight into LHDN relief categories
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:13px;opacity:0.95">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-        One tap to generate your e-Filing pack
-      </div>
-    </div>
   </div>
   <button type="button" onClick="{{goOnboarding}}" class="pressable" style="background:#fff;color:#201e1d;border:none;border-radius:var(--radius-md);padding:16px 20px;font:600 15px var(--font-body);text-align:left;display:flex;align-items:center;justify-content:space-between;cursor:pointer;width:100%;box-sizing:border-box">
     Get started
@@ -53,20 +39,17 @@ a:hover{color:var(--color-accent-900)}
 </sc-if>
 
 <sc-if value="{{isOnboarding}}" hint-placeholder-val="{{false}}">
-<div data-screen-label="Onboarding" key="{{onbStep}}" class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;padding:68px 24px 24px;box-sizing:border-box;position:relative;z-index:0">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+<div key="{{onbStep}}" class="{{navClass}}" style="height:100%;display:flex;flex-direction:column;padding:24px;box-sizing:border-box;position:relative;z-index:0">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
     <button type="button" onClick="{{onbBackStep}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
     </button>
-    <div style="flex:1;height:4px;background:var(--color-neutral-300);border-radius:2px;overflow:hidden">
-      <div class="bar-fill" style="height:100%;width:{{onbProgressPct}}%;background:var(--color-accent);border-radius:2px"></div>
-    </div>
-    <span style="font:600 11px var(--font-body);letter-spacing:0.06em;color:var(--color-text-muted);flex-shrink:0">{{onbProgress}}</span>
+    <span style="font:600 11px var(--font-body);letter-spacing:0.1em;color:var(--color-text-muted)">{{onbProgress}}</span>
   </div>
   <div style="font-family:var(--font-heading);font-weight:700;font-size:25px;line-height:1.1;letter-spacing:-0.014em;margin-bottom:24px">{{onbLabel}}</div>
   <div style="display:flex;flex-direction:column;flex:1">
     <sc-for list="{{onbOptions}}" as="opt" hint-placeholder-count="3">
-      <button type="button" onClick="{{opt.select}}" class="pressable" style="text-align:left;padding:16px;border:1.5px solid {{opt.borderColor}};border-radius:var(--radius-md);background:{{opt.bg}};font:500 15px var(--font-body);color:var(--color-text);cursor:pointer;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box">
+      <button type="button" onClick="{{opt.select}}" class="pressable" style="text-align:left;padding:16px;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);font:500 15px var(--font-body);color:var(--color-text);cursor:pointer;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;width:100%;box-sizing:border-box">
         {{opt.label}}
         <sc-if value="{{opt.selected}}" hint-placeholder-val="{{false}}">
           <svg class="pop-in" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
@@ -80,135 +63,77 @@ a:hover{color:var(--color-accent-900)}
 
 <sc-if value="{{isApp}}" hint-placeholder-val="{{false}}">
 <div style="height:100%;display:flex;flex-direction:column;position:relative">
-  <div style="flex:1;overflow:auto;padding:68px 20px {{contentBottomPad}}px;box-sizing:border-box;position:relative;z-index:0">
+  <div style="flex:1;overflow:auto;padding:20px 20px {{contentBottomPad}}px;box-sizing:border-box;position:relative;z-index:0">
 
     <sc-if value="{{tabHome}}" hint-placeholder-val="{{true}}">
-      <div data-screen-label="Home" class="{{navClass}}">
+      <div class="{{navClass}}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:2px">Welcome back</div>
-          <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;letter-spacing:-0.012em">Cukai</div>
-        </div>
-        <button type="button" onClick="{{setTabSettings}}" aria-label="Settings" class="pressable" style="width:38px;height:38px;border-radius:50%;background:var(--color-accent-100);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
-          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent-700)"/><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent-700)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>
-        </button>
+        <span style="font-family:var(--font-heading);font-weight:700;font-size:20px;letter-spacing:0.02em">Cukai</span>
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)"/><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>
       </div>
-      <div style="border-top:1px solid var(--color-divider);margin-bottom:18px"></div>
-
-      <sc-if value="{{showChecklist}}" hint-placeholder-val="{{true}}">
-        <div style="border:1.5px solid var(--color-accent-300);background:var(--color-accent-100);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:2px">Finish setting up Cukai</div>
-          <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:10px">A couple of quick things to get the most out of the app.</div>
-          <sc-for list="{{checklistItems}}" as="c" hint-placeholder-count="3">
-            <button type="button" onClick="{{c.action}}" class="pressable" style="width:100%;display:flex;align-items:center;gap:10px;padding:7px 0;background:none;border:none;text-align:left;cursor:pointer">
-              <div style="width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:{{c.dotBg}};border:1.5px solid {{c.dotBorder}}">
-                <sc-if value="{{c.done}}" hint-placeholder-val="{{false}}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>
-              </div>
-              <span style="font-size:13px;color:{{c.textColor}}">{{c.label}}</span>
-            </button>
-          </sc-for>
-        </div>
+      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted)">This month</span>
+        <sc-if value="{{showEditBudgetLink}}" hint-placeholder-val="{{true}}">
+          <button type="button" onClick="{{startEditBudget}}" class="pressable" style="background:none;border:none;font:600 11px var(--font-body);letter-spacing:0.04em;color:var(--color-accent-700);cursor:pointer;padding:0">Edit budgets</button>
+        </sc-if>
+      </div>
+      <div class="type-numeric" style="font-family:var(--font-heading);font-weight:700;font-size:32px;line-height:1.08;letter-spacing:-0.018em;margin-bottom:4px">{{budgetSpentLabel}} <span style="font-size:16px;font-weight:400;color:var(--color-text-muted)">/ {{budgetLabel}}</span></div>
+      <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+        <div class="field" style="margin-bottom:16px"><label>Monthly budget (RM)</label><input class="input" value="{{budgetDraft}}" onChange="{{setBudgetDraft}}" /></div>
       </sc-if>
-
-      <div style="background:var(--color-accent);color:#fff;border-radius:var(--radius-lg);padding:20px;margin-bottom:16px">
-        <div style="font-size:12px;opacity:0.85;margin-bottom:6px">Tax relief captured · YA2026</div>
-        <div class="type-numeric" style="font-family:var(--font-heading);font-weight:700;font-size:34px;letter-spacing:-0.02em;margin-bottom:6px">{{heroReliefLabel}}</div>
-        <div style="font-size:12px;opacity:0.9">{{heroRemainingLabel}}</div>
-        <div style="height:6px;background:rgba(255,255,255,0.25);border-radius:4px;margin-top:14px">
-          <div class="bar-fill" style="height:100%;width:{{heroPct}}%;background:#fff;border-radius:4px"></div>
-        </div>
-      </div>
-
-      <div style="background:var(--color-surface);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <span style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted)">This month</span>
-          <sc-if value="{{showEditBudgetLink}}" hint-placeholder-val="{{true}}">
-            <button type="button" onClick="{{startEditBudget}}" class="pressable" style="background:none;border:none;font:600 11px var(--font-body);letter-spacing:0.04em;color:var(--color-accent-700);cursor:pointer;padding:0">Edit budgets</button>
-          </sc-if>
-        </div>
-        <div class="type-numeric" style="font-family:var(--font-heading);font-weight:700;font-size:28px;line-height:1.08;letter-spacing:-0.018em;margin-bottom:4px">{{budgetSpentLabel}} <span style="font-size:14px;font-weight:400;color:var(--color-text-muted)">/ {{budgetLabel}}</span></div>
-        <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
-          <div class="field" style="margin:12px 0 6px"><label>Monthly budget (RM)</label><input class="input" value="{{budgetDraft}}" onChange="{{setBudgetDraft}}" /></div>
-        </sc-if>
-        <sc-if value="{{notEditingBudget}}" hint-placeholder-val="{{true}}">
-          <div style="height:8px;background:var(--color-neutral-200);border-radius:4px;margin:10px 0 14px"><div class="bar-fill" style="height:100%;width:{{budgetPct}}%;background:{{budgetBarColor}};border-radius:4px"></div></div>
-        </sc-if>
-        <div style="border-top:1px solid var(--color-neutral-300)"></div>
-        <sc-for list="{{categoryRows}}" as="cat" hint-placeholder-count="4">
-          <div style="padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-              <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-                <div style="width:28px;height:28px;border-radius:50%;background:{{cat.bg}};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{cat.color}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{cat.icon}}"></path></svg>
-                </div>
-                <span style="font-size:14px">{{cat.name}}</span>
-              </div>
-              <sc-if value="{{cat.notEditing}}" hint-placeholder-val="{{true}}">
-                <span style="font-size:14px;font-weight:600;color:{{cat.labelColor}};flex-shrink:0">{{cat.amountLabel}}</span>
-              </sc-if>
-              <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
-                <input class="input" value="{{cat.budgetDraft}}" onChange="{{cat.setBudgetDraft}}" style="width:90px;text-align:right;font-size:13px;padding:6px 8px;flex-shrink:0" />
-              </sc-if>
-            </div>
+      <sc-if value="{{notEditingBudget}}" hint-placeholder-val="{{true}}">
+        <div style="height:8px;background:var(--color-neutral-200);margin-bottom:20px"><div class="bar-fill" style="height:100%;width:{{budgetPct}}%;background:{{budgetBarColor}}"></div></div>
+      </sc-if>
+      <div style="border-top:1px solid var(--color-divider)"></div>
+      <sc-for list="{{categoryRows}}" as="cat" hint-placeholder-count="4">
+        <div style="padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px">{{cat.name}}</span>
             <sc-if value="{{cat.notEditing}}" hint-placeholder-val="{{true}}">
-              <div style="height:5px;background:var(--color-neutral-200);border-radius:3px;margin-top:8px"><div class="bar-fill" style="height:100%;width:{{cat.pct}}%;background:{{cat.barColor}};border-radius:3px"></div></div>
-              <sc-if value="{{cat.overBudget}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-danger-700);margin-top:4px">Over budget by {{cat.overAmountLabel}}</div></sc-if>
-              <sc-if value="{{cat.nearLimit}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">Nearing budget — {{cat.pct}}% used</div></sc-if>
+              <span style="font-size:14px;font-weight:600;color:{{cat.labelColor}}">{{cat.amountLabel}}</span>
+            </sc-if>
+            <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+              <input class="input" value="{{cat.budgetDraft}}" onChange="{{cat.setBudgetDraft}}" style="width:90px;text-align:right;font-size:13px;padding:6px 8px" />
             </sc-if>
           </div>
-        </sc-for>
-        <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
-          <div style="display:flex;gap:10px;margin-top:14px">
-            <button type="button" onClick="{{saveEditBudget}}" class="btn btn-primary" style="flex:1">Save</button>
-            <button type="button" onClick="{{cancelEditBudget}}" class="btn btn-secondary" style="flex:1">Cancel</button>
-          </div>
-        </sc-if>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <button type="button" onClick="{{openRecurring}}" class="pressable" style="text-align:left;background:var(--color-surface);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-lg);padding:14px;cursor:pointer;box-sizing:border-box">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M3 10h18"></path><path d="M8 2v4M16 2v4"></path></svg>
-          <div class="type-numeric" style="font-size:18px;font-weight:700;margin-top:10px">{{recurringTotalLabel}}</div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Recurring / mo</div>
-        </button>
-        <button type="button" onClick="{{openExceptions}}" class="pressable" style="text-align:left;background:var(--color-surface);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-lg);padding:14px;cursor:pointer;box-sizing:border-box">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 2.5 17a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path></svg>
-          <div class="type-numeric" style="font-size:18px;font-weight:700;margin-top:10px">{{exceptionsCountLabel}}</div>
-          <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px">Exceptions</div>
-        </button>
-      </div>
-
-      <sc-if value="{{showGmailCard}}" hint-placeholder-val="{{true}}">
-      <button type="button" onClick="{{openGmail}}" class="pressable" style="text-align:left;background:var(--color-accent-100);border:1.5px solid var(--color-accent-300);border-radius:var(--radius-lg);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;width:100%;margin-bottom:20px">
-        <div><div style="font-weight:600;font-size:14px">{{gmailQuickLabel}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">Detected in Gmail — tap to review</div></div>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-      </button>
+          <sc-if value="{{cat.notEditing}}" hint-placeholder-val="{{true}}">
+            <div style="height:5px;background:var(--color-neutral-200);margin-top:8px"><div class="bar-fill" style="height:100%;width:{{cat.pct}}%;background:{{cat.barColor}}"></div></div>
+            <sc-if value="{{cat.overBudget}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-danger-700);margin-top:4px">Over budget by {{cat.overAmountLabel}}</div></sc-if>
+            <sc-if value="{{cat.nearLimit}}" hint-placeholder-val="{{false}}"><div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">Nearing budget — {{cat.pct}}% used</div></sc-if>
+          </sc-if>
+        </div>
+      </sc-for>
+      <sc-if value="{{editingBudget}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button type="button" onClick="{{saveEditBudget}}" class="btn btn-primary" style="flex:1">Save</button>
+          <button type="button" onClick="{{cancelEditBudget}}" class="btn btn-secondary" style="flex:1">Cancel</button>
+        </div>
       </sc-if>
-
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+        <sc-if value="{{showGmailCard}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{openGmail}}" class="pressable" style="text-align:left;background:var(--color-accent-100);border:1.5px solid var(--color-accent-300);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">{{gmailQuickLabel}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">Detected in Gmail — tap to review</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </button>
+        </sc-if>
+        <button type="button" onClick="{{openRecurring}}" class="pressable" style="text-align:left;background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">Recurring payments</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{recurringTotalLabel}}</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </button>
+        <button type="button" onClick="{{openExceptions}}" class="pressable" style="text-align:left;background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);padding:16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box">
+          <div><div style="font-weight:600;font-size:14px">Exceptions</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{exceptionsSummaryLabel}}</div></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+        </button>
+      </div>
       </div>
     </sc-if>
 
     <sc-if value="{{tabTax}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Tax" class="{{navClass}}">
+      <div class="{{navClass}}">
       <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Tax dashboard</div>
       <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Year of Assessment 2026</div>
       <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
-
-      <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">Relief captured over time</div>
-      <div style="display:flex;align-items:flex-end;gap:8px;height:84px;margin-bottom:6px">
-        <sc-for list="{{cashFlowMonths}}" as="m" hint-placeholder-count="6">
-          <div style="flex:1;height:100%;display:flex;align-items:flex-end">
-            <div class="bar-fill" style="width:100%;border-radius:5px 5px 0 0;background:{{m.color}};height:{{m.pct}}%"></div>
-          </div>
-        </sc-for>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:20px">
-        <sc-for list="{{cashFlowMonths}}" as="m2" hint-placeholder-count="6">
-          <div style="flex:1;text-align:center;font-size:10px;color:var(--color-text-muted)">{{m2.label}}</div>
-        </sc-for>
-      </div>
-      <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
-
       <sc-if value="{{taxPackReady}}" hint-placeholder-val="{{false}}">
         <div style="border:1.5px solid var(--color-accent-300);background:var(--color-accent-100);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:20px">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">Tax pack ready</div>
@@ -218,14 +143,8 @@ a:hover{color:var(--color-accent-900)}
       </sc-if>
       <sc-for list="{{reliefRows}}" as="r" hint-placeholder-count="5">
         <div style="margin-bottom:18px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <div style="width:26px;height:26px;border-radius:50%;background:{{r.bg}};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{r.color}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{r.icon}}"></path></svg>
-            </div>
-            <span style="font-size:14px;font-weight:600;flex:1">{{r.name}}</span>
-            <span style="display:flex;align-items:center;gap:8px;font-size:13px;flex-shrink:0">{{r.spentLabel}} / {{r.capLabel}}<span class="tag tag-outline" style="font-size:10px">{{r.pct}}%</span></span>
-          </div>
-          <div style="height:6px;background:var(--color-neutral-200);border-radius:3px"><div class="bar-fill" style="height:100%;width:{{r.pct}}%;background:{{r.color}};border-radius:3px"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:6px"><span style="font-weight:600">{{r.name}}</span><span style="display:flex;align-items:center;gap:8px">{{r.spentLabel}} / {{r.capLabel}}<span class="tag tag-outline" style="font-size:10px">{{r.pct}}%</span></span></div>
+          <div style="height:6px;background:var(--color-neutral-200)"><div class="bar-fill" style="height:100%;width:{{r.pct}}%;background:var(--color-accent)"></div></div>
           <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">{{r.remainingLabel}}</div>
         </div>
       </sc-for>
@@ -233,19 +152,19 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{tabAssistant}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Assistant" class="{{navClass}}">
+      <div class="{{navClass}}">
       <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Assistant</div>
       <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Ask about spending or tax reliefs</div>
       <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
       <sc-for list="{{chatMessages}}" as="msg" hint-placeholder-count="2">
         <sc-if value="{{msg.fromUser}}" hint-placeholder-val="{{false}}">
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-            <div style="background:var(--color-text);color:#fff;padding:12px 14px;border-radius:var(--radius-md) var(--radius-md) 4px var(--radius-md);max-width:80%;font-size:14px">{{msg.text}}</div>
+            <div style="background:var(--color-text);color:#fff;padding:12px 14px;max-width:80%;font-size:14px">{{msg.text}}</div>
           </div>
         </sc-if>
         <sc-if value="{{msg.fromAi}}" hint-placeholder-val="{{true}}">
           <div style="display:flex;justify-content:flex-start;margin-bottom:10px">
-            <div style="background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);padding:12px 14px;border-radius:var(--radius-md) var(--radius-md) var(--radius-md) 4px;max-width:85%;font-size:14px;line-height:1.5">{{msg.text}}</div>
+            <div style="background:var(--color-neutral-100);border:1.5px solid var(--color-neutral-400);padding:12px 14px;max-width:85%;font-size:14px;line-height:1.5">{{msg.text}}</div>
           </div>
         </sc-if>
       </sc-for>
@@ -253,7 +172,7 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{tabReceipts}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Receipts" class="{{navClass}}">
+      <div class="{{navClass}}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <span style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em">Receipts</span>
         <button type="button" onClick="{{openCapture}}" class="btn btn-primary btn-icon" aria-label="Add receipt"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></button>
@@ -273,12 +192,7 @@ a:hover{color:var(--color-accent-900)}
         </select>
       </div>
       <sc-for list="{{filteredReceipts}}" as="grp" hint-placeholder-count="5">
-        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 6px">
-          <div style="width:22px;height:22px;border-radius:50%;background:{{grp.bg}};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="{{grp.color}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{grp.icon}}"></path></svg>
-          </div>
-          <span style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted)">{{grp.category}}</span>
-        </div>
+        <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin:16px 0 6px">{{grp.category}}</div>
         <div style="border-top:1px solid var(--color-divider)"></div>
         <sc-for list="{{grp.items}}" as="it" hint-placeholder-count="2">
           <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--color-neutral-300)">
@@ -294,32 +208,27 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{tabSettings}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Settings" class="{{navClass}}">
+      <div class="{{navClass}}">
       <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;line-height:1.12;letter-spacing:-0.012em;margin-bottom:4px">Settings &amp; consent</div>
       <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:16px">Manage connected accounts, backups and consent</div>
       <div style="border-top:1px solid var(--color-divider);margin-bottom:20px"></div>
-      <sc-for list="{{settingsSections}}" as="sec" hint-placeholder-count="4">
-        <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px">{{sec.title}}</div>
-        <div style="background:var(--color-surface);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-lg);padding:0 14px;margin-bottom:18px">
-        <sc-for list="{{sec.items}}" as="item" hint-placeholder-count="2">
-          <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-              <div><div style="font-size:14px;font-weight:600">{{item.label}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{item.sub}}</div></div>
-              <div class="seg" style="flex-shrink:0">
-                <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.onChecked}}" onChange="{{item.setOn}}" />On</label>
-                <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.offChecked}}" onChange="{{item.setOff}}" />Off</label>
-              </div>
+      <sc-for list="{{settingsList}}" as="item" hint-placeholder-count="5">
+        <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div><div style="font-size:14px;font-weight:600">{{item.label}}</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{item.sub}}</div></div>
+            <div class="seg" style="flex-shrink:0">
+              <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.onChecked}}" onChange="{{item.setOn}}" />On</label>
+              <label class="seg-opt"><input type="radio" name="{{item.key}}" checked="{{item.offChecked}}" onChange="{{item.setOff}}" />Off</label>
             </div>
           </div>
-        </sc-for>
         </div>
       </sc-for>
-      <button type="button" class="btn btn-ghost" style="margin-top:6px">Sign out</button>
+      <button type="button" class="btn btn-ghost" style="margin-top:20px">Sign out</button>
       </div>
     </sc-if>
 
     <sc-if value="{{subCapture}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Capture" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
         <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Add receipt</span>
       </div>
@@ -327,15 +236,15 @@ a:hover{color:var(--color-accent-900)}
       <sc-if value="{{addChoose}}" hint-placeholder-val="{{true}}">
         <div class="{{navClass}}" style="display:flex;flex-direction:column;gap:10px">
           <button type="button" onClick="{{chooseCamera}}" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
             <div><div style="font-weight:600;font-size:15px">Take a photo</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">AI reads the receipt and proposes the fields</div></div>
           </button>
           <button type="button" onClick="{{chooseManual}}" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
             <div><div style="font-weight:600;font-size:15px">Enter manually</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">Type in vendor, amount and category yourself</div></div>
           </button>
           <label for="statementFileInput" class="pressable" style="text-align:left;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-surface);padding:18px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 15h6"></path><path d="M9 11h1"></path></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 15h6"></path><path d="M9 11h1"></path></svg>
             <div><div style="font-weight:600;font-size:15px">Upload statement</div><div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">PDF or CSV from your bank or e-wallet — AI parses each line item</div></div>
           </label>
           <input type="file" id="statementFileInput" accept=".pdf,.csv,application/pdf,text/csv" onChange="{{handleStatementFile}}" style="display:none" />
@@ -374,7 +283,7 @@ a:hover{color:var(--color-accent-900)}
           <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Date</span><span>{{cameraDate}}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Amount</span><span style="font-weight:600">{{cameraAmountLabel}}</span></div>
           <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px solid var(--color-neutral-300)"><span style="color:var(--color-text-muted)">Category</span><span>{{cameraCategory}}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:8px 0"><span style="color:var(--color-text-muted)">LHDN relief</span><span class="tag tag-accent">{{cameraReliefTag}}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0"><span style="color:var(--color-text-muted)">LHDN relief</span><span>{{cameraReliefTag}}</span></div>
           <div style="font-size:13px;margin:14px 0;color:var(--color-text-muted)">Is this correct?</div>
           <div style="display:flex;gap:10px">
             <button type="button" onClick="{{confirmCamera}}" class="btn btn-primary" style="flex:1">Yes, confirm</button>
@@ -396,17 +305,14 @@ a:hover{color:var(--color-accent-900)}
             </sc-for>
           </select>
         </div>
-        <div style="margin:12px 0 18px"><span class="tag tag-accent">{{manualReliefTag}}</span></div>
+        <div style="font-size:12px;color:var(--color-text-muted);margin:10px 0 18px">LHDN relief: {{manualReliefTag}}</div>
         </div>
       </sc-if>
 
       <sc-if value="{{addDone}}" hint-placeholder-val="{{false}}">
-        <div class="{{navClass}}" style="text-align:center;padding:32px 4px 8px">
-          <div style="width:56px;height:56px;border-radius:50%;background:var(--color-accent-100);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-          </div>
-          <div style="font-size:14px;color:var(--color-text-muted)">Saved to your receipts repository.</div>
-        <div style="display:flex;gap:10px;margin-top:18px">
+        <div class="{{navClass}}">
+        <div style="padding:24px 4px 8px;font-size:14px;color:var(--color-text-muted)">Saved to your receipts repository.</div>
+        <div style="display:flex;gap:10px;margin-top:8px">
           <button type="button" onClick="{{addAnother}}" class="btn btn-secondary" style="flex:1">Add another</button>
           <button type="button" onClick="{{closeSub}}" class="btn btn-primary" style="flex:1">Done</button>
         </div>
@@ -415,22 +321,11 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{subRecurring}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Recurring" style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
         <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Recurring payments</span>
       </div>
       <div class="{{navClass}}">
-      <div style="font:600 11px var(--font-body);letter-spacing:0.1em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:10px">Upcoming</div>
-      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px">
-        <sc-for list="{{recurringTimeline}}" as="t" hint-placeholder-count="4">
-          <div style="background:var(--color-surface);border:1.5px solid var(--color-neutral-400);border-radius:var(--radius-md);min-width:76px;text-align:center;flex-shrink:0;padding:10px 8px;box-sizing:border-box">
-            <div style="font-size:10px;color:var(--color-text-muted);letter-spacing:0.06em">{{t.month}}</div>
-            <div class="type-numeric" style="font-family:var(--font-heading);font-weight:700;font-size:18px;margin:2px 0">{{t.day}}</div>
-            <div style="font-size:11px;color:var(--color-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{t.name}}</div>
-          </div>
-        </sc-for>
-      </div>
-      <div style="border-top:1px solid var(--color-divider)"></div>
       <sc-for list="{{recurring}}" as="rp" hint-placeholder-count="3">
         <div style="padding:14px 0;border-bottom:1px solid var(--color-neutral-300)">
           <sc-if value="{{rp.isEditing}}" hint-placeholder-val="{{false}}">
@@ -449,8 +344,8 @@ a:hover{color:var(--color-accent-900)}
               <div>
                 <div style="font-weight:600;font-size:14px">{{rp.name}}</div>
                 <div style="font-size:12px;color:var(--color-text-muted);margin-top:2px">{{rp.account}} · {{rp.due}}</div>
-                <div style="margin-top:6px"><span class="tag tag-accent">Repeated {{rp.detectedMonths}} months</span></div>
-                <sc-if value="{{rp.hasFlag}}" hint-placeholder-val="{{false}}"><div style="margin-top:6px"><span class="tag tag-danger">{{rp.flag}}</span></div></sc-if>
+                <div style="font-size:11px;color:var(--color-text-muted);margin-top:4px">{{rp.detectedNote}}</div>
+                <sc-if value="{{rp.hasFlag}}" hint-placeholder-val="{{false}}"><div style="font-size:12px;color:var(--color-danger-700);margin-top:4px">⚠ {{rp.flag}}</div></sc-if>
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-size:14px;font-weight:600;margin-bottom:8px">{{rp.amount}}</div>
@@ -468,7 +363,7 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{subExceptions}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Exceptions" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
         <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Exceptions &amp; anomalies</span>
       </div>
@@ -489,7 +384,7 @@ a:hover{color:var(--color-accent-900)}
     </sc-if>
 
     <sc-if value="{{subGmail}}" hint-placeholder-val="{{false}}">
-      <div data-screen-label="Gmail" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <button type="button" onClick="{{closeSub}}" aria-label="Back" class="pressable" style="background:none;border:none;border-radius:var(--radius-sm);padding:8px;margin-left:-8px;cursor:pointer;color:var(--color-text)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
         <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;line-height:1.15;letter-spacing:-0.01em">Gmail invoices</span>
       </div>
@@ -542,26 +437,26 @@ a:hover{color:var(--color-accent-900)}
 
   <div style="position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column">
   <sc-if value="{{tabAssistant}}" hint-placeholder-val="{{false}}">
-    <div class="material-chrome" style="display:flex;gap:8px;padding:12px 16px 26px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+    <div class="material-chrome" style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
       <input class="input" value="{{chatDraft}}" onChange="{{setChatDraft}}" placeholder="Ask about your spending or reliefs…" style="flex:1" />
       <button type="button" onClick="{{sendChat}}" disabled="{{chatSendDisabled}}" class="btn btn-primary btn-icon" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button>
     </div>
   </sc-if>
 
   <sc-if value="{{tabTax}}" hint-placeholder-val="{{false}}">
-    <div class="material-chrome" style="padding:12px 20px 26px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+    <div class="material-chrome" style="padding:12px 20px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
       <button type="button" onClick="{{generateTaxPack}}" disabled="{{taxPackButtonDisabled}}" class="btn btn-primary btn-lg">{{taxPackButtonLabel}}</button>
     </div>
   </sc-if>
 
   <sc-if value="{{showManualSaveBar}}" hint-placeholder-val="{{false}}">
-    <div class="material-chrome" style="padding:12px 20px 26px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
+    <div class="material-chrome" style="padding:12px 20px;border-top:1px solid var(--color-divider);box-sizing:border-box;flex-shrink:0">
       <button type="button" onClick="{{saveManual}}" class="btn btn-primary btn-lg">Save receipt</button>
     </div>
   </sc-if>
 
   <sc-if value="{{showTabBar}}" hint-placeholder-val="{{true}}">
-    <div class="material-chrome" style="display:flex;border-top:1px solid var(--color-divider);flex-shrink:0;padding-bottom:20px">
+    <div class="material-chrome" style="display:flex;border-top:1px solid var(--color-divider);flex-shrink:0">
       <button type="button" onClick="{{setTabHome}}" class="tab-btn" style="flex:1;background:none;border:none;border-top:3px solid {{tabHomeBorder}};padding:8px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{tabHomeColor}}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-6h-4v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
         <span style="font-size:10px">Home</span>
@@ -607,41 +502,26 @@ class Component extends DCLogic {
     manualAmount: '',
     manualCategory: 'Medical',
     exceptionResolved: null,
-    hasException: true,
+    hasException: false,
     navDir: 'fwd',
-    recurringItems: [
-      { key: 'r1', name: 'Celebrity Fitness', account: 'Maybank •1234', amount: 'RM149.00', due: '1 Sep', dueDay: '01', dueMonth: 'SEP', dueSort: 1, detectedMonths: 5 },
-      { key: 'r2', name: 'Astro', account: 'Maybank •1234', amount: 'RM129.90', due: '5 Sep', dueDay: '05', dueMonth: 'SEP', dueSort: 5, detectedMonths: 4 },
-      { key: 'r3', name: 'Unifi', account: 'CIMB •5678', amount: 'RM159.00', due: '12 Sep', dueDay: '12', dueMonth: 'SEP', dueSort: 12, detectedMonths: 6 },
-      { key: 'r4', name: 'Spotify', account: 'CIMB •5678', amount: 'RM14.90', due: '20 Sep', dueDay: '20', dueMonth: 'SEP', dueSort: 20, detectedMonths: 3, flag: 'Price increased from RM12.90 last month' },
-    ],
+    recurringItems: [],
     editingKey: null,
     editDraft: { amount: '', due: '' },
     settings: { gmail: true, cloud: true, retention: true, biometric: false, notifications: true },
     receiptMonth: 'All',
     receiptType: 'All',
-    gmailInvoices: [
-      { key: 'g1', vendor: 'Shopee', date: '8 Aug 2026', amount: 'RM89.00', category: 'Shopping', status: 'pending' },
-      { key: 'g2', vendor: 'Grab', date: '9 Aug 2026', amount: 'RM23.50', category: 'Transport', status: 'pending' },
-    ],
+    gmailInvoices: [],
     editingGmailKey: null,
     gmailEditDraft: { vendor: '', date: '', amount: '', category: 'Medical' },
     statementFileLabel: '',
     statementRows: [],
-    budget: 1550,
-    categories: [
-      { name: 'Groceries', spent: 420, budget: 600 },
-      { name: 'Transport', spent: 180, budget: 250 },
-      { name: 'Dining', spent: 310, budget: 300 },
-      { name: 'Medical', spent: 150, budget: 400 },
-    ],
+    budget: 0,
+    categories: [],
     editingBudget: false,
     budgetDraft: '',
     categoryBudgetDraft: {},
     taxPackStatus: 'idle',
-    chatMessages: [
-      { key: 'a0', from: 'ai', text: "Hi! Ask me about your spending by category, or your LHDN tax reliefs — try \u201Chow's my medical relief?\u201D" },
-    ],
+    chatMessages: [],
     chatDraft: '',
   };
 
@@ -654,74 +534,21 @@ class Component extends DCLogic {
   ];
 
   relief = [
-    { name: 'Medical', spent: 1450, cap: 10000 },
-    { name: 'Education', spent: 3200, cap: 7000 },
-    { name: 'Lifestyle', spent: 890, cap: 2500 },
-    { name: 'EPF / Insurance', spent: 4000, cap: 4000 },
+    { name: 'Medical', spent: 0, cap: 10000 },
+    { name: 'Education', spent: 0, cap: 7000 },
+    { name: 'Lifestyle', spent: 0, cap: 2500 },
+    { name: 'EPF / Insurance', spent: 0, cap: 4000 },
     { name: "Parents' medical", spent: 0, cap: 8000 },
   ];
 
-  cashFlowMonths = [
-    { label: 'Mar', value: 1200 },
-    { label: 'Apr', value: 2600 },
-    { label: 'May', value: 4100 },
-    { label: 'Jun', value: 6200 },
-    { label: 'Jul', value: 8100 },
-    { label: 'Aug', value: 9540 },
-  ];
-  cashFlowShades = ['var(--color-accent-300)', 'var(--color-accent-400)', 'var(--color-accent-500)', 'var(--color-accent-600)', 'var(--color-accent-700)', 'var(--color-accent)'];
+  mockCameraReceipt = { vendor: '', date: '', amount: 0, category: '' };
+  mockException = { vendor: '', amount: 0, date: '', time1: '', time2: '' };
 
-  mockCameraReceipt = { vendor: 'Guardian Pharmacy', date: '10 Aug 2026', amount: 86.40, category: 'Medical' };
-  mockException = { vendor: 'Grab', amount: 23.50, date: '9 Aug', time1: '2:14pm', time2: '2:16pm' };
-
-  receipts = [
-    { category: 'Medical', items: [
-      { vendor: 'Guardian Pharmacy', date: '10 Aug 2026', amount: 'RM86.40', month: 'Aug 2026' },
-      { vendor: 'Klinik Mediviron', date: '2 Jul 2026', amount: 'RM120.00', month: 'Jul 2026' },
-    ] },
-    { category: 'Education', items: [
-      { vendor: 'Kumon', date: '15 Jul 2026', amount: 'RM380.00', month: 'Jul 2026' },
-    ] },
-    { category: 'Lifestyle', items: [
-      { vendor: 'MPH Bookstore', date: '5 Aug 2026', amount: 'RM64.90', month: 'Aug 2026' },
-    ] },
-    { category: 'EPF / Insurance', items: [
-      { vendor: 'AIA Insurance', date: '1 Aug 2026', amount: 'RM333.00', month: 'Aug 2026' },
-    ] },
-  ];
+  receipts = [];
 
   monthOptions = ['All', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'];
   typeOptions = ['All', 'Medical', 'Education', 'Lifestyle', 'EPF / Insurance', "Parents' medical"];
   categoryOptions = ['Medical', 'Education', 'Lifestyle', 'EPF / Insurance', "Parents' medical", 'Groceries', 'Transport', 'Dining', 'Shopping', 'Other'];
-
-  catIcons = {
-    Medical: 'M12 5v14M5 12h14',
-    Education: 'M12 4 3 9l9 5 9-5-9-5Z M7 12v5c0 1.4 2.3 2.5 5 2.5s5-1.1 5-2.5v-5',
-    Lifestyle: 'M6 8h12l-1 12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 8Z M9 8V6a3 3 0 0 1 6 0v2',
-    'EPF / Insurance': 'M12 3l7 3v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3Z',
-    "Parents' medical": 'M12 20s-7-4.4-9.5-9C1 8 2 4.5 5.5 4a4.5 4.5 0 0 1 6.5 2 4.5 4.5 0 0 1 6.5-2C21.9 4.5 23 8 21.5 11 19 15.6 12 20 12 20Z',
-    Groceries: 'M4 9h16l-1.5 10a2 2 0 0 1-2 1.8H7.5A2 2 0 0 1 5.5 19L4 9Z M8 9V7a4 4 0 0 1 8 0v2',
-    Transport: 'M5 17h14l1-6H4l1 6Z M7 17v2M17 17v2M6 11l2-4h8l2 4',
-    Dining: 'M7 2v8a2 2 0 1 0 4 0V2M9 10v12M16.5 2c-1.9 0-3.5 1.8-3.5 4v5.5h3.5M16.5 2v20',
-    Shopping: 'M6 8h12l-1.4 12a1.6 1.6 0 0 1-1.6 1.4H9a1.6 1.6 0 0 1-1.6-1.4L6 8Z M9 8V6a3 3 0 0 1 6 0v2',
-    Other: 'M12 7v5l3 3M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
-  };
-  catColors = {
-    Medical: 'var(--color-accent-600)',
-    Education: 'oklch(55% 0.13 235)',
-    Lifestyle: 'oklch(68% 0.15 75)',
-    'EPF / Insurance': 'oklch(50% 0.12 275)',
-    "Parents' medical": 'oklch(62% 0.16 25)',
-    Groceries: 'oklch(65% 0.14 145)',
-    Transport: 'oklch(55% 0.13 235)',
-    Dining: 'oklch(68% 0.15 75)',
-    Shopping: 'oklch(62% 0.16 25)',
-    Other: 'var(--color-text-muted)',
-  };
-  catMeta = (name) => {
-    const color = this.catColors[name] || 'var(--color-text-muted)';
-    return { icon: this.catIcons[name] || this.catIcons.Other, color, bg: `color-mix(in srgb, ${color} 16%, white)` };
-  };
 
   reliefTagFor = (cat) => ({
     Medical: 'Medical relief — RM10,000 cap',
@@ -895,10 +722,8 @@ class Component extends DCLogic {
     const categoryRows = s.categories.map(c => {
       const pct = Math.min(100, Math.round((c.spent / c.budget) * 100));
       const overBudget = c.spent > c.budget;
-      const meta = this.catMeta(c.name);
       return {
         name: c.name,
-        icon: meta.icon, color: meta.color, bg: meta.bg,
         amountLabel: this.fmt(c.spent) + ' / ' + this.fmt(c.budget),
         labelColor: overBudget ? 'var(--color-danger-700)' : 'var(--color-text)',
         pct,
@@ -912,25 +737,12 @@ class Component extends DCLogic {
       };
     });
 
-    const reliefRows = this.relief.map(r => {
-      const meta = this.catMeta(r.name);
-      return {
-        name: r.name,
-        icon: meta.icon, color: meta.color, bg: meta.bg,
-        spentLabel: this.fmt(r.spent),
-        capLabel: this.fmt(r.cap),
-        pct: Math.min(100, Math.round((r.spent / r.cap) * 100)),
-        remainingLabel: this.fmt(Math.max(0, r.cap - r.spent)) + ' remaining',
-      };
-    });
-
-    const totalReliefSpent = this.relief.reduce((sum, r) => sum + r.spent, 0);
-    const totalReliefCap = this.relief.reduce((sum, r) => sum + r.cap, 0);
-    const maxCashFlow = Math.max(...this.cashFlowMonths.map(m => m.value), 1);
-    const cashFlowMonths = this.cashFlowMonths.map((m, i) => ({
-      label: m.label,
-      pct: Math.max(4, Math.round((m.value / maxCashFlow) * 100)),
-      color: this.cashFlowShades[i] || 'var(--color-accent)',
+    const reliefRows = this.relief.map(r => ({
+      name: r.name,
+      spentLabel: this.fmt(r.spent),
+      capLabel: this.fmt(r.cap),
+      pct: Math.min(100, Math.round((r.spent / r.cap) * 100)),
+      remainingLabel: this.fmt(Math.max(0, r.cap - r.spent)) + ' remaining',
     }));
 
     const gmailPending = s.gmailInvoices
@@ -949,26 +761,12 @@ class Component extends DCLogic {
       hasFlag: !!r.flag,
       isEditing: s.editingKey === r.key,
       notEditing: s.editingKey !== r.key,
+      detectedNote: `Detected — repeated ${r.detectedMonths} months in a row`,
       startEdit: () => this.startEditRecurring(r.key),
       del: () => this.deleteRecurring(r.key),
     }));
-    const recurringTimeline = [...s.recurringItems].sort((a, b) => a.dueSort - b.dueSort)
-      .map(r => ({ key: r.key, day: r.dueDay, month: r.dueMonth, name: r.name }));
 
-    const checklistDefs = [
-      { label: 'Connect Gmail for auto-detected receipts', done: s.settings.gmail, action: () => this.setTab('settings') },
-      { label: 'Set your monthly budget', done: s.budget > 0, action: this.startEditBudget },
-      { label: 'Turn on biometric lock', done: s.settings.biometric, action: () => this.setTab('settings') },
-    ];
-    const checklistItems = checklistDefs.map(c => ({
-      ...c,
-      dotBg: c.done ? 'var(--color-accent)' : 'transparent',
-      dotBorder: c.done ? 'var(--color-accent)' : 'var(--color-neutral-500)',
-      textColor: c.done ? 'var(--color-text-muted)' : 'var(--color-text)',
-    }));
-    const showChecklist = checklistDefs.some(c => !c.done);
-
-    const settingsItemDefs = [
+    const settingsList = [
       { key: 'gmail', label: 'Gmail sync', sub: 'Detect receipts & invoices from your inbox' },
       { key: 'cloud', label: 'Cloud backup', sub: 'Encrypted backup for cross-device access' },
       { key: 'retention', label: 'Data retention (7-yr)', sub: 'Keep records per LHDN documentation guidance' },
@@ -981,25 +779,14 @@ class Component extends DCLogic {
       setOn: () => this.setState(st => ({ settings: { ...st.settings, [item.key]: true } })),
       setOff: () => this.setState(st => ({ settings: { ...st.settings, [item.key]: false } })),
     }));
-    const byKey = Object.fromEntries(settingsItemDefs.map(i => [i.key, i]));
-    const settingsSections = [
-      { title: 'Connections', items: [byKey.gmail] },
-      { title: 'Data & backup', items: [byKey.cloud, byKey.retention] },
-      { title: 'Security', items: [byKey.biometric] },
-      { title: 'Notifications', items: [byKey.notifications] },
-    ];
 
     const filteredReceipts = this.receipts
       .filter(g => s.receiptType === 'All' || !s.receiptType || g.category === s.receiptType)
-      .map(g => {
-        const meta = this.catMeta(g.category);
-        return { ...g, icon: meta.icon, color: meta.color, bg: meta.bg, items: g.items.filter(it => s.receiptMonth === 'All' || !s.receiptMonth || it.month === s.receiptMonth) };
-      })
+      .map(g => ({ ...g, items: g.items.filter(it => s.receiptMonth === 'All' || !s.receiptMonth || it.month === s.receiptMonth) }))
       .filter(g => g.items.length > 0);
 
     const tabColor = (name) => s.tab === name ? 'var(--color-accent)' : 'var(--color-text-muted)';
     const tabBorder = (name) => s.tab === name ? 'var(--color-accent)' : 'transparent';
-    const pendingExceptions = s.hasException && s.exceptionResolved === null ? 1 : 0;
 
     return {
       navClass: s.navDir === 'back' ? 'slide-in-left' : 'slide-in-right',
@@ -1009,13 +796,9 @@ class Component extends DCLogic {
       goOnboarding: this.goOnboarding,
 
       onbStep: s.onbStep,
-      onbProgress: `${s.onbStep + 1} / ${this.steps.length}`,
-      onbProgressPct: Math.round(((s.onbStep + 1) / this.steps.length) * 100),
+      onbProgress: `0${s.onbStep + 1} / 0${this.steps.length}`,
       onbLabel: step.label,
-      onbOptions: step.options.map(o => {
-        const sel = o === s.onbAnswers[step.key];
-        return { label: o, selected: sel, borderColor: sel ? 'var(--color-accent)' : 'var(--color-divider)', bg: sel ? 'var(--color-accent-100)' : 'var(--color-surface)', select: () => this.onbSelect(o) };
-      }),
+      onbOptions: step.options.map(o => ({ label: o, selected: o === s.onbAnswers[step.key], select: () => this.onbSelect(o) })),
       onbContinueDisabled: !s.onbAnswers[step.key],
       onbButtonLabel: s.onbStep === this.steps.length - 1 ? 'Finish setup' : 'Continue',
       onbBackStep: this.onbBackStep,
@@ -1056,13 +839,6 @@ class Component extends DCLogic {
       openExceptions: () => this.openSub('exceptions'),
       openGmail: this.openGmail,
       closeSub: this.closeSub,
-
-      showChecklist,
-      checklistItems,
-
-      heroReliefLabel: this.fmt(totalReliefSpent),
-      heroRemainingLabel: this.fmt(Math.max(0, totalReliefCap - totalReliefSpent)) + ' of headroom left for YA2026',
-      heroPct: Math.min(100, Math.round((totalReliefSpent / totalReliefCap) * 100)),
 
       showGmailCard: s.settings.gmail && gmailPending.length > 0,
       gmailQuickLabel: gmailPending.length === 1 ? '1 invoice detected from Gmail' : `${gmailPending.length} invoices detected from Gmail`,
@@ -1126,9 +902,8 @@ class Component extends DCLogic {
       categoryRows,
 
       recurring: recurringRows,
-      recurringTimeline,
       noRecurring: s.recurringItems.length === 0,
-      recurringTotalLabel: this.fmt(s.recurringItems.reduce((sum, r) => sum + this.parseAmount(r.amount), 0)),
+      recurringTotalLabel: this.fmt(s.recurringItems.reduce((sum, r) => sum + this.parseAmount(r.amount), 0)) + ' / month',
       editAmount: s.editDraft.amount,
       editDue: s.editDraft.due,
       setEditAmount: this.setEditAmount,
@@ -1142,7 +917,7 @@ class Component extends DCLogic {
       noException: !s.hasException,
       resolveDup: () => this.resolveException('duplicate'),
       resolveNotDup: () => this.resolveException('not-duplicate'),
-      exceptionsCountLabel: pendingExceptions === 0 ? 'None' : String(pendingExceptions),
+      exceptionsSummaryLabel: s.hasException && s.exceptionResolved === null ? '1 flagged transaction' : 'No flagged transactions',
       exceptionTitleLabel: `${this.mockException.vendor} — ${this.fmt(this.mockException.amount)}`,
       exceptionDescLabel: `Two charges ${this.mockException.date}, ${this.mockException.time1} & ${this.mockException.time2} — same amount, same merchant.`,
 
@@ -1153,8 +928,8 @@ class Component extends DCLogic {
       cameraReliefTag: this.reliefTagFor(this.mockCameraReceipt.category),
 
       reliefRows,
-      cashFlowMonths,
-      settingsSections,
+      receipts: this.receipts,
+      settingsList,
 
       taxPackIdle: s.taxPackStatus === 'idle',
       taxPackGenerating: s.taxPackStatus === 'generating',
