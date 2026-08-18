@@ -1,17 +1,21 @@
 import { useStore, useActions } from '../../store/StoreProvider';
-import { selectBudgets } from '../../store/selectors';
+import { selectBudgets, selectSubscriptions } from '../../store/selectors';
 import { Card } from '../../components/primitives';
+import { moneyWhole } from '../../lib/format';
+import { BudgetGauge } from './BudgetGauge';
 
-// Ported from Cukai v7.dc.html lines 1297-1404 (budgets bucket list only —
-// the donut gauge and subscriptions list at the top/bottom of that range are
-// owned by other screen components). Data comes from selectBudgets(state).
+// Ported from Cukai v7.dc.html lines 1297-1404: the gauge, bucket list, and
+// subscriptions summary that make up the Budgets screen.
 export function BudgetsSection() {
   const { state } = useStore();
   const actions = useActions();
   const { buckets } = selectBudgets(state);
+  const { subs, monthlyTotal, yearlyLabel } = selectSubscriptions(state);
 
   return (
     <div>
+      <BudgetGauge />
+      <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 16 }} />
       {buckets.map((b) => (
         <Card key={b.key} style={{ marginBottom: 12 }}>
           <button
@@ -83,6 +87,50 @@ export function BudgetsSection() {
           )}
         </Card>
       ))}
+
+      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, margin: '20px 0 10px' }}>Subscriptions</div>
+      <div style={{ display: 'flex', gap: 26, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Monthly</div>
+          <div className="type-numeric" style={{ fontWeight: 700, fontSize: 16 }}>RM {moneyWhole(monthlyTotal)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Yearly</div>
+          <div className="type-numeric" style={{ fontWeight: 700, fontSize: 16 }}>RM {yearlyLabel}</div>
+        </div>
+      </div>
+      <Card style={{ padding: '4px 14px', marginBottom: 12 }}>
+        {subs.map((s, i) => (
+          <div key={s.name + i} className="sub-row" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 9, background: 'var(--color-neutral-200)', color: 'var(--color-text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: 14,
+            }}>
+              {s.name[0]?.toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.name}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · Next {s.nextPayment || '—'}</div>
+            </div>
+            <div className="type-numeric" style={{ fontWeight: 600, fontSize: 13.5, flexShrink: 0 }}>RM {moneyWhole(parseFloat(s.amount) || 0)}</div>
+          </div>
+        ))}
+        {subs.length === 0 && (
+          <div style={{ padding: '16px 0', fontSize: 12, color: 'var(--color-text-muted)', textAlign: 'center' }}>No subscriptions yet.</div>
+        )}
+      </Card>
+      <button
+        type="button"
+        onClick={actions.openAddSub}
+        className="pressable"
+        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-accent-700)', font: '700 12.5px var(--font-body)', padding: '6px 0', marginBottom: 20 }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14"></path>
+          <path d="M12 5v14"></path>
+        </svg>
+        Add subscription
+      </button>
     </div>
   );
 }

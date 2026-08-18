@@ -125,6 +125,71 @@ export function selectBudgets(state: AppState) {
   return { buckets, totalSpent, totalPlan };
 }
 
+const BUDGET_SHADES = ['var(--color-accent-700)', 'var(--color-accent-500)', 'var(--color-accent-300)', 'var(--color-neutral-500)'];
+
+export interface DonutBranch {
+  bucketKey: string; catId: string; name: string; amountLabel: string; color: string; pct: number;
+  x1: string; y1: string; x2: string; y2: string; calloutLeft: string; calloutTop: string;
+}
+
+// Ported from Cukai v7.dc.html lines 2790-2836: the half-donut budget gauge
+// at the top of the Budgets screen, with an expandable per-category
+// breakdown (donutBranches) when state.donutExpanded is true.
+export function selectBudgetGauge(state: AppState) {
+  const { buckets, totalSpent: budgetTotalSpent, totalPlan: budgetTotalPlan } = selectBudgets(state);
+  const gaugeCX = 150, gaugeCY = 210, gaugeR = 110;
+  const gaugePctSpent = state.mounted && budgetTotalPlan > 0 ? Math.min(1, budgetTotalSpent / budgetTotalPlan) : 0;
+  const gaugePoint = (f: number): [number, number] => {
+    const theta = ((180 - f * 180) * Math.PI) / 180;
+    return [gaugeCX + gaugeR * Math.cos(theta), gaugeCY - gaugeR * Math.sin(theta)];
+  };
+  const fmt = (p: [number, number]) => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+  const gaugeStart = gaugePoint(0), gaugeMid = gaugePoint(gaugePctSpent), gaugeEnd = gaugePoint(1);
+  const gaugeArcPath = `M ${fmt(gaugeStart)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
+  const availableArcPath = `M ${fmt(gaugeMid)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
+
+  const budgetRemaining = Math.max(0, budgetTotalPlan - budgetTotalSpent);
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = Math.max(1, daysInMonth - now.getDate() + 1);
+
+  let donutBranches: DonutBranch[] = [];
+  if (state.donutExpanded) {
+    const allCats: { bucketKey: string; catId: string; name: string; spent: number; color: string }[] = [];
+    buckets.forEach((b, bi) => b.categories.forEach((c) =>
+      allCats.push({ bucketKey: b.key, catId: c.id, name: c.name, spent: c.spent, color: BUDGET_SHADES[bi % BUDGET_SHADES.length] })));
+    allCats.sort((a, b) => b.spent - a.spent);
+    const topCats = allCats.slice(0, 5);
+    const N = topCats.length, lineStartR = gaugeR + 12, lineEndR = gaugeR + 32, calloutR = gaugeR + 40;
+    const angleStart = 200, angleEnd = 340;
+    donutBranches = topCats.map((c, i) => {
+      const angleDeg = N > 1 ? angleStart + ((angleEnd - angleStart) * i) / (N - 1) : 270;
+      const angle = (angleDeg * Math.PI) / 180;
+      const ex = gaugeCX + calloutR * Math.cos(angle), ey = gaugeCY + calloutR * Math.sin(angle);
+      const sx = gaugeCX + lineStartR * Math.cos(angle), sy = gaugeCY + lineStartR * Math.sin(angle);
+      const tx = gaugeCX + lineEndR * Math.cos(angle), ty = gaugeCY + lineEndR * Math.sin(angle);
+      return {
+        bucketKey: c.bucketKey, catId: c.catId, name: c.name, amountLabel: moneyWhole(c.spent), color: c.color,
+        pct: budgetTotalSpent > 0 ? Math.round((c.spent / budgetTotalSpent) * 100) : 0,
+        x1: sx.toFixed(1), y1: sy.toFixed(1), x2: tx.toFixed(1), y2: ty.toFixed(1),
+        calloutLeft: ex.toFixed(1) + 'px', calloutTop: ey.toFixed(1) + 'px',
+      };
+    });
+  }
+
+  return {
+    gaugeArcPath, availableArcPath, donutBranches,
+    donutHint: state.donutExpanded ? 'Tap to collapse' : 'Tap for a category breakdown',
+    gaugeBoxHeight: state.donutExpanded ? 280 : 178,
+    gaugeShiftY: state.donutExpanded ? 0 : -64,
+    gaugeOverflow: state.donutExpanded ? 'visible' : 'hidden',
+    budgetRemainingLabel: moneyWhole(budgetRemaining),
+    budgetPerDayLabel: moneyWhole(budgetRemaining / daysLeft),
+    budgetSpentTotalLabel: moneyWhole(budgetTotalSpent),
+    budgetPlanTotalLabel: moneyWhole(budgetTotalPlan),
+  };
+}
+
 export function selectHomeDashboard(state: AppState) {
   const { totalSpent: homeBudgetSpent, totalPlan: homeBudgetTotal } = selectBudgets(state);
   const homeBudgetPct = state.mounted && homeBudgetTotal > 0 ? Math.round((homeBudgetSpent / homeBudgetTotal) * 100) : 0;
