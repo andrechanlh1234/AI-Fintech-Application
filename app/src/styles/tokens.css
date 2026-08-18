@@ -1,0 +1,366 @@
+/* Cukai — design-system tokens and component classes. Plain native-platform
+   look: single green accent, true neutral grays, system font. Source of
+   truth for the system's look. */
+
+:root {
+  --color-bg: #f7f8f7;
+  --color-surface: #ffffff;
+  --color-text: #1a1c1a;
+  --color-text-muted: #6b6f6c;
+  --color-accent: #2e7d32;
+  --color-danger: #d93025;
+  --color-divider: color-mix(in srgb, #1a1c1a 14%, transparent);
+
+  /* Tonal ramp — true neutral gray, standard native surface hierarchy. */
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #f1f2f1;
+  --color-neutral-300: #e2e3e2;
+  --color-neutral-400: #c7c9c7;
+  --color-neutral-500: #a5a8a5;
+  --color-neutral-600: #7d817e;
+  --color-neutral-700: #5c605d;
+  --color-neutral-800: #3c3e3c;
+  --color-neutral-900: #212221;
+
+  /* Single brand accent — green, on the same neutral ramp. */
+  --color-accent-100: #e6f4e8;
+  --color-accent-200: #c2e5c6;
+  --color-accent-300: #96d19d;
+  --color-accent-400: #63b96e;
+  --color-accent-500: #439c4c;
+  --color-accent-600: #2e7d32;
+  --color-accent-700: #246428;
+  --color-accent-800: #1b4b1e;
+  --color-accent-900: #113213;
+
+  /* Semantic danger red — for destructive/flagged states only, not a brand
+     hue. Native apps reserve red for this; nothing else should use it. */
+  --color-danger-100: #fce8e6;
+  --color-danger-700: #a3241a;
+
+  /* Tax accent — a third, distinct warm gold voice reserved for the Tax
+     Center and tax-related tags/badges, so tax reads as its own "mode"
+     against the green money-management brand. Not used for buttons
+     outside Tax. */
+  --color-tax: #b7791f;
+  --color-tax-100: #fbf0dc;
+  --color-tax-200: #f6dfb0;
+  --color-tax-300: #edc47a;
+  --color-tax-400: #dea34a;
+  --color-tax-500: #c8862c;
+  --color-tax-600: #b7791f;
+  --color-tax-700: #935f18;
+  --color-tax-800: #6e4712;
+  --color-tax-900: #4a300c;
+
+  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading-weight: 600;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --space-1: 4.0px;
+  --space-2: 8.0px;
+  --space-3: 12.0px;
+  --space-4: 16.0px;
+  --space-6: 24.0px;
+  --space-8: 32.0px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+     light theme, a hairline edge + ambient darkness on a dark one. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.grayscale{filter:grayscale(1) contrast(1.08)}
+
+/* In-app background — same flat ground as the outer showcase wrapper
+   (var(--color-neutral-200)), so the phone's screens read as a continuation
+   of the same canvas, not a different surface. */
+.rainforest-canvas {
+  background-color: var(--color-neutral-200);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+/* Tracking and leading are size-specific, not one fixed value applied
+   everywhere — large display text wants tight leading and negative
+   tracking (letters read too far apart as they grow); small text wants
+   looser leading and near-zero-to-positive tracking for legibility. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; line-height: 1.05; letter-spacing: -0.02em; }
+h2 { font-size: 32px; line-height: 1.08; letter-spacing: -0.018em; }
+h3 { font-size: 25px; line-height: 1.1; letter-spacing: -0.014em; }
+h4 { font-size: 20px; line-height: 1.15; letter-spacing: -0.01em; }
+h5 { font-size: 16px; line-height: 1.2; letter-spacing: -0.004em; }
+h6 { font-size: 13px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; }
+.type-numeric { font-variant-numeric: tabular-nums; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 11px; margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+.text-muted { color: var(--color-text-muted); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — rules — */
+.hr {
+  height: 2px; border: 0; margin: var(--space-4) 0;
+  background: var(--color-divider);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text); /* matches the .input's 14px —
+     the pair sits side by side in sign-up rows */
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease,
+    transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease;
+}
+.btn svg { display: block; transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:not(:disabled):hover { box-shadow: var(--shadow-sm); }
+.btn:not(:disabled):active { transform: scale(0.96); }
+.btn-primary { background: var(--color-accent); color: #fff; }
+.btn-primary:hover { background: var(--color-accent-700); }
+.btn-primary:active { background: var(--color-accent-800); }
+.btn-secondary { border-color: var(--color-neutral-500); color: var(--color-text); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); justify-content: flex-start; text-align: left; }
+.btn-lg { width: 100%; padding: 16px 20px; font-size: 16px; }
+
+/* — forms — */
+.field > label {
+  display: block; font-size: 12px; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 14px; color: var(--color-text); caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; box-shadow: 0 0 0 3px var(--color-accent-100); }
+textarea.input { min-height: 90px; resize: vertical; }
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+  transition: background-color .2s ease, color .2s ease;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface);
+  border: 1.5px solid var(--color-neutral-400);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; color: var(--color-text-muted); flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: var(--color-text-muted);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-danger { background: var(--color-danger-100); color: var(--color-danger-700); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+.tag-tax { background: var(--color-tax-100); color: var(--color-tax-800); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-divider);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-2); border-bottom: 2px solid var(--color-divider);
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body { font-size: 14px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* — motion — screens fade/rise in on mount for free: sc-if swaps content by
+   unmounting/remounting fresh DOM nodes, and a CSS `animation` on the new
+   node's first paint fires automatically, no JS transition library needed. */
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* Directional page slides — forward navigation (drilling into a screen)
+   enters from the right, back navigation enters from the left, same as
+   native iOS/Android push transitions. Which one plays is decided in the
+   component's navDir state and bound via {{navClass}}, not by CSS alone. */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.screen-in { animation: screen-in .34s cubic-bezier(.16,1,.3,1) both; }
+.pop-in { animation: pop-in .22s cubic-bezier(.34,1.56,.64,1) both; }
+.slide-in-right { animation: slide-in-right .32s cubic-bezier(.16,1,.3,1) both; }
+.slide-in-left { animation: slide-in-left .32s cubic-bezier(.16,1,.3,1) both; }
+
+/* Progress/relief bars fill smoothly instead of snapping to their width. */
+.bar-fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
+
+/* Shared press-feedback for the raw (non-.btn) buttons and touch-target
+   cards throughout the app — quick-action tiles, onboarding options,
+   capture choice cards, icon buttons. */
+.pressable {
+  cursor: pointer;
+  transition: transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease,
+    filter .18s ease, border-color .18s ease, background-color .18s ease;
+}
+.pressable:hover { filter: brightness(0.97); }
+.pressable:active { transform: scale(0.97); }
+
+/* Bottom tab bar — smooth color/opacity crossfade between tabs, with a
+   small icon "bounce" on tap. */
+.tab-btn { transition: color .25s ease, opacity .25s ease, border-color .25s ease; }
+.tab-btn svg { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.tab-btn:active svg { transform: scale(0.85); }
+
+/* — material chrome — the tab bar and input bar float as a translucent
+   layer over scrolling content rather than an opaque strip, so content
+   scrolls underneath and hierarchy reads as depth, not a hard cutoff. The
+   bold top hairline stays (it's a brand cue), only the fill goes glass. */
+.material-chrome {
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .material-chrome { background: var(--color-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* Reduced motion isn't *no* feedback — it's a gentler, non-vestibular
+   equivalent: replace the slide/spring/scale motion with a short opacity
+   cross-fade, since the position/opacity change still aids comprehension
+   (something changed, here's the new state) without any parallax or push. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .screen-in, .slide-in-right, .slide-in-left, .pop-in {
+    animation-name: reduced-fade-in !important;
+    animation-duration: 140ms !important;
+    animation-timing-function: ease !important;
+  }
+  .btn, .pressable, .tab-btn, .tab-btn svg, .btn svg {
+    transition-duration: 90ms !important;
+  }
+  .btn:not(:disabled):active, .pressable:active { transform: none !important; }
+  .tab-btn:active svg { transform: none !important; }
+}
+@keyframes reduced-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
