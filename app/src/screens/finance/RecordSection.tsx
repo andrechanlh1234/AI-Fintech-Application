@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectRecordPage } from '../../store/selectors';
 import { money, signedMoney } from '../../lib/format';
@@ -64,6 +64,19 @@ export default function RecordSection() {
   const scrollCalendar = (dir: 1 | -1) => {
     railRef.current?.scrollBy({ left: dir * 160, behavior: 'smooth' });
   };
+
+  // Center the selected day in the rail on mount / when the selected day changes
+  // from outside the rail (e.g. after saving a scan) rather than leaving the
+  // strip scrolled to day 1.
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const idx = rec.calendarDays.findIndex((d) => d.isSelected);
+    const child = el.children[idx] as HTMLElement | undefined;
+    if (!child) return;
+    el.scrollTo({ left: child.offsetLeft - el.clientWidth / 2 + child.offsetWidth / 2, behavior: 'auto' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.selectedDayMonth, state.selectedDay]);
 
   const searchActive = !!state.txSearch || state.txFilter !== 'All';
   const netColor = rec.selectedDayNet >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)';
