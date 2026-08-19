@@ -18,7 +18,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed]);
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -144,10 +144,12 @@ export function useActions() {
       setThemeDark: () => dispatch({ type: 'SET_THEME', theme: 'dark' }),
 
       // manual records
-      addRecord: (listKey: ManualListKey) => dispatch({ type: 'ADD_RECORD', listKey }),
-      setRecordField: (listKey: ManualListKey, id: string, field: 'name' | 'amount', value: string) => dispatch({ type: 'SET_RECORD_FIELD', listKey, id, field, value }),
-      removeRecord: (listKey: ManualListKey, id: string) => dispatch({ type: 'REMOVE_RECORD', listKey, id }),
+      addRecord: (listKey: Exclude<ManualListKey, 'investments'>) => dispatch({ type: 'ADD_RECORD', listKey }),
+      setRecordField: (listKey: Exclude<ManualListKey, 'investments'>, id: string, field: 'name' | 'amount', value: string) => dispatch({ type: 'SET_RECORD_FIELD', listKey, id, field, value }),
+      removeRecord: (listKey: Exclude<ManualListKey, 'investments'>, id: string) => dispatch({ type: 'REMOVE_RECORD', listKey, id }),
       setInvestField: (idx: number, field: 'name' | 'qty' | 'buy' | 'cur', value: string) => dispatch({ type: 'SET_INVEST_FIELD', idx, field, value }),
+      addInvestmentRow: () => dispatch({ type: 'ADD_INVESTMENT_ROW' }),
+      removeInvestmentRow: (idx: number) => dispatch({ type: 'REMOVE_INVESTMENT_ROW', idx }),
 
       // subscriptions
       setSubDraft: (field: string, value: string) => dispatch({ type: 'SET_SUB_DRAFT_FIELD', field, value }),

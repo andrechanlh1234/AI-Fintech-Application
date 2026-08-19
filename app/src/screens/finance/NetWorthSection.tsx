@@ -3,9 +3,27 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { BRAND, subBadge } from '../../lib/constants';
-import type { AppState } from '../../store/types';
+import type { AppState, ManualData } from '../../store/types';
+
+type ManualListKey = Exclude<keyof ManualData, 'investments'>;
 
 const RANGE_OPTIONS: AppState['netWorthRange'][] = ['1M', '3M', '6M', '1Y', '3Y', 'ALL'];
+
+function AddLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="pressable"
+      style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12px var(--font-body)' }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12h14" /><path d="M12 5v14" />
+      </svg>
+      {label}
+    </button>
+  );
+}
 
 function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
   const badge = (row.brand && BRAND[row.brand]) || subBadge(row.name || '?');
@@ -36,6 +54,60 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
         </svg>
       )}
     </button>
+  );
+}
+
+// Manual entries (the normal case — there's no real bank sync) are edited
+// right here: name + amount (or, for investments, qty/buy/cur), with a
+// remove button. This is what makes "+ Add account" actually visible and
+// usable immediately, instead of adding an invisible unnamed row.
+function NwManualRowView({ row }: { row: NwRow }) {
+  const actions = useActions();
+  const isInvest = row.listKey === 'investments';
+
+  const remove = () => {
+    if (isInvest && row.idx != null) actions.removeInvestmentRow(row.idx);
+    else if (row.id) actions.removeRecord(row.listKey as ManualListKey, row.id);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+      {isInvest ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+          <input
+            className="input" value={row.name} placeholder="Investment name"
+            onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'name', e.target.value)}
+          />
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input className="input" value={row.qty ?? ''} placeholder="Qty" style={{ flex: 1 }}
+              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'qty', e.target.value)} />
+            <input className="input" value={row.buy ?? ''} placeholder="Buy price" style={{ flex: 1 }}
+              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'buy', e.target.value)} />
+            <input className="input" value={row.cur ?? ''} placeholder="Current price" style={{ flex: 1 }}
+              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'cur', e.target.value)} />
+          </div>
+        </div>
+      ) : (
+        <>
+          <input
+            className="input" value={row.name} placeholder="Name" style={{ flex: 1.3 }}
+            onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'name', e.target.value)}
+          />
+          <input
+            className="input" value={row.rawAmount ?? ''} placeholder="Amount (RM)" style={{ flex: 1 }}
+            onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'amount', e.target.value)}
+          />
+        </>
+      )}
+      <button
+        type="button" onClick={remove} aria-label="Remove" className="pressable"
+        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
   );
 }
 
@@ -182,8 +254,25 @@ export function NetWorthSection() {
             {grp.expanded && (
               <div className="pop-in" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--color-neutral-300)' }}>
                 {grp.rows.map((row) => (
-                  <NwRowView key={row.listKey + ':' + row.id} row={row} onOpen={() => openRow(row)} />
+                  row.isManual
+                    ? <NwManualRowView key={row.listKey + ':' + (row.id ?? row.idx)} row={row} />
+                    : <NwRowView key={row.listKey + ':' + row.id} row={row} onOpen={() => openRow(row)} />
                 ))}
+                {grp.rows.length === 0 && (
+                  <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', padding: '4px 0 10px' }}>Nothing here yet.</div>
+                )}
+                <div style={{ display: 'flex', gap: 16, paddingTop: grp.rows.length ? 10 : 0 }}>
+                  {grp.key === 'cash' && <AddLink label="Add account" onClick={() => actions.addRecord('bankAccounts')} />}
+                  {grp.key === 'invest' && <AddLink label="Add investment" onClick={actions.addInvestmentRow} />}
+                  {grp.key === 'other' && <>
+                    <AddLink label="Add property" onClick={() => actions.addRecord('properties')} />
+                    <AddLink label="Add other asset" onClick={() => actions.addRecord('otherAssets')} />
+                  </>}
+                  {grp.key === 'liab' && <>
+                    <AddLink label="Add card" onClick={() => actions.addRecord('creditCards')} />
+                    <AddLink label="Add liability" onClick={() => actions.addRecord('liabilities')} />
+                  </>}
+                </div>
               </div>
             )}
           </div>

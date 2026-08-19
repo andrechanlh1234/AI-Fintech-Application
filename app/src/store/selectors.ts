@@ -5,14 +5,35 @@
 import type { AppState } from './types';
 import { money, moneyWhole, clamp } from '../lib/format';
 import {
-  ALL_TX, MONTH_SUMMARIES, REVIEW_ITEMS, NETWORTH_SERIES, NETWORTH_1M,
+  MONTH_SUMMARIES, REVIEW_ITEMS,
   type Transaction, type BudgetCategory,
 } from '../lib/seedData';
 import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, NETWORTH_MONTH_LABELS, MONTH_ORDER } from '../lib/constants';
 import {
   buildTaxModel, estimateAnnualIncome, marginalTaxRate, ASSUMED_TAX_RATE,
-  TAX_ITEMS_META, TAX_ITEM_DATA, RELIEF_INFO, type TaxProfile,
+  TAX_ITEMS_META, RELIEF_INFO, categoryToReliefKey, type TaxProfile, type TaxItemData,
 } from '../lib/taxEngine';
+
+/** Real deductible transactions (tax=true) for a given tax year, grouped by
+ * LHDN relief item key, in the shape buildTaxModel() expects. No hardcoded
+ * amounts — every RM here traces back to a transaction the user actually
+ * scanned or accepted from review. Transactions without a reliefKey (e.g.
+ * scan categories with no clear LHDN mapping) are omitted rather than
+ * guessed into a bucket. */
+function buildCapturedData(transactions: Transaction[], taxYear: string): Record<string, TaxItemData> {
+  const targetYear = taxYear === 'YA2025' ? '2025' : '2026';
+  const data: Record<string, TaxItemData> = {};
+  transactions.forEach((t) => {
+    if (!t.tax || !t.reliefKey) return;
+    const yearMatch = t.dateLabel.match(/\b(20\d{2})\b/);
+    if (yearMatch && yearMatch[1] !== targetYear) return;
+    const amount = Math.abs(t.amount);
+    const entry = data[t.reliefKey] || (data[t.reliefKey] = { captured: 0, receipts: [] });
+    entry.captured += amount;
+    entry.receipts.push({ merchant: t.merchant, amount, dateLabel: t.dateLabel });
+  });
+  return data;
+}
 
 function sumOb(state: AppState, listKey: 'bankAccounts' | 'creditCards' | 'properties' | 'otherAssets' | 'liabilities') {
   return state.ob.manual[listKey].reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -21,6 +42,13 @@ function sumOb(state: AppState, listKey: 'bankAccounts' | 'creditCards' | 'prope
 export interface NwRow {
   name: string; subLabel: string; balanceValue: number; brand?: string | null;
   clickable: boolean; listKey: string; id: string | null;
+  /** Manual entries (the common case, since there's no real bank sync) are
+   * edited inline right in this row — name/amount text fields — rather than
+   * through a tap-to-detail modal, so a freshly-added blank row is visible
+   * and fillable immediately instead of disappearing until it has a name. */
+  isManual: boolean;
+  qty?: string; buy?: string; cur?: string; idx?: number; // manual investment rows only
+  rawAmount?: string; // manual asset/liability rows only — bind inputs to this, not balanceValue
 }
 
 export function selectNetWorth(state: AppState) {
@@ -37,28 +65,30 @@ export function selectNetWorth(state: AppState) {
   const otherAssetsTotalVal = obPropertyTotal + obOtherAssetTotal;
   const liabTotalVal = seedCreditTotal + obCreditTotal + obLiabilityTotal;
 
-  const nwEditRow = (name: string, amount: number, subLabel: string, listKey: string, id: string, brand?: string | null): NwRow =>
-    ({ name, subLabel, balanceValue: amount, brand, clickable: !!(listKey && id), listKey, id });
-  const nwInvestRow = (r: { name: string; qty: string; cur: string; id: string; brand?: string | null }, listKey: string): NwRow =>
-    ({ name: r.name, subLabel: 'Tap to edit', balanceValue: (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), brand: r.brand, clickable: !!r.id, listKey, id: r.id });
+  const nwSeedRow = (name: string, amount: number, listKey: string, id: string, brand?: string | null): NwRow =>
+    ({ name, subLabel: 'Synced · tap to edit', balanceValue: amount, brand, clickable: true, listKey, id, isManual: false });
+  const nwManualRow = (name: string, amount: number, listKey: string, id: string, rawAmount: string): NwRow =>
+    ({ name, subLabel: 'Manual', balanceValue: amount, clickable: false, listKey, id, isManual: true, rawAmount });
+  const nwInvestRow = (r: { name: string; qty: string; buy: string; cur: string; id: string; brand?: string | null }, listKey: string, isManual: boolean, idx?: number): NwRow =>
+    ({ name: r.name, subLabel: isManual ? 'Manual' : 'Synced · tap to edit', balanceValue: (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), brand: r.brand, clickable: !isManual, listKey, id: r.id, isManual, qty: r.qty, buy: r.buy, cur: r.cur, idx });
 
   const groups = [
     { key: 'cash', label: 'Cash', totalVal: cashTotalVal, rows: [
-      ...state.netWorthSeed.cash.map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Synced · tap to edit', 'seed.cash', r.id, r.brand)),
-      ...ob.manual.bankAccounts.filter((r) => r.name).map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Manual · tap to view history', 'bankAccounts', r.id)),
+      ...state.netWorthSeed.cash.map((r) => nwSeedRow(r.name, parseFloat(r.amount) || 0, 'seed.cash', r.id, r.brand)),
+      ...ob.manual.bankAccounts.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'bankAccounts', r.id, r.amount)),
     ] },
     { key: 'invest', label: 'Investments', totalVal: investTotalVal, rows: [
-      ...state.netWorthSeed.investments.map((r) => nwInvestRow(r, 'seed.investments')),
-      ...ob.manual.investments.filter((r) => r.name).map((r, i) => nwInvestRow({ ...r, id: r.id || 'mi' + i }, 'investments')),
+      ...state.netWorthSeed.investments.map((r) => nwInvestRow(r, 'seed.investments', false)),
+      ...ob.manual.investments.map((r, i) => nwInvestRow({ ...r, id: r.id || 'mi' + i }, 'investments', true, i)),
     ] },
     { key: 'other', label: 'Other assets', totalVal: otherAssetsTotalVal, rows: [
-      ...ob.manual.properties.filter((r) => r.name).map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Manual · tap to view history', 'properties', r.id)),
-      ...ob.manual.otherAssets.filter((r) => r.name).map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Manual · tap to view history', 'otherAssets', r.id)),
+      ...ob.manual.properties.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'properties', r.id, r.amount)),
+      ...ob.manual.otherAssets.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'otherAssets', r.id, r.amount)),
     ] },
     { key: 'liab', label: 'Liabilities', totalVal: liabTotalVal, rows: [
-      ...state.netWorthSeed.creditCards.map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Synced · tap to edit', 'seed.creditCards', r.id, r.brand)),
-      ...ob.manual.creditCards.filter((r) => r.name).map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Manual · tap to view history', 'creditCards', r.id)),
-      ...ob.manual.liabilities.filter((r) => r.name).map((r) => nwEditRow(r.name, parseFloat(r.amount) || 0, 'Manual · tap to view history', 'liabilities', r.id)),
+      ...state.netWorthSeed.creditCards.map((r) => nwSeedRow(r.name, parseFloat(r.amount) || 0, 'seed.creditCards', r.id, r.brand)),
+      ...ob.manual.creditCards.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'creditCards', r.id, r.amount)),
+      ...ob.manual.liabilities.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'liabilities', r.id, r.amount)),
     ] },
   ].map((g) => ({ ...g, icon: NW_GROUP_ICON[g.key], expanded: state.expandedNwGroup === g.key }));
 
@@ -69,13 +99,21 @@ export function selectNetWorth(state: AppState) {
   return { groups, assets, liabilities, netWorth };
 }
 
+// There is no real historical net-worth tracking (that needs a backend
+// recording snapshots over time, which doesn't exist yet). Rather than
+// show a fabricated up-and-to-the-right trend, the chart is a flat line at
+// the user's actual current net worth — delta is honestly 0 until real
+// history exists. Month labels are just calendar labels for the x-axis,
+// not implied past values.
 export function selectNetWorthChart(state: AppState) {
-  const rangeSlice = (n: number) => ({ series: NETWORTH_SERIES.slice(-n), labels: NETWORTH_MONTH_LABELS.slice(-n) });
-  const chartData = state.netWorthRange === '1M' ? { series: NETWORTH_1M, labels: null as string[] | null }
+  const { netWorth } = selectNetWorth(state);
+  const flat = (n: number) => new Array(n).fill(netWorth) as number[];
+  const rangeSlice = (n: number) => ({ series: flat(n), labels: NETWORTH_MONTH_LABELS.slice(-n) });
+  const chartData = state.netWorthRange === '1M' ? { series: flat(7), labels: null as string[] | null }
     : state.netWorthRange === '3M' ? rangeSlice(3)
     : state.netWorthRange === '6M' ? rangeSlice(6)
     : state.netWorthRange === '1Y' ? rangeSlice(12)
-    : { series: NETWORTH_SERIES, labels: NETWORTH_MONTH_LABELS };
+    : rangeSlice(NETWORTH_MONTH_LABELS.length);
   const series = chartData.series, seriesLabels = chartData.labels;
   const minV = Math.min(...series), maxV = Math.max(...series);
   const range = Math.max(1, maxV - minV);
@@ -87,7 +125,7 @@ export function selectNetWorthChart(state: AppState) {
   const linePoints = pts.map((p) => p.join(',')).join(' ');
   const areaPoints = pts.map((p) => p.join(',')).join(' ') + ' ' + pts[pts.length - 1][0] + ',128 ' + pts[0][0] + ',128';
   const delta = series[series.length - 1] - series[0];
-  const deltaPct = Number(((delta / series[0]) * 100).toFixed(1));
+  const deltaPct = series[0] !== 0 ? Number(((delta / series[0]) * 100).toFixed(1)) : 0;
   const selIdx = state.nwSelectedIdx != null && state.nwSelectedIdx < series.length ? state.nwSelectedIdx : null;
   const hasSelection = selIdx != null && !!seriesLabels;
   return {
@@ -196,7 +234,7 @@ export function selectHomeDashboard(state: AppState) {
 
   const isPremiumHome = state.subscriptionTier === 'premium';
   const homeLifeMeta = TAX_ITEMS_META.lifestyle.find((i) => i.key === 'life_general')!;
-  const homeLifeData = (TAX_ITEM_DATA[state.taxYear] || {}).life_general || { captured: 0, receipts: [] };
+  const homeLifeData = buildCapturedData(state.transactions, state.taxYear).life_general || { captured: 0, receipts: [] };
   const homeLifePct = homeLifeMeta ? Math.round((homeLifeData.captured / homeLifeMeta.cap) * 100) : 0;
   const insight = homeLifePct >= 85
     ? { title: 'Lifestyle relief ' + homeLifePct + '% used', sub: 'RM ' + moneyWhole(homeLifeMeta.cap - homeLifeData.captured) + ' of your RM ' + moneyWhole(homeLifeMeta.cap) + ' cap left this year — tap to review in Tax Center →' }
@@ -208,7 +246,7 @@ export function selectHomeDashboard(state: AppState) {
     const cat = CAT_ICON[c.name] ? c.name : b.key === 'insurance' ? 'Health' : b.key === 'goals' ? 'Lifestyle' : 'Bills';
     budgetDerivedTx.push({ id: 'bud-' + it.id, merchant: it.name, cat, dateLabel: 'Recurring', dateGroup: 'This week', month: 'Aug', amount: -(parseFloat(String(it.amount)) || 0), tax: false, payment: b.name + ' budget' });
   })));
-  const combinedTx = ALL_TX.concat(budgetDerivedTx);
+  const combinedTx = state.transactions.concat(budgetDerivedTx);
 
   const recentTx = combinedTx.filter((t) => t.dateGroup === 'Today' || t.dateGroup === 'Yesterday').slice(0, 3).map((t) => ({
     ...t, ...rowBadge(t), catLabel: t.cat,
@@ -237,13 +275,15 @@ export function selectTaxCenter(state: AppState) {
   const ob = state.ob;
   const profile: TaxProfile = { marital: ob.marital, dependants: ob.dependants, reliefs: ob.reliefs, hasDisability: ob.hasDisability, hasHousingLoan: ob.hasHousingLoan };
   const grossAnnualIncome = estimateAnnualIncome(ob.approxIncome || ob.income);
-  const rawTaxModel = buildTaxModel(state.taxYear, profile);
+  const capturedData = buildCapturedData(state.transactions, state.taxYear);
+  const rawTaxModel = buildTaxModel(profile, capturedData);
   const chargeableIncomeEst = Math.max(0, grossAnnualIncome - 9000 - rawTaxModel.totalCaptured);
   const marginalRate = grossAnnualIncome > 0 ? marginalTaxRate(chargeableIncomeEst) : ASSUMED_TAX_RATE;
   const taxBracketPct = Math.round(marginalRate * 100);
-  const taxModel = buildTaxModel(state.taxYear, profile, marginalRate);
+  const taxModel = buildTaxModel(profile, capturedData, marginalRate);
   const prevTaxYear = state.taxYear === 'YA2026' ? 'YA2025' : 'YA2026';
-  const prevTaxModel = buildTaxModel(prevTaxYear, profile, marginalRate);
+  const prevCapturedData = buildCapturedData(state.transactions, prevTaxYear);
+  const prevTaxModel = buildTaxModel(profile, prevCapturedData, marginalRate);
   const { totalCaptured, totalCap, totalRemaining: totalAvailable, totalPotentialBenefit } = taxModel;
 
   const taxOptPct = state.mounted && totalCap > 0 ? Math.round((totalCaptured / totalCap) * 100) : 0;
@@ -277,13 +317,15 @@ export function selectReliefImpact(state: AppState) {
   const scanAmountNum = parseFloat(state.scanAmount) || 0;
   const reliefInfo = RELIEF_INFO[state.scanCategory] || null;
   if (!reliefInfo) return { hasReliefInfo: false as const };
-  const beforePct = state.mounted ? Math.min(100, Math.round((reliefInfo.before / reliefInfo.cap) * 100)) : 0;
-  const after = Math.min(reliefInfo.cap, reliefInfo.before + scanAmountNum);
+  const reliefKey = categoryToReliefKey(state.scanCategory);
+  const before = reliefKey ? (buildCapturedData(state.transactions, state.taxYear)[reliefKey]?.captured ?? 0) : 0;
+  const beforePct = state.mounted ? Math.min(100, Math.round((before / reliefInfo.cap) * 100)) : 0;
+  const after = Math.min(reliefInfo.cap, before + scanAmountNum);
   const afterPct = state.mounted ? Math.min(100, Math.round((after / reliefInfo.cap) * 100)) : 0;
   return {
     hasReliefInfo: true as const, name: reliefInfo.name, why: reliefInfo.why,
     beforePct, afterPct, remainingLabel: moneyWhole(Math.max(0, reliefInfo.cap - after)),
-    beforeLabel: moneyWhole(reliefInfo.before), afterLabel: moneyWhole(after), capLabel: moneyWhole(reliefInfo.cap),
+    beforeLabel: moneyWhole(before), afterLabel: moneyWhole(after), capLabel: moneyWhole(reliefInfo.cap),
   };
 }
 
@@ -335,7 +377,8 @@ export function selectStatsPage(state: AppState) {
   const statsMonths = state.statsPeriod === 'This month' ? [state.historyMonth]
     : state.statsPeriod === 'Last 3 months' ? MONTH_ORDER.slice(Math.max(0, MONTH_ORDER.indexOf(state.historyMonth) - 2), MONTH_ORDER.indexOf(state.historyMonth) + 1)
     : MONTH_ORDER.filter((m) => MONTH_SUMMARIES[m]);
-  const statsTx = ALL_TX.filter((t) => statsMonths.includes(t.month) && t.amount < 0);
+  const { combinedTx } = selectHomeDashboard(state);
+  const statsTx = combinedTx.filter((t) => statsMonths.includes(t.month) && t.amount < 0);
   const statsCatTotals: Record<string, number> = {};
   statsTx.forEach((t) => { statsCatTotals[t.cat] = (statsCatTotals[t.cat] || 0) + Math.abs(t.amount); });
   const statsCatSum = Object.values(statsCatTotals).reduce((s, v) => s + v, 0);

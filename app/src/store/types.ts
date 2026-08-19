@@ -1,5 +1,5 @@
 // State shape ported from Cukai v7.dc.html (lines 1967-2021).
-import type { RecordRow, InvestRow, NetWorthSeed, Bucket, AiMessage, BalanceEntry } from '../lib/seedData';
+import type { RecordRow, InvestRow, NetWorthSeed, Bucket, AiMessage, BalanceEntry, Transaction } from '../lib/seedData';
 
 export interface Subscription {
   name: string;
@@ -126,6 +126,11 @@ export interface AppState {
   expandedNwGroup: string | null;
   netWorthSeed: NetWorthSeed;
   finance: { buckets: Bucket[] };
+  /** Real transactions the user has added — via a saved scan or an accepted
+   * review-import item. Starts empty; nothing here unless the user put it
+   * there. Budget line items and REVIEW_ITEMS are derived/overlaid on top
+   * of this in selectors, not stored here. */
+  transactions: Transaction[];
 }
 
 export type { BalanceEntry };

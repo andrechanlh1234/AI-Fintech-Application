@@ -2,9 +2,15 @@
 // Each Action variant corresponds 1:1 to an original `this.xyz = (...) => this.setState(...)` method,
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
 import type { AppState, ManualData, BalanceDraft } from './types';
-import { mkRecord, mkCategory, mkItem, REVIEW_ITEMS, type ReviewItem } from '../lib/seedData';
+import { mkRecord, mkCategory, mkItem, mkInvestRow, REVIEW_ITEMS, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
 import { clamp } from '../lib/format';
+import { categoryToReliefKey } from '../lib/taxEngine';
+
+const BLANK_SCAN_FIELDS = {
+  scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
+  scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '',
+} as const;
 
 type ManualListKey = keyof ManualData;
 
@@ -70,10 +76,12 @@ export type Action =
   | { type: 'TOGGLE_SETTING'; key: 'budgetAlerts' | 'taxReminders' | 'weeklySummary' }
   | { type: 'SET_THEME'; theme: 'light' | 'dark' }
 
-  | { type: 'ADD_RECORD'; listKey: ManualListKey }
-  | { type: 'SET_RECORD_FIELD'; listKey: ManualListKey; id: string; field: 'name' | 'amount'; value: string }
-  | { type: 'REMOVE_RECORD'; listKey: ManualListKey; id: string }
+  | { type: 'ADD_RECORD'; listKey: Exclude<ManualListKey, 'investments'> }
+  | { type: 'SET_RECORD_FIELD'; listKey: Exclude<ManualListKey, 'investments'>; id: string; field: 'name' | 'amount'; value: string }
+  | { type: 'REMOVE_RECORD'; listKey: Exclude<ManualListKey, 'investments'>; id: string }
   | { type: 'SET_INVEST_FIELD'; idx: number; field: 'name' | 'qty' | 'buy' | 'cur'; value: string }
+  | { type: 'ADD_INVESTMENT_ROW' }
+  | { type: 'REMOVE_INVESTMENT_ROW'; idx: number }
 
   | { type: 'SET_SUB_DRAFT_FIELD'; field: string; value: string }
   | { type: 'ADD_SUBSCRIPTION' }
@@ -310,6 +318,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return updateManual(state, (m) => ({ ...m, [action.listKey]: (m[action.listKey] as any[]).map((r) => r.id === action.id ? { ...r, [action.field]: action.value } : r) }));
     case 'REMOVE_RECORD':
       return updateManual(state, (m) => ({ ...m, [action.listKey]: (m[action.listKey] as any[]).filter((r) => r.id !== action.id) }));
+    case 'ADD_INVESTMENT_ROW':
+      return updateManual(state, (m) => ({ ...m, investments: [...m.investments, mkInvestRow('', '', '', '')] }));
+    case 'REMOVE_INVESTMENT_ROW':
+      return updateManual(state, (m) => ({ ...m, investments: m.investments.filter((_, i) => i !== action.idx) }));
     case 'SET_INVEST_FIELD':
       return updateManual(state, (m) => {
         const investments = m.investments.slice();
@@ -384,9 +396,20 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, reviewOpen: false };
     case 'REVIEW_DECIDE': {
       const pending = reviewPending(state.reviewDecisions);
-      const id = pending[0]?.id;
-      if (!id) return state;
-      return { ...state, reviewDecisions: { ...state.reviewDecisions, [id]: action.dir }, reviewDragging: false, reviewDragX: 0 };
+      const item = pending[0];
+      if (!item) return state;
+      let transactions = state.transactions;
+      if (action.dir === 'accept') {
+        const reliefKey = categoryToReliefKey(item.cat) ?? undefined;
+        const dateGroup = item.dateLabel.startsWith('Today') ? 'Today' : item.dateLabel === 'Yesterday' ? 'Yesterday' : 'This week';
+        const tx: Transaction = {
+          id: 'rev-' + item.id, merchant: item.merchant, cat: item.cat,
+          dateLabel: item.dateLabel, dateGroup, month: 'Aug',
+          amount: -item.amount, tax: !!reliefKey, brand: item.brand, payment: item.payment, reliefKey,
+        };
+        transactions = [...state.transactions, tx];
+      }
+      return { ...state, reviewDecisions: { ...state.reviewDecisions, [item.id]: action.dir }, reviewDragging: false, reviewDragX: 0, transactions };
     }
     case 'REVIEW_DOWN':
       return { ...state, reviewDragging: true, reviewDragStartX: action.clientX, reviewDragX: 0 };
@@ -401,23 +424,38 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan / capture receipt ----
     case 'OPEN_SCAN':
-      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false };
+      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, ...BLANK_SCAN_FIELDS };
     case 'CLOSE_SCAN':
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
+      // True manual entry — fields stay blank, no simulated OCR result.
       return { ...state, scanStep: 'confirm' };
     case 'CAPTURE_PHOTO_START':
       return { ...state, scanStep: 'processing' };
     case 'CAPTURE_PHOTO_DONE':
-      return { ...state, scanStep: 'confirm' };
+      // No real camera/OCR integration — this simulates what extraction
+      // would produce so the confirm step has something to review/edit.
+      return {
+        ...state, scanStep: 'confirm',
+        scanMerchant: 'Popular Bookstore', scanAmount: '86.00', scanCategory: 'Lifestyle', scanDeductible: true,
+      };
     case 'SET_SCAN_FIELD':
       return { ...state, [action.field]: action.value };
     case 'SET_SCAN_DEDUCTIBLE':
       return { ...state, scanDeductible: action.value };
-    case 'SAVE_SCAN':
-      return { ...state, scanStep: 'saved' };
+    case 'SAVE_SCAN': {
+      const amount = parseFloat(state.scanAmount) || 0;
+      if (!state.scanMerchant || !amount) return { ...state, scanStep: 'saved' };
+      const reliefKey = state.scanDeductible ? (categoryToReliefKey(state.scanCategory) ?? undefined) : undefined;
+      const tx: Transaction = {
+        id: 'scan-' + uid(), merchant: state.scanMerchant, cat: state.scanCategory,
+        dateLabel: state.scanDate, dateGroup: 'Today', month: 'Aug',
+        amount: -amount, tax: state.scanDeductible, payment: state.scanPaymentMethod, reliefKey,
+      };
+      return { ...state, scanStep: 'saved', transactions: [...state.transactions, tx] };
+    }
     case 'SCAN_ANOTHER':
-      return { ...state, scanStep: 'capture' };
+      return { ...state, scanStep: 'capture', ...BLANK_SCAN_FIELDS };
     case 'VIEW_IN_TAX':
       return { ...state, scanOpen: false, tab: 'tax' };
 

@@ -56,27 +56,22 @@ export const TAX_ITEMS_META: Record<string, TaxItemMeta[]> = {
 export interface TaxReceipt { merchant: string; amount: number; dateLabel: string }
 export interface TaxItemData { captured: number; receipts: TaxReceipt[] }
 
-export const TAX_ITEM_DATA: Record<string, Record<string, TaxItemData>> = {
-  YA2026: {
-    indiv_self: { captured: 9000, receipts: [] },
-    indiv_education: { captured: 1600, receipts: [{ merchant: 'UNITAR Course Fees', amount: 1600.0, dateLabel: '2 Aug 2026' }] },
-    indiv_skills: { captured: 450, receipts: [{ merchant: 'Coursera Subscription', amount: 450.0, dateLabel: '14 Jul 2026' }] },
-    med_self: { captured: 1940, receipts: [{ merchant: 'Klinik Mediviron', amount: 120.0, dateLabel: '6 Aug 2026' }, { merchant: 'Guardian Pharmacy', amount: 43.2, dateLabel: '5 Aug 2026' }] },
-    med_parents: { captured: 1000, receipts: [{ merchant: "Mum's Clinic Visit", amount: 380.0, dateLabel: '28 Jul 2026' }] },
-    life_general: { captured: 2180, receipts: [{ merchant: 'Popular Bookstore', amount: 86.0, dateLabel: '9 Aug 2026' }] },
-    epf_life: { captured: 1520, receipts: [{ merchant: 'Prudential Premium', amount: 540.0, dateLabel: '1 Aug 2026' }] },
-    epf_socso: { captured: 350, receipts: [{ merchant: 'SOCSO (PERKESO) — payroll', amount: 350.0, dateLabel: 'Ongoing' }] },
-  },
-  YA2025: {
-    indiv_self: { captured: 9000, receipts: [] },
-    indiv_education: { captured: 1400, receipts: [{ merchant: 'INTI College Fees', amount: 1400.0, dateLabel: '1 Dec 2025' }] },
-    med_self: { captured: 1700, receipts: [{ merchant: 'Klinik Famili', amount: 95.0, dateLabel: '8 Dec 2025' }, { merchant: 'Watsons Pharmacy', amount: 38.5, dateLabel: '3 Dec 2025' }] },
-    med_parents: { captured: 900, receipts: [{ merchant: "Dad's Physiotherapy", amount: 310.0, dateLabel: '20 Nov 2025' }] },
-    life_general: { captured: 1850, receipts: [{ merchant: 'Kinokuniya Bookstore', amount: 72.0, dateLabel: '12 Dec 2025' }] },
-    epf_life: { captured: 1500, receipts: [{ merchant: 'AIA Premium', amount: 480.0, dateLabel: '28 Nov 2025' }] },
-    epf_socso: { captured: 350, receipts: [{ merchant: 'SOCSO (PERKESO) — payroll', amount: 350.0, dateLabel: 'Ongoing' }] },
-  },
+// Which LHDN relief item a scanned/reviewed expense category counts toward.
+// Only categories with a clear, defensible LHDN correspondence are mapped;
+// everything else returns null (not auto-assigned to any relief item) rather
+// than guessing. This drives real captured-amount totals — there is no
+// hardcoded per-item "captured" data anymore; see selectTaxCenter in
+// store/selectors.ts, which builds a capturedData map from state.transactions.
+const CATEGORY_TO_RELIEF_KEY: Record<string, string> = {
+  Lifestyle: 'life_general',
+  Health: 'med_self',
+  Shopping: 'life_general',
+  Bills: 'life_general',
 };
+
+export function categoryToReliefKey(category: string): string | null {
+  return CATEGORY_TO_RELIEF_KEY[category] ?? null;
+}
 
 export const ASSUMED_TAX_RATE = 0.24;
 
@@ -150,9 +145,9 @@ export interface TaxModel {
   allReceipts: { merchant: string; amount: number; dateLabel: string; itemLabel: string; groupKey: string }[];
 }
 
-export function buildTaxModel(taxYear: string, profile: TaxProfile | null, rate?: number): TaxModel {
+export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<string, TaxItemData>, rate?: number): TaxModel {
   const r = rate == null ? ASSUMED_TAX_RATE : rate;
-  const itemData = TAX_ITEM_DATA[taxYear] || {};
+  const itemData = capturedData;
   const groups: TaxModelGroup[] = TAX_GROUPS_META.map((g) => {
     const items: TaxModelItem[] = TAX_ITEMS_META[g.key]
       .filter((im) => isTaxItemRelevant(im.key, im, profile))
@@ -187,9 +182,12 @@ export function buildTaxModel(taxYear: string, profile: TaxProfile | null, rate?
   return { groups, totalCaptured, totalCap, totalRemaining, totalPotentialBenefit, allReceipts };
 }
 
-export const RELIEF_INFO: Record<string, { name: string; cap: number; before: number; why: string }> = {
-  Lifestyle: { name: 'Lifestyle Relief', cap: 2500, before: 2180, why: "Books, personal computers/smartphones, sports equipment and internet subscriptions qualify under LHDN's Lifestyle relief." },
-  Health: { name: 'Medical Expenses Relief', cap: 8000, before: 1940, why: 'Medical treatment for yourself, your spouse or child is deductible under the Medical Expenses relief.' },
+// Static reference info only — "before" (how much of the cap is already
+// captured) is computed live from the user's actual transactions in
+// selectReliefImpact (store/selectors.ts), not hardcoded here.
+export const RELIEF_INFO: Record<string, { name: string; cap: number; why: string }> = {
+  Lifestyle: { name: 'Lifestyle Relief', cap: 2500, why: "Books, personal computers/smartphones, sports equipment and internet subscriptions qualify under LHDN's Lifestyle relief." },
+  Health: { name: 'Medical Expenses Relief', cap: 10000, why: 'Medical treatment for yourself, your spouse or child is deductible under the Medical Expenses relief.' },
 };
 
 export const TAX_GROUP_ICON: Record<string, string> = { individual: 'isPerson', medical: 'isMedical', lifestyle: 'isBook', epf: 'isShield', child: 'isUsers' };

@@ -1,5 +1,7 @@
-// Ported from Cukai v7.dc.html state initializer (lines 1967-2021).
-import { mkRecord, mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
+// Ported from Cukai v7.dc.html state initializer (lines 1967-2021), with
+// every pre-filled example value removed — a fresh user starts at RM0 with
+// no transactions/subscriptions/accounts until they enter their own.
+import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
 import type { AppState } from './types';
 
 const emptySubDraft = {
@@ -17,17 +19,14 @@ export function buildInitialState(): AppState {
       approxIncome: '', multipleIncome: null, incomeTypes: [], reliefs: [], otherText: {}, agreedTerms: false,
       setupMethod: null, linkedIds: [], connectingId: null,
       manual: {
-        bankAccounts: [mkRecord('UOB One', '5000'), mkRecord('Maybank Savings', '10000'), mkRecord('CIMB', '3000')],
-        creditCards: [mkRecord('UOB One Card', '2000'), mkRecord('HSBC Live+', '1500'), mkRecord('Maybank Visa', '800')],
-        properties: [mkRecord('Property 1', '800000'), mkRecord('Property 2', '500000')],
-        otherAssets: [mkRecord('Car', '80000'), mkRecord('Gold', '20000'), mkRecord('Investments', '50000')],
-        liabilities: [mkRecord('Personal Loan', '30000'), mkRecord('Student Loan', '15000')],
+        bankAccounts: [],
+        creditCards: [],
+        properties: [],
+        otherAssets: [],
+        liabilities: [],
         investments: [mkInvestRow('', '', '', ''), mkInvestRow('', '', '', ''), mkInvestRow('', '', '', '')],
       },
-      subs: [
-        { name: 'Netflix', amount: '55', frequency: 'Monthly', startDate: '15 Jan 2026', nextPayment: '15 Aug 2026', method: 'Maybank Visa', category: 'Entertainment' },
-        { name: 'Spotify', amount: '15.90', frequency: 'Monthly', startDate: '20 Feb 2026', nextPayment: '20 Aug 2026', method: "Touch 'n Go eWallet", category: 'Entertainment' },
-      ],
+      subs: [],
       subDraft: { ...emptySubDraft },
       goals: [], savingsTarget: '',
     },
@@ -38,7 +37,7 @@ export function buildInitialState(): AppState {
     nwSelectedIdx: null,
     historyMonth: 'Aug',
     showWhyDeductible: false,
-    scanTaxAmount: '0.70', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
+    scanTaxAmount: '', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
     expandedBucket: null,
     expandedTaxGroup: null, taxItemDetailOpen: null, showAllTaxReceipts: false,
     txSearch: '',
@@ -46,10 +45,13 @@ export function buildInitialState(): AppState {
     confirmedIds: {},
     reviewOpen: false, reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
     scanOpen: false, scanStep: 'capture', scanFrom: 'home',
-    scanMerchant: 'Popular Bookstore', scanAmount: '86.00', scanDate: '9 Aug 2026',
-    scanCategory: 'Lifestyle', scanDeductible: true,
+    // Blank until the user fills them in (manual entry) or capturePhoto's
+    // simulated-OCR result fills them in (see CAPTURE_PHOTO_DONE in reducer.ts).
+    scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
+    scanCategory: 'Food & Drink', scanDeductible: false,
     taxYear: 'YA2026',
     mounted: false,
+    transactions: [],
 
     aiView: 'chat', aiMessages: [], aiInput: '', aiTyping: false,
     theme: 'light',
@@ -70,10 +72,12 @@ const STORAGE_KEY = 'cukai_v7_data';
 
 export function loadPersisted(): Partial<{
   manual: AppState['ob']['manual'];
+  subs: AppState['ob']['subs'];
   buckets: AppState['finance']['buckets'];
   obDone: boolean;
   theme: AppState['theme'];
   netWorthSeed: AppState['netWorthSeed'];
+  transactions: AppState['transactions'];
 }> | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -87,10 +91,12 @@ export function persistState(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       manual: state.ob.manual,
+      subs: state.ob.subs,
       buckets: state.finance.buckets,
       obDone: state.appStage === 'app',
       theme: state.theme,
       netWorthSeed: state.netWorthSeed,
+      transactions: state.transactions,
     }));
   } catch {
     // ignore write failures (private browsing / storage full)
@@ -105,9 +111,11 @@ export function mergePersisted(base: AppState): AppState {
   const p = loadPersisted();
   if (!p) return base;
   if (p.manual) base.ob.manual = { ...base.ob.manual, ...p.manual };
+  if (p.subs) base.ob.subs = p.subs;
   if (p.buckets) base.finance.buckets = p.buckets;
   if (p.obDone) base.appStage = 'app';
   if (p.theme) base.theme = p.theme;
+  if (p.transactions) base.transactions = p.transactions;
   if (p.netWorthSeed) base.netWorthSeed = p.netWorthSeed;
   return base;
 }

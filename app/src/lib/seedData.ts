@@ -12,22 +12,11 @@ export interface Transaction {
   tax: boolean;
   brand?: string;
   payment: string;
+  /** LHDN relief item key (see lib/taxEngine.ts TAX_ITEMS_META) this
+   * transaction counts toward, when tax=true. Set by the scan/review flows
+   * via categoryToReliefKey(); undefined means "deductible but uncategorised". */
+  reliefKey?: string;
 }
-
-export const ALL_TX: Transaction[] = [
-  { id: 1, merchant: 'Grab', cat: 'Transport', dateLabel: 'Today, 8:12 AM', dateGroup: 'Today', month: 'Aug', amount: -18.5, tax: false, brand: 'grab', payment: 'GrabPay' },
-  { id: 2, merchant: 'Tealive', cat: 'Food & Drink', dateLabel: 'Today, 7:35 AM', dateGroup: 'Today', month: 'Aug', amount: -9.9, tax: false, brand: 'tealive', payment: 'Maybank Visa' },
-  { id: 3, merchant: 'Popular Bookstore', cat: 'Lifestyle', dateLabel: 'Yesterday', dateGroup: 'Yesterday', month: 'Aug', amount: -86.0, tax: true, payment: 'CIMB Credit Card' },
-  { id: 4, merchant: 'Guardian Pharmacy', cat: 'Health', dateLabel: 'Yesterday', dateGroup: 'Yesterday', month: 'Aug', amount: -43.2, tax: true, brand: 'guardian', payment: "Touch 'n Go eWallet" },
-  { id: 5, merchant: 'Shopee', cat: 'Shopping', dateLabel: 'Yesterday', dateGroup: 'Yesterday', month: 'Aug', amount: -129.0, tax: false, brand: 'shopee', payment: 'CIMB Credit Card' },
-  { id: 6, merchant: 'TNB', cat: 'Bills', dateLabel: 'Mon', dateGroup: 'This week', month: 'Aug', amount: -142.3, tax: false, payment: 'Maybank Savings' },
-  { id: 7, merchant: 'Astro', cat: 'Bills', dateLabel: 'Mon', dateGroup: 'This week', month: 'Aug', amount: -99.9, tax: false, payment: 'Maybank Savings' },
-  { id: 8, merchant: 'Salary', cat: 'Income', dateLabel: '1 Aug', dateGroup: 'This week', month: 'Aug', amount: 6200.0, tax: false, payment: 'Bank Transfer' },
-  { id: 9, merchant: 'Grab', cat: 'Transport', dateLabel: 'Sun', dateGroup: 'This week', month: 'Aug', amount: -24.0, tax: false, brand: 'grab', payment: 'GrabPay' },
-  { id: 10, merchant: 'Mr DIY', cat: 'Shopping', dateLabel: '28 Jul', dateGroup: 'Earlier', month: 'Jul', amount: -35.5, tax: false, payment: "Touch 'n Go eWallet" },
-  { id: 11, merchant: 'Klinik Mediviron', cat: 'Health', dateLabel: '26 Jul', dateGroup: 'Earlier', month: 'Jul', amount: -120.0, tax: true, payment: 'Cash' },
-  { id: 12, merchant: "Touch 'n Go Reload", cat: 'Transport', dateLabel: '24 Jul', dateGroup: 'Earlier', month: 'Jul', amount: -50.0, tax: false, payment: 'Maybank Visa' },
-];
 
 export interface BalanceEntry { id: string; amount: number; desc: string; date: string }
 export interface RecordRow { id: string; name: string; amount: string; history?: BalanceEntry[] }
@@ -40,10 +29,10 @@ export function mkRecord(name: string, amount: string): RecordRow {
 export function mkInvestRow(name: string, qty: string, buy: string, cur: string): InvestRow {
   return { id: uid(), name, qty, buy, cur };
 }
-function mkSeedCash(name: string, balance: number, brand: string | null): SeedRow {
+export function mkSeedCash(name: string, balance: number, brand: string | null): SeedRow {
   return { id: uid(), name, amount: String(balance), brand: brand || null, history: [] };
 }
-function mkSeedInvest(name: string, balance: number, brand: string | null): InvestRow {
+export function mkSeedInvest(name: string, balance: number, brand: string | null): InvestRow {
   return { id: uid(), name, qty: '1', buy: String(balance), cur: String(balance), brand: brand || null };
 }
 
@@ -53,25 +42,11 @@ export interface NetWorthSeed {
   creditCards: SeedRow[];
 }
 
+// No pre-filled "connected" accounts — a fresh user has RM0 until they add
+// a manual entry or (once a real bank integration exists) actually link an
+// account. mkSeedCash/mkSeedInvest stay exported for that future wiring.
 export function defaultNetWorthSeed(): NetWorthSeed {
-  return {
-    cash: [
-      mkSeedCash('Maybank Savings', 18240.55, 'maybank'),
-      mkSeedCash('CIMB Current', 4120.1, 'cimb'),
-      mkSeedCash("Touch 'n Go eWallet", 86.4, 'tng'),
-      mkSeedCash('GrabPay', 214.75, 'grab'),
-    ],
-    investments: [
-      mkSeedInvest('ASB', 28400.0, null),
-      mkSeedInvest('Public Mutual', 13900.0, null),
-      mkSeedInvest('Moomoo', 8500.0, 'moomoo'),
-    ],
-    creditCards: [
-      mkSeedCash('Maybank Ikhwan Visa', 1240.3, 'maybank'),
-      mkSeedCash('CIMB Cash Rebate Visa', 386.0, 'cimb'),
-      mkSeedCash('UOB Preferred Visa', 620.0, 'uob'),
-    ],
-  };
+  return { cash: [], investments: [], creditCards: [] };
 }
 
 export const NETWORTH_SERIES = [44100, 45300, 46800, 47600, 49500, 51200, 52400, 54100, 56600, 60200, 63900, 67100, 71216];
@@ -88,28 +63,15 @@ export function mkCategory(name: string, cap: number, items: BudgetItem[]): Budg
   return { id: uid(), name, cap, items };
 }
 
+// The four bucket groups are real structure from the source design (Fixed/
+// Flexible/Goals/Insurance), but no pre-filled categories or amounts — the
+// user builds their own budget via "Add category" / "Add item".
 export function defaultBuckets(): Bucket[] {
   return [
-    { key: 'fixed', name: 'Fixed', categories: [
-      mkCategory('Housing', 3500, [mkItem('House 1', 2000), mkItem('House 2', 1500)]),
-      mkCategory('Utilities', 500, [mkItem('TNB', 200), mkItem('Astro', 100), mkItem('Internet', 200)]),
-    ] },
-    { key: 'flexible', name: 'Flexible', categories: [
-      mkCategory('Food & Drink', 900, [mkItem('Food & Drink', 780)]),
-      mkCategory('Transport', 400, [mkItem('Transport', 310)]),
-      mkCategory('Shopping', 800, [mkItem('Shopping', 950)]),
-      mkCategory('Lifestyle', 1300, [mkItem('Lifestyle', 900)]),
-    ] },
-    { key: 'goals', name: 'Goals', categories: [
-      mkCategory('Emergency fund', 500, [mkItem('Emergency fund', 500)]),
-      mkCategory('New laptop fund', 1200, [mkItem('New laptop fund', 320)]),
-    ] },
-    { key: 'insurance', name: 'Insurance', categories: [
-      mkCategory('Life Insurance', 450, [mkItem('Life Insurance', 400)]),
-      mkCategory('Medical Insurance', 350, [mkItem('Medical Insurance', 300)]),
-      mkCategory('MRTA', 250, [mkItem('MRTA', 200)]),
-      mkCategory('Other Insurance', 200, [mkItem('Other Insurance', 180)]),
-    ] },
+    { key: 'fixed', name: 'Fixed', categories: [] },
+    { key: 'flexible', name: 'Flexible', categories: [] },
+    { key: 'goals', name: 'Goals', categories: [] },
+    { key: 'insurance', name: 'Insurance', categories: [] },
   ];
 }
 
