@@ -44,7 +44,7 @@ export function buildInitialState(): AppState {
     txFilter: 'All',
     confirmedIds: {},
     reviewOpen: false, reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
-    scanOpen: false, scanStep: 'capture', scanFrom: 'home',
+    scanOpen: false, scanStep: 'capture', scanFrom: 'home', scanMethod: 'manual',
     // Blank until the user fills them in (manual entry) or capturePhoto's
     // simulated-OCR result fills them in (see CAPTURE_PHOTO_DONE in reducer.ts).
     scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',

@@ -152,7 +152,11 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
     const items: TaxModelItem[] = TAX_ITEMS_META[g.key]
       .filter((im) => isTaxItemRelevant(im.key, im, profile))
       .map((im) => {
-        const d = itemData[im.key] || { captured: 0, receipts: [] };
+        // "automatic" items (currently just the base Individual & Dependent
+        // Relatives relief) are a standard entitlement every resident
+        // taxpayer gets with no receipts required — always fully captured,
+        // unlike everything else here which only counts real transactions.
+        const d = im.automatic ? { captured: im.cap, receipts: [] } : (itemData[im.key] || { captured: 0, receipts: [] });
         const captured = d.captured, cap = im.cap;
         const receiptsSum = d.receipts.reduce((s, x) => s + x.amount, 0);
         const otherAmount = Math.max(0, captured - receiptsSum);

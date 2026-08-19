@@ -104,7 +104,9 @@ export function ScanFlow() {
             </button>
             <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Confirm details</span>
           </div>
-          <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>Read from your photo — check it's right</div>
+          <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
+            {state.scanMethod === 'photo' ? "Read from your photo — check it's right" : 'Enter the receipt details'}
+          </div>
 
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Merchant</label>

@@ -91,6 +91,10 @@ export interface AppState {
   scanOpen: boolean;
   scanStep: ScanStep;
   scanFrom: Tab;
+  /** Whether the confirm step's fields came from the simulated-photo path
+   * (capturePhoto) or true manual entry (chooseManual) — drives whether the
+   * "read from your photo" badge is honest to show. */
+  scanMethod: 'photo' | 'manual';
   scanMerchant: string;
   scanAmount: string;
   scanDate: string;

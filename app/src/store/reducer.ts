@@ -9,7 +9,7 @@ import { categoryToReliefKey } from '../lib/taxEngine';
 
 const BLANK_SCAN_FIELDS = {
   scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
-  scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '',
+  scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '', scanMethod: 'manual',
 } as const;
 
 type ManualListKey = keyof ManualData;
@@ -429,14 +429,14 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
       // True manual entry — fields stay blank, no simulated OCR result.
-      return { ...state, scanStep: 'confirm' };
+      return { ...state, scanStep: 'confirm', scanMethod: 'manual' };
     case 'CAPTURE_PHOTO_START':
       return { ...state, scanStep: 'processing' };
     case 'CAPTURE_PHOTO_DONE':
       // No real camera/OCR integration — this simulates what extraction
       // would produce so the confirm step has something to review/edit.
       return {
-        ...state, scanStep: 'confirm',
+        ...state, scanStep: 'confirm', scanMethod: 'photo',
         scanMerchant: 'Popular Bookstore', scanAmount: '86.00', scanCategory: 'Lifestyle', scanDeductible: true,
       };
     case 'SET_SCAN_FIELD':
