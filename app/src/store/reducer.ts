@@ -55,7 +55,7 @@ export type Action =
   | { type: 'SET_SCAN_TAG'; value: string }
 
   | { type: 'TOGGLE_BUCKET'; key: string }
-  | { type: 'ADD_BUCKET_CATEGORY'; bucketKey: string }
+  | { type: 'ADD_BUCKET_CATEGORY'; bucketKey: string; name?: string; openDetail?: boolean }
   | { type: 'REMOVE_BUCKET_CATEGORY'; bucketKey: string; catId: string }
   | { type: 'SET_BUCKET_CATEGORY_NAME'; bucketKey: string; catId: string; value: string }
   | { type: 'SET_BUCKET_CATEGORY_CAP'; bucketKey: string; catId: string; value: number }
@@ -173,7 +173,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'OB_BACK':
       return { ...state, obStep: action.prevStep };
     case 'OB_FINISH':
-      return { ...state, appStage: 'app', tab: 'home' };
+      // Defensive: nothing set during onboarding should leave a detail
+      // overlay auto-open the moment the user lands on the real app shell.
+      return { ...state, appStage: 'app', tab: 'home', budgetItemDetailOpen: null };
     case 'TOGGLE_AGREED_TERMS':
       return { ...state, ob: { ...state.ob, agreedTerms: !state.ob.agreedTerms } };
     case 'CHOOSE_SETUP_METHOD':
@@ -251,11 +253,11 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'TOGGLE_BUCKET':
       return { ...state, expandedBucket: state.expandedBucket === action.key ? null : action.key };
     case 'ADD_BUCKET_CATEGORY': {
-      const cat = mkCategory('New category', 0, [mkItem('New item', 0)]);
+      const cat = mkCategory(action.name ?? 'New category', 0, action.name ? [] : [mkItem('New item', 0)]);
       return {
         ...state,
         finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: [...b.categories, cat] }) },
-        budgetItemDetailOpen: action.bucketKey + ':' + cat.id,
+        budgetItemDetailOpen: action.openDetail === false ? state.budgetItemDetailOpen : action.bucketKey + ':' + cat.id,
       };
     }
     case 'REMOVE_BUCKET_CATEGORY':

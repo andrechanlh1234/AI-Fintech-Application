@@ -11,6 +11,7 @@ import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } fro
 import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
 import { SubscriptionsStep } from './steps/SubscriptionsStep';
+import { BudgetSetupStep } from './steps/BudgetSetupStep';
 
 function computeOrder(multipleIncome: string | null, setupMethod: string | null): string[] {
   return OB_ORDER.filter((k) => {
@@ -319,6 +320,10 @@ export function OnboardingFlow() {
             <div style={{ flex: 1 }} />
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
           </div>
+        )}
+
+        {state.obStep === 'budget' && (
+          <BudgetSetupStep state={state} actions={actions} progress={progress} onBack={goBack} onSkip={goNext} onContinue={goNext} />
         )}
 
         {state.obStep === 'linkAccounts' && (

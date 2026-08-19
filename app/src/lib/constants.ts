@@ -119,7 +119,7 @@ export const GOAL_OPTS = [
 
 export const OB_ORDER = [
   'login', 'source', 'privacy', 'about', 'txPersonal', 'txIncomeTypes', 'txReliefs', 'txHealth',
-  'goals', 'linkAccounts', 'manualSetup', 'subscriptions', 'netWorth', 'txDone',
+  'goals', 'budget', 'linkAccounts', 'manualSetup', 'subscriptions', 'netWorth', 'txDone',
 ];
 
 export interface IconFlags {

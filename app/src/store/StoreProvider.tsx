@@ -112,7 +112,7 @@ export function useActions() {
 
       // budgets
       toggleBucket: (key: string) => dispatch({ type: 'TOGGLE_BUCKET', key }),
-      addBucketCategory: (bucketKey: string) => dispatch({ type: 'ADD_BUCKET_CATEGORY', bucketKey }),
+      addBucketCategory: (bucketKey: string, name?: string, openDetail?: boolean) => dispatch({ type: 'ADD_BUCKET_CATEGORY', bucketKey, name, openDetail }),
       removeBucketCategory: (bucketKey: string, catId: string) => dispatch({ type: 'REMOVE_BUCKET_CATEGORY', bucketKey, catId }),
       setBucketCategoryName: (bucketKey: string, catId: string, value: string) => dispatch({ type: 'SET_BUCKET_CATEGORY_NAME', bucketKey, catId, value }),
       setBucketCategoryCap: (bucketKey: string, catId: string, value: number) => dispatch({ type: 'SET_BUCKET_CATEGORY_CAP', bucketKey, catId, value }),
