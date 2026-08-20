@@ -5,11 +5,15 @@
 // manual entry, etc.) rather than this module ever touching UI state.
 import type { SyncPayload } from '../store/initialState';
 
-// Explicitly 127.0.0.1, not "localhost" — on this machine "localhost"
-// resolves to ::1 first, where an unrelated process already listens on
-// port 8000, so the ambiguous hostname would silently hit the wrong server.
+// When opened as localhost/127.0.0.1 (this machine), talk to the backend on
+// 127.0.0.1 explicitly — on this machine "localhost" resolves to ::1 first,
+// where an unrelated process already listens on port 8000, so the ambiguous
+// hostname would silently hit the wrong server. When opened via a LAN IP
+// (e.g. a phone on the same network hitting this machine for real device
+// testing), the backend is reachable at that same IP, port 8000.
+const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE = (import.meta as unknown as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE
-  || 'http://127.0.0.1:8000';
+  || (isLocalHost ? 'http://127.0.0.1:8000' : `http://${window.location.hostname}:8000`);
 
 const TOKEN_KEY = 'cukai_v7_token';
 

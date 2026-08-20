@@ -42,6 +42,12 @@ app.include_router(google_oauth_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # Also allow any private-LAN IP on the dev port, so a phone on the same
+    # wifi/hotspot as this machine can reach the backend for real-device
+    # testing without needing this list updated every time the network
+    # changes. Covers the common private ranges (192.168.x, 172.16-31.x,
+    # 10.x) — dev-only, never applies to a real deployment's public origin.
+    allow_origin_regex=r"http://(192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
     allow_methods=["*"],
     allow_headers=["*"],
 )
