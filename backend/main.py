@@ -10,6 +10,11 @@ doesn't re-model net worth, budgets, or transactions, it just stores and
 returns that blob per account.
 """
 
+from dotenv import load_dotenv
+
+load_dotenv()  # backend/.env, if present — must run before any module below reads os.environ
+
+import asyncio
 import json
 import tempfile
 import uuid
@@ -22,10 +27,13 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
 
 from backend import auth
+from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
+from backend.google_oauth import router as google_oauth_router
 from pipeline.receipt_ocr import process_receipt_image
 
 app = FastAPI(title="Cukai API")
+app.include_router(google_oauth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,8 +46,10 @@ bearer = HTTPBearer(auto_error=False)
 
 
 @app.on_event("startup")
-def _startup() -> None:
+async def _startup() -> None:
     init_db()
+    backup_now()  # one immediate backup so a same-day crash never means zero backups
+    asyncio.create_task(backup_loop())
 
 
 # ---- schemas ----
@@ -91,7 +101,9 @@ def signup(body: Credentials):
 def login(body: Credentials):
     with get_conn() as conn:
         row = conn.execute("SELECT id, password_hash FROM users WHERE email = ?", (body.email,)).fetchone()
-    if not row or not auth.verify_password(body.password, row["password_hash"]):
+    if not row or not row["password_hash"]:
+        raise HTTPException(401, "Incorrect email or password")
+    if not auth.verify_password(body.password, row["password_hash"]):
         raise HTTPException(401, "Incorrect email or password")
     return {"token": auth.create_token(row["id"]), "user": {"id": row["id"], "email": body.email}}
 

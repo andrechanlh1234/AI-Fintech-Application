@@ -4,7 +4,7 @@ import { reducer, type Action } from './reducer';
 import { buildInitialState, mergePersisted, persistState, clearPersisted, buildSyncPayload } from './initialState';
 import { aiCraftReply } from '../lib/seedData';
 import {
-  getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage,
+  getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
 } from '../lib/api';
 
@@ -22,6 +22,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // pull whatever this account last synced (overwriting the local-only
   // state a guest may have accumulated before signing in).
   useEffect(() => {
+    captureOAuthTokenFromUrl(); // picks up ?oauth_token= from a Google-login redirect, if present
     if (!getToken()) return;
     (async () => {
       try {
@@ -268,6 +269,8 @@ export function useActions() {
       },
       openAuthPanel: () => dispatch({ type: 'OPEN_AUTH_PANEL' }),
       closeAuthPanel: () => dispatch({ type: 'CLOSE_AUTH_PANEL' }),
+      openLegal: (doc: 'privacy' | 'terms') => dispatch({ type: 'OPEN_LEGAL', doc }),
+      closeLegal: () => dispatch({ type: 'CLOSE_LEGAL' }),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.linkedIds]);

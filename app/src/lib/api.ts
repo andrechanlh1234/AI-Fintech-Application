@@ -73,6 +73,25 @@ export function logout() {
   setToken(null);
 }
 
+export function googleLoginUrl(): string {
+  return API_BASE + '/auth/google/login';
+}
+
+// The Google OAuth callback (backend/google_oauth.py) can't hand the SPA
+// a token directly — it redirects the browser instead, with the token in
+// the URL. Called once on mount; returns true if it found and stored one.
+export function captureOAuthTokenFromUrl(): boolean {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('oauth_token');
+  if (!token) return false;
+  setToken(token);
+  params.delete('oauth_token');
+  params.delete('oauth_error');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash);
+  return true;
+}
+
 export async function fetchMe(): Promise<AuthUser> {
   return request<AuthUser>('/auth/me', { headers: authHeaders() });
 }

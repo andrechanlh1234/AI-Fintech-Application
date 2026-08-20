@@ -9,6 +9,7 @@ import {
 import type { RecordRow } from '../../lib/seedData';
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
 import { AuthForm } from '../../components/AuthForm';
+import { googleLoginUrl } from '../../lib/api';
 import { useState } from 'react';
 import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
@@ -31,7 +32,14 @@ export function OnboardingFlow() {
   const { state } = useStore();
   const actions = useActions();
   const ob = state.ob;
-  const [oauthNote, setOauthNote] = useState<string | null>(null);
+  const [oauthNote, setOauthNote] = useState<string | null>(() => {
+    const err = new URLSearchParams(window.location.search).get('oauth_error');
+    if (!err) return null;
+    window.history.replaceState({}, '', window.location.pathname);
+    return err === 'not_configured'
+      ? 'Google sign-in isn’t configured on this server yet — use email for now.'
+      : 'Google sign-in didn’t go through — use email for now, or try again.';
+  });
 
   const order = computeOrder(ob.multipleIncome, ob.setupMethod);
   const idx = order.indexOf(state.obStep);
@@ -89,7 +97,7 @@ export function OnboardingFlow() {
             </div>
 
             <button
-              type="button" onClick={() => setOauthNote('Google sign-in needs a developer account we haven’t set up yet — use email for now.')} className="pressable"
+              type="button" onClick={() => { window.location.href = googleLoginUrl(); }} className="pressable"
               style={{ width: '100%', padding: 15, background: '#fff', border: '1.5px solid var(--color-neutral-400)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, font: '600 14px var(--font-body)', cursor: 'pointer', marginBottom: 10, boxSizing: 'border-box' }}
             >
               <svg width="17" height="17" viewBox="0 0 24 24">

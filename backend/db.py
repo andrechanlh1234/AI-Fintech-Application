@@ -17,7 +17,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
+    google_sub TEXT UNIQUE,
     created_at TEXT NOT NULL
 );
 
@@ -29,9 +30,36 @@ CREATE TABLE IF NOT EXISTS user_state (
 """
 
 
+def _migrate_users_table(conn: sqlite3.Connection) -> None:
+    """Upgrade a `users` table created before Google sign-in existed
+    (password_hash NOT NULL, no google_sub column) — SQLite can't ALTER
+    COLUMN to drop a NOT NULL constraint, so rebuild the table in place."""
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
+    if "google_sub" in cols:
+        return  # already migrated (or a fresh DB created with the schema above)
+    conn.execute("ALTER TABLE users RENAME TO users_old")
+    conn.execute(
+        """
+        CREATE TABLE users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT,
+            google_sub TEXT UNIQUE,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO users (id, email, password_hash, created_at) "
+        "SELECT id, email, password_hash, created_at FROM users_old"
+    )
+    conn.execute("DROP TABLE users_old")
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        _migrate_users_table(conn)
 
 
 @contextmanager
