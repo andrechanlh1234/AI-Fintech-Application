@@ -165,6 +165,18 @@ export function MorePanel() {
         <div style={{ fontSize: 13.5, fontWeight: 600 }}>Help &amp; support</div>
         <ChevronIcon />
       </button>
+
+      <div style={sectionLabelStyle}>Legal</div>
+      <div style={{ borderTop: '1px solid var(--color-divider)' }} />
+      <button type="button" onClick={() => actions.openLegal('privacy')} className="pressable" style={rowButtonStyle}>
+        <div style={{ fontSize: 13.5, fontWeight: 600 }}>Privacy Policy</div>
+        <ChevronIcon />
+      </button>
+      <button type="button" onClick={() => actions.openLegal('terms')} className="pressable" style={rowButtonStyle}>
+        <div style={{ fontSize: 13.5, fontWeight: 600 }}>Terms of Use</div>
+        <ChevronIcon />
+      </button>
+
       <button type="button" onClick={actions.openDonate} className="pressable" style={{ ...rowButtonStyle, borderBottom: 'none' }}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Donate to Cukai</div>

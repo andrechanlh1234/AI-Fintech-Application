@@ -18,6 +18,7 @@ import { TaxPackModal } from './screens/modals/TaxPackModal';
 import { DonateModal } from './screens/modals/DonateModal';
 import { AddSubModal } from './screens/modals/AddSubModal';
 import { AuthPanel } from './screens/modals/AuthPanel';
+import { LegalDoc } from './screens/legal/LegalDoc';
 
 function AppShell() {
   const { state } = useStore();
@@ -82,6 +83,9 @@ function AppShell() {
       </BottomSheet>
       <BottomSheet open={state.authPanelOpen} onClose={actions.closeAuthPanel}>
         <AuthPanel />
+      </BottomSheet>
+      <BottomSheet open={!!state.legalOpen} onClose={actions.closeLegal}>
+        {state.legalOpen && <LegalDoc doc={state.legalOpen} />}
       </BottomSheet>
     </div>
   );
