@@ -118,6 +118,7 @@ export type Action =
   | { type: 'SAVE_SCAN' } | { type: 'SCAN_ANOTHER' } | { type: 'VIEW_IN_TAX' }
 
   | { type: 'SET_AUTH_USER'; user: AuthUser | null }
+  | { type: 'OAUTH_LOGIN_COMPLETE' }
   | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
@@ -496,6 +497,13 @@ export function reducer(state: AppState, action: Action): AppState {
     // ---- accounts ----
     case 'SET_AUTH_USER':
       return { ...state, authUser: action.user };
+    case 'OAUTH_LOGIN_COMPLETE':
+      // Mirrors AuthForm's onSuccess={goNext} for the redirect-based Google
+      // flow, which has no callback site to hook that into directly. Only
+      // advances onboarding if that's genuinely where the user was — a
+      // guest signing in from deep in the app via AuthPanel just gets the
+      // panel closed, not shoved into onboarding.
+      return { ...state, obStep: state.obStep === 'login' ? 'source' : state.obStep, authPanelOpen: false };
     case 'APPLY_REMOTE_STATE':
       return applySyncPayload(state, action.payload);
     case 'OPEN_AUTH_PANEL':

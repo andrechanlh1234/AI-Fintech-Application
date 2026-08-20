@@ -28,7 +28,7 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={submit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div className="seg" style={{ marginBottom: 4 }}>
+      <div className="seg" style={{ marginBottom: 4, alignSelf: 'center' }}>
         <label className="seg-opt">
           <input type="radio" name="authMode" checked={mode === 'signup'} onChange={() => setMode('signup')} />
           Create account

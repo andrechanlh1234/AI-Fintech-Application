@@ -22,7 +22,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // pull whatever this account last synced (overwriting the local-only
   // state a guest may have accumulated before signing in).
   useEffect(() => {
-    captureOAuthTokenFromUrl(); // picks up ?oauth_token= from a Google-login redirect, if present
+    const justSignedInViaGoogle = captureOAuthTokenFromUrl(); // picks up ?oauth_token= from a Google-login redirect, if present
     if (!getToken()) return;
     (async () => {
       try {
@@ -30,6 +30,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_AUTH_USER', user });
         const remote = await fetchRemoteState();
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+        if (justSignedInViaGoogle) dispatch({ type: 'OAUTH_LOGIN_COMPLETE' });
       } catch {
         apiLogout(); // expired/invalid token — fall back to local-only silently
       }

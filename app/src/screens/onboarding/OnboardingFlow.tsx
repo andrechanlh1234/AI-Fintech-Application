@@ -259,7 +259,7 @@ export function OnboardingFlow() {
             </div>
 
             <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have income besides your salary?</div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
               {singleOpts(['Yes', 'No'], ob.multipleIncome, (label) => actions.setOb('multipleIncome', label)).map((opt) => (
                 <button
                   key={opt.label} type="button" onClick={opt.onClick} className="pressable"
