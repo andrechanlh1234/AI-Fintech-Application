@@ -2,15 +2,30 @@
 
 A real, functional implementation of the Cukai v7 Claude Design prototype
 (`../Cukai v7.dc.html`): a personal finance + Malaysian tax app. Vite +
-React + TypeScript, client-side only, with a local-storage-backed mock
-data layer standing in for a future backend.
+React + TypeScript frontend, with a real backend (`../backend/`) for
+accounts, per-account data sync, and receipt OCR — see that directory's
+notes below. The frontend still works fully standalone (guest/local-only
+mode) if the backend isn't running.
 
 ## Run it
+
+Frontend only (guest mode — data stays in this browser):
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
 npm run build    # type-checks (tsc -b) then produces dist/
+```
+
+Full stack (real accounts + real receipt OCR — see `../backend/README.md`
+for first-time setup):
+
+```bash
+# terminal 1, from the repo root
+backend/.venv/bin/uvicorn backend.main:app --reload --port 8000
+
+# terminal 2
+cd app && npm run dev
 ```
 
 ## What's implemented
@@ -57,16 +72,19 @@ simulation.
 
 ## Known gaps / next steps
 
-- **No backend.** Everything reads/writes `localStorage`. The mock data
-  shape (`RecordRow`, `Transaction`, etc. in `src/lib/seedData.ts`) was
-  deliberately kept close to `../pipeline/models.py`'s `Record`
-  dataclass so a real API can slot in later without a data-model rewrite.
-- **OCR is simulated.** The scan flow's "processing" step is a timed
-  placeholder; `../pipeline/receipt_ocr.py` has real Tesseract-based OCR
-  logic that isn't wired up yet.
+- **No public hosting.** The backend only runs on `localhost` right now —
+  fine for development, not usable by anyone but the person running it.
+- **No Google/Apple sign-in.** The buttons are present (matching the
+  design) but say plainly that OAuth isn't set up — that needs a Google
+  Cloud / Apple Developer account to configure.
+- **No real bank-statement linking.** "Connect your accounts" during
+  onboarding is still a UI mock; Malaysia has no Plaid-equivalent
+  aggregator, so this would mean either a paid aggregator API or
+  manual/CSV import (`../pipeline/statement_parser.py` already has
+  working CIMB/TNG PDF and generic CSV parsing, also unwired).
 - **AI replies are canned**, not a real LLM call (`aiCraftReply()` in
   `src/lib/seedData.ts`).
-- **Gmail invoice detection, multi-user auth, and the Supabase backend**
-  described in `../Feasibility_and_Implementation_Timeline.md` are not
-  built — intentionally, per that document's own recommendation not to
-  build backend infra before the frontend proves the product out.
+
+What *is* now real: accounts (email/password), per-account data sync
+across sessions/devices, and receipt OCR via the backend — see
+`../backend/README.md`.
