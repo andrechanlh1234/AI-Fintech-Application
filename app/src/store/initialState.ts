@@ -65,6 +65,7 @@ export function buildInitialState(): AppState {
     balanceDetailOpen: null, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' },
     investDetailOpen: null, expandedNwGroup: null,
     netWorthSeed: defaultNetWorthSeed(),
+    netWorthHistory: [],
     finance: { buckets: defaultBuckets() },
   };
 }
@@ -83,6 +84,7 @@ export interface SyncPayload {
   theme: AppState['theme'];
   netWorthSeed: AppState['netWorthSeed'];
   transactions: AppState['transactions'];
+  netWorthHistory: AppState['netWorthHistory'];
 }
 
 export function buildSyncPayload(state: AppState): SyncPayload {
@@ -94,6 +96,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     theme: state.theme,
     netWorthSeed: state.netWorthSeed,
     transactions: state.transactions,
+    netWorthHistory: state.netWorthHistory,
   };
 }
 
@@ -106,6 +109,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.theme) next.theme = p.theme;
   if (p.transactions) next.transactions = p.transactions;
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
+  if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
   return next;
 }
 

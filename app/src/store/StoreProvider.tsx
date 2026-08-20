@@ -3,6 +3,7 @@ import type { AppState, ManualData, BalanceDraft } from './types';
 import { reducer, type Action } from './reducer';
 import { buildInitialState, mergePersisted, persistState, clearPersisted, buildSyncPayload } from './initialState';
 import { aiCraftReply } from '../lib/seedData';
+import { selectNetWorth } from './selectors';
 import {
   getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
@@ -46,7 +47,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions]);
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory]);
+
+  // Record a real net-worth snapshot whenever it actually changes — this is
+  // the only thing that makes the Finance > Net worth chart a real line
+  // instead of a flat repeat of the current value. Upserts today's entry
+  // (see the reducer case), so this fires safely on every keystroke without
+  // spamming a point per keystroke.
+  useEffect(() => {
+    const value = selectNetWorth(state).netWorth;
+    const today = new Date().toISOString().slice(0, 10);
+    dispatch({ type: 'RECORD_NET_WORTH_SNAPSHOT', date: today, value });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ob.manual, state.netWorthSeed, state.transactions]);
 
   // Once signed in, also mirror every change to the backend (debounced —
   // syncing on every keystroke would be wasteful and can race).
@@ -60,7 +73,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

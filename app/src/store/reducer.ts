@@ -123,6 +123,7 @@ export type Action =
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
   | { type: 'SET_RESET_TOKEN'; token: string | null }
+  | { type: 'RECORD_NET_WORTH_SNAPSHOT'; date: string; value: number }
 
   | { type: 'TOGGLE_AI_VIEW' }
   | { type: 'START_NEW_AI_CHAT' }
@@ -517,6 +518,18 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, legalOpen: null };
     case 'SET_RESET_TOKEN':
       return { ...state, resetToken: action.token };
+    case 'RECORD_NET_WORTH_SNAPSHOT': {
+      // Upsert today's entry rather than appending on every change — one
+      // real data point per calendar day is what makes the chart move
+      // without turning into a point-per-keystroke timeline.
+      const history = state.netWorthHistory;
+      const last = history[history.length - 1];
+      if (last && last.date === action.date) {
+        if (last.value === action.value) return state;
+        return { ...state, netWorthHistory: [...history.slice(0, -1), { date: action.date, value: action.value }] };
+      }
+      return { ...state, netWorthHistory: [...history, { date: action.date, value: action.value }] };
+    }
 
     default:
       return state;

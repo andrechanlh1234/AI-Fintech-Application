@@ -134,6 +134,12 @@ export interface AppState {
   investDetailOpen: string | null;
   expandedNwGroup: string | null;
   netWorthSeed: NetWorthSeed;
+  /** Real net-worth snapshots, one upserted per calendar day whenever net
+   * worth actually changes (see StoreProvider's snapshot effect) — this is
+   * what makes the Finance > Net worth chart a real line instead of a flat
+   * repeat of the current value. A fresh account has at most one entry;
+   * the chart only shows real movement once real days of usage exist. */
+  netWorthHistory: { date: string; value: number }[];
   finance: { buckets: Bucket[] };
   /** Real transactions the user has added — via a saved scan or an accepted
    * review-import item. Starts empty; nothing here unless the user put it

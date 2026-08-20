@@ -34,11 +34,6 @@ export const MONTH_FULL: Record<string, string> = {
 
 export const MONTH_ORDER = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export const NETWORTH_MONTH_LABELS = [
-  'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26',
-  'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26',
-];
-
 export const CATEGORY_OPTIONS = ['Food & Drink', 'Transport', 'Shopping', 'Bills', 'Health', 'Lifestyle', 'Income', 'Other'];
 
 // The OCR pipeline (pipeline/categorize.py) classifies into its own,

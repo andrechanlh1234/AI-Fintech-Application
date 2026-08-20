@@ -8,7 +8,7 @@ import {
   MONTH_SUMMARIES, REVIEW_ITEMS,
   type Transaction, type BudgetCategory,
 } from '../lib/seedData';
-import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, NETWORTH_MONTH_LABELS, MONTH_ORDER } from '../lib/constants';
+import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER } from '../lib/constants';
 import {
   buildTaxModel, estimateAnnualIncome, marginalTaxRate, ASSUMED_TAX_RATE,
   TAX_ITEMS_META, RELIEF_INFO, categoryToReliefKey, type TaxProfile, type TaxItemData,
@@ -102,23 +102,40 @@ export function selectNetWorth(state: AppState) {
 // There is no real historical net-worth tracking (that needs a backend
 // recording snapshots over time, which doesn't exist yet). Rather than
 // show a fabricated up-and-to-the-right trend, the chart is a flat line at
-// the user's actual current net worth — delta is honestly 0 until real
-// history exists. Month labels are just calendar labels for the x-axis,
-// not implied past values.
+// real recorded snapshots (see StoreProvider's snapshot effect and the
+// RECORD_NET_WORTH_SNAPSHOT reducer case) — a brand-new account has at most
+// one snapshot, so the chart is honestly a single flat point until real
+// days of usage build up real history. Never fabricated backward.
+const RANGE_DAYS: Record<AppState['netWorthRange'], number> = {
+  '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '3Y': 365 * 3, ALL: Infinity,
+};
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function shortDateLabel(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${SHORT_MONTHS[m - 1]} ${String(y).slice(2)}`;
+}
+
 export function selectNetWorthChart(state: AppState) {
   const { netWorth } = selectNetWorth(state);
-  const flat = (n: number) => new Array(n).fill(netWorth) as number[];
-  const rangeSlice = (n: number) => ({ series: flat(n), labels: NETWORTH_MONTH_LABELS.slice(-n) });
-  const chartData = state.netWorthRange === '1M' ? { series: flat(7), labels: null as string[] | null }
-    : state.netWorthRange === '3M' ? rangeSlice(3)
-    : state.netWorthRange === '6M' ? rangeSlice(6)
-    : state.netWorthRange === '1Y' ? rangeSlice(12)
-    : rangeSlice(NETWORTH_MONTH_LABELS.length);
-  const series = chartData.series, seriesLabels = chartData.labels;
+  const today = new Date();
+  const windowDays = RANGE_DAYS[state.netWorthRange];
+  const cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - windowDays);
+  const inWindow = Number.isFinite(windowDays)
+    ? state.netWorthHistory.filter((h) => new Date(h.date) >= cutoff)
+    : state.netWorthHistory;
+  // Guard against an empty window (e.g. all real history predates the
+  // selected range) by falling back to today's real current value rather
+  // than rendering nothing.
+  const points = inWindow.length > 0 ? inWindow : [{ date: today.toISOString().slice(0, 10), value: netWorth }];
+  const series = points.map((p) => p.value);
+  const seriesLabels = points.map((p) => shortDateLabel(p.date));
   const minV = Math.min(...series), maxV = Math.max(...series);
   const range = Math.max(1, maxV - minV);
   const pts = series.map((v, i) => {
-    const x = (i / (series.length - 1)) * 292 + 4;
+    // series.length - 1 === 0 for a brand-new account's single real
+    // snapshot — center that lone point instead of dividing by zero.
+    const x = series.length > 1 ? (i / (series.length - 1)) * 292 + 4 : 150;
     const y = 118 - ((v - minV) / range) * 100;
     return [Number(x.toFixed(1)), Number(y.toFixed(1))] as [number, number];
   });

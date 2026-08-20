@@ -212,6 +212,12 @@ export function NetWorthSection() {
           )}
           <polygon points={chart.areaPoints} fill="url(#nwFill)" />
           <polyline points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          {/* A single real point (a brand-new account, or a range with only
+              one snapshot) needs an explicit dot -- a 1-point polyline/
+              polygon renders nothing at all, leaving the chart blank. */}
+          {chart.pts.length === 1 && (
+            <circle cx={chart.pts[0][0]} cy={chart.pts[0][1]} r={4} fill="var(--color-accent)" />
+          )}
           {chart.seriesLabels && chart.pts.map(([cx, cy], i) => (
             <circle key={i} cx={cx} cy={cy} r={9} fill="transparent" onClick={() => actions.selectNwPoint(i)} style={{ cursor: 'pointer' }} />
           ))}

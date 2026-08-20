@@ -305,7 +305,9 @@ textarea.input { min-height: 90px; resize: vertical; }
   from { opacity: 0; transform: translateX(-28px); }
   to { opacity: 1; transform: translateX(0); }
 }
-.screen-in { animation: screen-in .34s cubic-bezier(.16,1,.3,1) both; }
+/* Was .34s -- fires on every Continue/Skip/Back tap across onboarding's ~10
+   steps, so the delay compounds fast when moving through it quickly. */
+.screen-in { animation: screen-in .18s cubic-bezier(.16,1,.3,1) both; }
 .pop-in { animation: pop-in .22s cubic-bezier(.34,1.56,.64,1) both; }
 .slide-in-right { animation: slide-in-right .32s cubic-bezier(.16,1,.3,1) both; }
 .slide-in-left { animation: slide-in-left .32s cubic-bezier(.16,1,.3,1) both; }
