@@ -18,11 +18,12 @@ from datetime import datetime, timezone
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import RedirectResponse
 
 from backend import auth
 from backend.db import get_conn
+from backend.email_service import send_welcome_email
 
 router = APIRouter()
 
@@ -60,7 +61,9 @@ def google_login():
 
 
 @router.get("/auth/google/callback")
-async def google_callback(code: str | None = None, state: str | None = None, error: str | None = None):
+async def google_callback(
+    background_tasks: BackgroundTasks, code: str | None = None, state: str | None = None, error: str | None = None
+):
     if error or not code:
         return RedirectResponse(f"{FRONTEND_URL}/?oauth_error={error or 'missing_code'}")
     if not state or state not in _PENDING_STATES:
@@ -91,6 +94,7 @@ async def google_callback(code: str | None = None, state: str | None = None, err
 
     email = info.get("email")
     google_sub = info.get("sub")
+    name = info.get("name")
     if not email or not google_sub:
         return RedirectResponse(f"{FRONTEND_URL}/?oauth_error=no_email")
 
@@ -107,6 +111,7 @@ async def google_callback(code: str | None = None, state: str | None = None, err
                 "INSERT INTO users (id, email, password_hash, google_sub, created_at) VALUES (?, ?, NULL, ?, ?)",
                 (user_id, email, google_sub, datetime.now(timezone.utc).isoformat()),
             )
+            background_tasks.add_task(send_welcome_email, email, name)
 
     token = auth.create_token(user_id)
     return RedirectResponse(f"{FRONTEND_URL}/?oauth_token={token}")

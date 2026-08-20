@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
@@ -29,6 +29,7 @@ from pydantic import BaseModel, EmailStr
 from backend import auth
 from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
+from backend.email_service import send_welcome_email
 from backend.google_oauth import router as google_oauth_router
 from pipeline.receipt_ocr import process_receipt_image
 
@@ -82,7 +83,7 @@ def current_user_id(creds: HTTPAuthorizationCredentials | None = Depends(bearer)
 # ---- auth endpoints ----
 
 @app.post("/auth/signup", response_model=AuthResponse)
-def signup(body: Credentials):
+def signup(body: Credentials, background_tasks: BackgroundTasks):
     if len(body.password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
     with get_conn() as conn:
@@ -94,6 +95,7 @@ def signup(body: Credentials):
             "INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
             (user_id, body.email, auth.hash_password(body.password), datetime.now(timezone.utc).isoformat()),
         )
+    background_tasks.add_task(send_welcome_email, body.email, None)
     return {"token": auth.create_token(user_id), "user": {"id": user_id, "email": body.email}}
 
 
