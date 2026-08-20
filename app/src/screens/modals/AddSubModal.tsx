@@ -49,11 +49,11 @@ export function AddSubModal() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Start date</label>
-          <input className="input" value={draft.startDate} onChange={(e) => actions.setSubDraft('startDate', e.target.value)} placeholder="e.g. 15 Jan 2026" />
+          <input className="input" type="date" value={draft.startDate} onChange={(e) => actions.setSubDraft('startDate', e.target.value)} />
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Next payment</label>
-          <input className="input" value={draft.nextPayment} onChange={(e) => actions.setSubDraft('nextPayment', e.target.value)} placeholder="e.g. 15 Aug 2026" />
+          <input className="input" type="date" value={draft.nextPayment} onChange={(e) => actions.setSubDraft('nextPayment', e.target.value)} />
         </div>
       </div>
 
