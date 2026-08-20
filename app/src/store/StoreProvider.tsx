@@ -47,7 +47,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory]);
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode]);
 
   // Record a real net-worth snapshot whenever it actually changes — this is
   // the only thing that makes the Finance > Net worth chart a real line
@@ -73,7 +73,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -167,7 +167,7 @@ export function useActions() {
 
       // budgets
       toggleBucket: (key: string) => dispatch({ type: 'TOGGLE_BUCKET', key }),
-      addBucketCategory: (bucketKey: string, name?: string, openDetail?: boolean) => dispatch({ type: 'ADD_BUCKET_CATEGORY', bucketKey, name, openDetail }),
+      addBucketCategory: (bucketKey: string, name?: string, openDetail?: boolean, cap?: number) => dispatch({ type: 'ADD_BUCKET_CATEGORY', bucketKey, name, openDetail, cap }),
       removeBucketCategory: (bucketKey: string, catId: string) => dispatch({ type: 'REMOVE_BUCKET_CATEGORY', bucketKey, catId }),
       setBucketCategoryName: (bucketKey: string, catId: string, value: string) => dispatch({ type: 'SET_BUCKET_CATEGORY_NAME', bucketKey, catId, value }),
       setBucketCategoryCap: (bucketKey: string, catId: string, value: number) => dispatch({ type: 'SET_BUCKET_CATEGORY_CAP', bucketKey, catId, value }),
@@ -308,6 +308,7 @@ export function useActions() {
         dispatch({ type: 'SET_RESET_TOKEN', token: null });
       },
       cancelPasswordReset: () => dispatch({ type: 'SET_RESET_TOKEN', token: null }),
+      setUserMode: (mode: 'developer' | 'customer') => dispatch({ type: 'SET_USER_MODE', mode }),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.linkedIds]);

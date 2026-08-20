@@ -120,11 +120,52 @@ export const RELIEF_OPTS = [
   'Books', 'Sports / fitness', 'Donations', 'EPF / retirement', 'Parents / dependants', 'Other',
 ];
 export const INCOME_TYPE_OPTS = ['Bonus', 'Freelance / side income', 'Investment income', 'Rental income', 'Other'];
-export const INCOME_RANGE_OPTS = ['Below RM 3,000', 'RM 3,000–6,000', 'RM 6,000–10,000', 'RM 10,000–20,000', 'RM 20,000+'];
+// Boundaries are MY_TAX_BRACKETS (taxEngine.ts) annual chargeable-income
+// thresholds divided by 12 — an approximation only, since gross monthly
+// income isn't the same as annual chargeable/post-relief income. Matches
+// INCOME_RANGE_MID in taxEngine.ts; update both together.
+export const INCOME_RANGE_OPTS = [
+  'Below RM 500', 'RM 500–1,700', 'RM 1,700–2,900', 'RM 2,900–4,200', 'RM 4,200–5,800',
+  'RM 5,800–8,300', 'RM 8,300–33,300', 'RM 33,300–50,000', 'RM 50,000–166,700', 'RM 166,700+',
+];
 export const EMPLOYMENT_OPTS = ['Employed', 'Self-employed', 'Business owner', 'Not working', 'Other'];
 export const GOAL_OPTS = [
   'Build an emergency fund', 'Pay off debt', 'Save for a big purchase',
   'Grow my investments', 'Retire comfortably', 'Just track my spending',
+];
+
+// Full country list for onboarding's Country field. Alphabetical; 'Malaysia'
+// is the default selected value (see initialState.ts) since this is a
+// Malaysian tax app, even though it's listed here in alphabetical order.
+export const COUNTRY_OPTIONS = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina',
+  'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados',
+  'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana',
+  'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia', 'Cameroon',
+  'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+  'Congo (Congo-Brazzaville)', 'Costa Rica', "Côte d'Ivoire", 'Croatia', 'Cuba', 'Cyprus',
+  'Czechia', 'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica',
+  'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 'Equatorial Guinea', 'Eritrea',
+  'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon', 'Gambia', 'Georgia',
+  'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq',
+  'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati',
+  'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya',
+  'Liechtenstein', 'Lithuania', 'Luxembourg', 'Macau', 'Madagascar', 'Malawi', 'Malaysia',
+  'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico',
+  'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar',
+  'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria',
+  'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama',
+  'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania',
+  'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
+  'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia',
+  'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia',
+  'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname',
+  'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand',
+  'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan',
+  'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States',
+  'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia',
+  'Zimbabwe', 'Other',
 ];
 
 // 'about' now also carries the "tax situation" questions that used to be
@@ -169,6 +210,16 @@ export function deriveTxDate(t: { dateLabel?: string; dateGroup?: string; month:
   if (t.dateLabel === 'Recurring') return { day: 5, month: 'Aug' };
   return { day: 1, month: t.month };
 }
+
+// Shared by the onboarding budget step and the post-onboarding Budgets
+// screen's "Add category" guided form — one list of common names per bucket
+// so both surfaces offer the same suggestions instead of drifting apart.
+export const BUDGET_COMMON_CATEGORIES: Record<string, string[]> = {
+  fixed: ['Housing', 'Utilities'],
+  flexible: ['Food & Drink', 'Transport', 'Shopping'],
+  goals: ['Emergency fund'],
+  insurance: ['Medical Insurance'],
+};
 
 export function chipStyle(active: boolean) {
   return {

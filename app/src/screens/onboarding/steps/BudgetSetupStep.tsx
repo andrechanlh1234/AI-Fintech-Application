@@ -4,18 +4,14 @@
 // discovered "Add category" on the Budgets screen. Reuses the exact same
 // bucket/category actions the Budgets screen itself uses, so anything set
 // here is the real thing, not a separate draft.
+import { useState } from 'react';
 import type { AppState } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
 import { StepHeader, PlusIcon, XIcon } from './shared';
+import { AddBudgetCategoryForm } from '../../../components/AddBudgetCategoryForm';
+import { BUDGET_COMMON_CATEGORIES } from '../../../lib/constants';
 
 type Actions = ReturnType<typeof useActions>;
-
-const COMMON_CATEGORIES: Record<string, string[]> = {
-  fixed: ['Housing', 'Utilities'],
-  flexible: ['Food & Drink', 'Transport', 'Shopping'],
-  goals: ['Emergency fund'],
-  insurance: ['Medical Insurance'],
-};
 
 export function BudgetSetupStep({
   state, actions, progress, onBack, onSkip, onContinue,
@@ -23,6 +19,9 @@ export function BudgetSetupStep({
   state: AppState; actions: Actions; progress: string; onBack: () => void; onSkip: () => void; onContinue: () => void;
 }) {
   const totalPlan = state.finance.buckets.reduce((s, b) => s + b.categories.reduce((s2, c) => s2 + (c.cap || 0), 0), 0);
+  // Which bucket currently has the add-category form open, and whether a
+  // quick-add chip pre-selected a name (skipping straight to the cap step).
+  const [adding, setAdding] = useState<{ bucketKey: string; initialName?: string } | null>(null);
 
   return (
     <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'auto' }}>
@@ -53,25 +52,36 @@ export function BudgetSetupStep({
               </button>
             </div>
           ))}
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-            <button
-              type="button" onClick={() => actions.addBucketCategory(b.key, undefined, false)} className="pressable"
-              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12px var(--font-body)', padding: '4px 0' }}
-            >
-              <PlusIcon />Add category
-            </button>
-            {COMMON_CATEGORIES[b.key]?.filter((name) => !b.categories.some((c) => c.name === name)).map((name) => (
+
+          {adding?.bucketKey === b.key ? (
+            <AddBudgetCategoryForm
+              bucketKey={b.key}
+              commonNames={BUDGET_COMMON_CATEGORIES[b.key] ?? []}
+              existingNames={b.categories.map((c) => c.name)}
+              initialName={adding.initialName}
+              onDone={() => setAdding(null)}
+            />
+          ) : (
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <button
-                key={name}
-                type="button"
-                onClick={() => actions.addBucketCategory(b.key, name, false)}
-                className="pressable"
-                style={{ all: 'unset', cursor: 'pointer', padding: '4px 10px', borderRadius: 999, border: '1.5px solid var(--color-neutral-400)', fontSize: 11.5, color: 'var(--color-text-muted)' }}
+                type="button" onClick={() => setAdding({ bucketKey: b.key })} className="pressable"
+                style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12px var(--font-body)', padding: '4px 0' }}
               >
-                + {name}
+                <PlusIcon />Add category
               </button>
-            ))}
-          </div>
+              {BUDGET_COMMON_CATEGORIES[b.key]?.filter((name) => !b.categories.some((c) => c.name === name)).map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setAdding({ bucketKey: b.key, initialName: name })}
+                  className="pressable"
+                  style={{ all: 'unset', cursor: 'pointer', padding: '4px 10px', borderRadius: 999, border: '1.5px solid var(--color-neutral-400)', fontSize: 11.5, color: 'var(--color-text-muted)' }}
+                >
+                  + {name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ))}
 

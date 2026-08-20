@@ -4,7 +4,7 @@
 import type { AppState, ManualData, BalanceDraft } from './types';
 import { mkRecord, mkCategory, mkItem, mkInvestRow, REVIEW_ITEMS, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
-import { clamp, isoToDisplayDate } from '../lib/format';
+import { clamp, isoToDisplayDate, computeNextPayment } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
 import { mapOcrCategory } from '../lib/constants';
 import { applySyncPayload, type SyncPayload } from './initialState';
@@ -58,7 +58,7 @@ export type Action =
   | { type: 'SET_SCAN_TAG'; value: string }
 
   | { type: 'TOGGLE_BUCKET'; key: string }
-  | { type: 'ADD_BUCKET_CATEGORY'; bucketKey: string; name?: string; openDetail?: boolean }
+  | { type: 'ADD_BUCKET_CATEGORY'; bucketKey: string; name?: string; openDetail?: boolean; cap?: number }
   | { type: 'REMOVE_BUCKET_CATEGORY'; bucketKey: string; catId: string }
   | { type: 'SET_BUCKET_CATEGORY_NAME'; bucketKey: string; catId: string; value: string }
   | { type: 'SET_BUCKET_CATEGORY_CAP'; bucketKey: string; catId: string; value: number }
@@ -124,6 +124,7 @@ export type Action =
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
   | { type: 'SET_RESET_TOKEN'; token: string | null }
   | { type: 'RECORD_NET_WORTH_SNAPSHOT'; date: string; value: number }
+  | { type: 'SET_USER_MODE'; mode: 'developer' | 'customer' }
 
   | { type: 'TOGGLE_AI_VIEW' }
   | { type: 'START_NEW_AI_CHAT' }
@@ -266,7 +267,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'TOGGLE_BUCKET':
       return { ...state, expandedBucket: state.expandedBucket === action.key ? null : action.key };
     case 'ADD_BUCKET_CATEGORY': {
-      const cat = mkCategory(action.name ?? 'New category', 0, action.name ? [] : [mkItem('New item', 0)]);
+      const cat = mkCategory(action.name ?? 'New category', action.cap ?? 0, action.name ? [] : [mkItem('New item', 0)]);
       return {
         ...state,
         finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: [...b.categories, cat] }) },
@@ -345,8 +346,18 @@ export function reducer(state: AppState, action: Action): AppState {
       });
 
     // ---- subscriptions ----
-    case 'SET_SUB_DRAFT_FIELD':
-      return { ...state, ob: { ...state.ob, subDraft: { ...state.ob.subDraft, [action.field]: action.value } } };
+    case 'SET_SUB_DRAFT_FIELD': {
+      const nextDraft = { ...state.ob.subDraft, [action.field]: action.value };
+      // Auto-suggest "next payment" from the start date + frequency
+      // whenever either changes — still a real, independently editable
+      // field afterward (a direct edit to nextPayment itself doesn't hit
+      // this branch, so a manual override sticks until start/frequency
+      // change again).
+      if ((action.field === 'startDate' || action.field === 'frequency') && nextDraft.startDate) {
+        nextDraft.nextPayment = computeNextPayment(nextDraft.startDate, nextDraft.frequency);
+      }
+      return { ...state, ob: { ...state.ob, subDraft: nextDraft } };
+    }
     case 'ADD_SUBSCRIPTION': {
       const d = state.ob.subDraft;
       if (!d.name || !d.amount) return state;
@@ -530,6 +541,8 @@ export function reducer(state: AppState, action: Action): AppState {
       }
       return { ...state, netWorthHistory: [...history, { date: action.date, value: action.value }] };
     }
+    case 'SET_USER_MODE':
+      return { ...state, userMode: action.mode };
 
     default:
       return state;

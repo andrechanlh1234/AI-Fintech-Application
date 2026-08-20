@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectBudgets, selectSubscriptions } from '../../store/selectors';
 import { Card } from '../../components/primitives';
-import { moneyWhole } from '../../lib/format';
+import { moneyWhole, isoToDisplayDate } from '../../lib/format';
 import { BudgetGauge } from './BudgetGauge';
+import { AddBudgetCategoryForm } from '../../components/AddBudgetCategoryForm';
+import { BUDGET_COMMON_CATEGORIES } from '../../lib/constants';
 
 // Ported from Cukai v7.dc.html lines 1297-1404: the gauge, bucket list, and
 // subscriptions summary that make up the Budgets screen.
@@ -11,6 +14,10 @@ export function BudgetsSection() {
   const actions = useActions();
   const { buckets } = selectBudgets(state);
   const { subs, monthlyTotal, yearlyLabel } = selectSubscriptions(state);
+  // Which bucket currently has the guided "add category" form open — same
+  // AddBudgetCategoryForm the onboarding budget step uses, so this screen's
+  // "+ Add category" no longer drops a blank row you rename after the fact.
+  const [addingFor, setAddingFor] = useState<string | null>(null);
 
   return (
     <div>
@@ -71,18 +78,27 @@ export function BudgetsSection() {
                   )}
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => actions.addBucketCategory(b.key)}
-                className="pressable"
-                style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12px var(--font-body)', padding: '4px 0' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14"></path>
-                  <path d="M12 5v14"></path>
-                </svg>
-                Add category
-              </button>
+              {addingFor === b.key ? (
+                <AddBudgetCategoryForm
+                  bucketKey={b.key}
+                  commonNames={BUDGET_COMMON_CATEGORIES[b.key] ?? []}
+                  existingNames={b.categories.map((c) => c.name)}
+                  onDone={() => setAddingFor(null)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingFor(b.key)}
+                  className="pressable"
+                  style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12px var(--font-body)', padding: '4px 0' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5v14"></path>
+                  </svg>
+                  Add category
+                </button>
+              )}
             </div>
           )}
         </Card>
@@ -110,7 +126,7 @@ export function BudgetsSection() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · Next {s.nextPayment || '—'}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · Next {isoToDisplayDate(s.nextPayment) || '—'}</div>
             </div>
             <div className="type-numeric" style={{ fontWeight: 600, fontSize: 13.5, flexShrink: 0 }}>RM {moneyWhole(parseFloat(s.amount) || 0)}</div>
           </div>
