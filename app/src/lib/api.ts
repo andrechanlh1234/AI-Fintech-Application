@@ -73,6 +73,35 @@ export function logout() {
   setToken(null);
 }
 
+export async function forgotPassword(email: string): Promise<void> {
+  await request('/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await request('/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
+
+// A password-reset email links back with ?reset_token=... in the URL —
+// read it once on mount so the app can show the "set a new password" form
+// instead of the normal login screen, then strip it from the URL.
+export function readResetTokenFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('reset_token');
+  if (!token) return null;
+  params.delete('reset_token');
+  const query = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash);
+  return token;
+}
+
 export function googleLoginUrl(): string {
   return API_BASE + '/auth/google/login';
 }
@@ -123,4 +152,21 @@ export async function scanReceiptImage(file: File): Promise<ScannedReceipt> {
   const form = new FormData();
   form.append('file', file);
   return request<ScannedReceipt>('/receipts/scan', { method: 'POST', body: form });
+}
+
+export interface AiChatResponse {
+  reply: string | null;
+  source: 'gemini' | 'canned';
+}
+
+// `source: "canned"` means the backend has no Gemini key configured (or the
+// call failed) — the caller should fall back to the client-side canned
+// reply generator (aiCraftReply in lib/seedData.ts), same as if this
+// request throws outright (network error, backend not running).
+export async function requestAiReply(message: string): Promise<AiChatResponse> {
+  return request<AiChatResponse>('/ai/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  });
 }

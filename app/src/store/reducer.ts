@@ -122,6 +122,7 @@ export type Action =
   | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
+  | { type: 'SET_RESET_TOKEN'; token: string | null }
 
   | { type: 'TOGGLE_AI_VIEW' }
   | { type: 'START_NEW_AI_CHAT' }
@@ -514,6 +515,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, legalOpen: action.doc };
     case 'CLOSE_LEGAL':
       return { ...state, legalOpen: null };
+    case 'SET_RESET_TOKEN':
+      return { ...state, resetToken: action.token };
 
     default:
       return state;

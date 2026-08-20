@@ -19,10 +19,17 @@ import { DonateModal } from './screens/modals/DonateModal';
 import { AddSubModal } from './screens/modals/AddSubModal';
 import { AuthPanel } from './screens/modals/AuthPanel';
 import { LegalDoc } from './screens/legal/LegalDoc';
+import { ResetPasswordScreen } from './screens/auth/ResetPasswordScreen';
 
 function AppShell() {
   const { state } = useStore();
   const actions = useActions();
+
+  // Takes priority over everything else — a reset-email link can arrive
+  // while signed in, mid-onboarding, or in a brand new browser session.
+  if (state.resetToken) {
+    return <ResetPasswordScreen />;
+  }
 
   if (state.appStage === 'onboarding') {
     return <OnboardingFlow />;

@@ -5,26 +5,66 @@ import { useActions } from '../store/StoreProvider';
 // and the "Sign in" entry point in More (for guests who skipped it).
 export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
   const actions = useActions();
-  const [mode, setMode] = useState<'signup' | 'login'>('signup');
+  const [mode, setMode] = useState<'signup' | 'login' | 'forgot'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setBusy(true);
     try {
-      if (mode === 'signup') await actions.authSignup(email.trim(), password);
-      else await actions.authLogin(email.trim(), password);
-      onSuccess();
+      if (mode === 'forgot') {
+        await actions.requestPasswordReset(email.trim());
+        setResetSent(true);
+      } else if (mode === 'signup') {
+        await actions.authSignup(email.trim(), password);
+        onSuccess();
+      } else {
+        await actions.authLogin(email.trim(), password);
+        onSuccess();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setBusy(false);
     }
   };
+
+  if (mode === 'forgot') {
+    return (
+      <form onSubmit={submit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {resetSent ? (
+          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center', padding: '8px 0' }}>
+            If an account exists for that email, a reset link is on its way.
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 2 }}>
+              Enter your email and we'll send a link to reset your password.
+            </div>
+            <input
+              className="input" type="email" placeholder="Email" value={email} required autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
+            <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
+              {busy ? 'Please wait…' : 'Send reset link'}
+            </button>
+          </>
+        )}
+        <button
+          type="button" onClick={() => { setMode('login'); setResetSent(false); setError(null); }} className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', alignSelf: 'center', color: 'var(--color-text-muted)', font: '600 12.5px var(--font-body)', padding: '4px 0' }}
+        >
+          Back to log in
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={submit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -47,6 +87,14 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
         minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
         onChange={(e) => setPassword(e.target.value)}
       />
+      {mode === 'login' && (
+        <button
+          type="button" onClick={() => { setMode('forgot'); setError(null); }} className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', alignSelf: 'flex-end', color: 'var(--color-text-muted)', font: '600 12px var(--font-body)' }}
+        >
+          Forgot password?
+        </button>
+      )}
       {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
       <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
         {busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Log in'}

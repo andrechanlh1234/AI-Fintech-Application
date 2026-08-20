@@ -6,12 +6,17 @@ import { aiCraftReply } from '../lib/seedData';
 import {
   getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
+  forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, readResetTokenFromUrl,
+  requestAiReply,
 } from '../lib/api';
 
 const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, () => mergePersisted(buildInitialState()));
+  const [state, dispatch] = useReducer(reducer, undefined, () => ({
+    ...mergePersisted(buildInitialState()),
+    resetToken: readResetTokenFromUrl(), // ?reset_token=... from a password-reset email link
+  }));
 
   useEffect(() => {
     const t = setTimeout(() => dispatch({ type: 'SET_MOUNTED' }), 60);
@@ -248,7 +253,18 @@ export function useActions() {
         const t = (text || '').trim();
         if (!t) return;
         dispatch({ type: 'SUBMIT_AI_TEXT_USER', text: t });
-        setTimeout(() => dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: aiCraftReply(t) }), 700);
+        // A minimum delay keeps the existing typing-indicator pacing even
+        // when a real Gemini reply comes back fast; requestAiReply throwing
+        // (network error, backend down) or returning source:"canned"
+        // (no GEMINI_API_KEY configured, or the call itself failed) both
+        // fall back to the same client-side canned reply — the chat must
+        // never go silent or error out.
+        const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
+        Promise.all([requestAiReply(t).catch(() => null), minDelay])
+          .then(([res]) => {
+            const reply = res && res.source === 'gemini' && res.reply ? res.reply : aiCraftReply(t);
+            dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: reply });
+          });
       },
 
       // accounts
@@ -272,6 +288,13 @@ export function useActions() {
       closeAuthPanel: () => dispatch({ type: 'CLOSE_AUTH_PANEL' }),
       openLegal: (doc: 'privacy' | 'terms') => dispatch({ type: 'OPEN_LEGAL', doc }),
       closeLegal: () => dispatch({ type: 'CLOSE_LEGAL' }),
+      requestPasswordReset: (email: string) => apiForgotPassword(email),
+      completePasswordReset: async (newPassword: string) => {
+        if (!state.resetToken) throw new Error('Missing reset token');
+        await apiResetPassword(state.resetToken, newPassword);
+        dispatch({ type: 'SET_RESET_TOKEN', token: null });
+      },
+      cancelPasswordReset: () => dispatch({ type: 'SET_RESET_TOKEN', token: null }),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.linkedIds]);

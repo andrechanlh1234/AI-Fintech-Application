@@ -21,16 +21,19 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
 
 from backend import auth
+from backend.ai_chat import GeminiNotConfigured, generate_ai_reply
+from backend.ai_chat import logger as ai_logger
 from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
-from backend.email_service import send_welcome_email
+from backend.email_service import FRONTEND_URL, send_password_reset_email, send_welcome_email
 from backend.google_oauth import router as google_oauth_router
+from backend.rate_limit import enforce_rate_limit
 from pipeline.receipt_ocr import process_receipt_image
 
 app = FastAPI(title="Cukai API")
@@ -69,6 +72,20 @@ class StatePayload(BaseModel):
     state: dict | None = None
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+class AiChatRequest(BaseModel):
+    message: str
+    history: list[dict] = []
+
+
 # ---- auth dependency ----
 
 def current_user_id(creds: HTTPAuthorizationCredentials | None = Depends(bearer)) -> str:
@@ -83,7 +100,8 @@ def current_user_id(creds: HTTPAuthorizationCredentials | None = Depends(bearer)
 # ---- auth endpoints ----
 
 @app.post("/auth/signup", response_model=AuthResponse)
-def signup(body: Credentials, background_tasks: BackgroundTasks):
+def signup(body: Credentials, background_tasks: BackgroundTasks, request: Request):
+    enforce_rate_limit(request, "signup", max_attempts=5, window_seconds=60 * 60)
     if len(body.password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
     with get_conn() as conn:
@@ -100,7 +118,8 @@ def signup(body: Credentials, background_tasks: BackgroundTasks):
 
 
 @app.post("/auth/login", response_model=AuthResponse)
-def login(body: Credentials):
+def login(body: Credentials, request: Request):
+    enforce_rate_limit(request, "login", max_attempts=10, window_seconds=15 * 60)
     with get_conn() as conn:
         row = conn.execute("SELECT id, password_hash FROM users WHERE email = ?", (body.email,)).fetchone()
     if not row or not row["password_hash"]:
@@ -108,6 +127,37 @@ def login(body: Credentials):
     if not auth.verify_password(body.password, row["password_hash"]):
         raise HTTPException(401, "Incorrect email or password")
     return {"token": auth.create_token(row["id"]), "user": {"id": row["id"], "email": body.email}}
+
+
+@app.post("/auth/forgot-password")
+def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTasks, request: Request):
+    enforce_rate_limit(request, "forgot-password", max_attempts=3, window_seconds=60 * 60)
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM users WHERE email = ? AND password_hash IS NOT NULL", (body.email,)
+        ).fetchone()
+    # Always return the same response whether or not the account exists (and
+    # whether it's a Google-only account with no password to reset) — telling
+    # an attacker which emails have accounts is its own information leak.
+    if row:
+        reset_link = f"{FRONTEND_URL}/?reset_token={auth.create_reset_token(row['id'])}"
+        background_tasks.add_task(send_password_reset_email, body.email, reset_link)
+    return {"ok": True}
+
+
+@app.post("/auth/reset-password")
+def reset_password(body: ResetPasswordRequest):
+    if len(body.new_password) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
+    user_id = auth.decode_reset_token(body.token)
+    if not user_id:
+        raise HTTPException(400, "This reset link is invalid or has expired")
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (auth.hash_password(body.new_password), user_id),
+        )
+    return {"ok": True}
 
 
 @app.get("/auth/me")
@@ -160,3 +210,24 @@ async def scan_receipt(file: UploadFile = File(...)):
         except Exception as e:
             raise HTTPException(422, f"Could not read this receipt: {e}") from e
     return record.to_dict()
+
+
+# ---- AI chat ----
+# Deliberately not behind auth, same reasoning as /receipts/scan — no
+# per-account data involved, works for guests too. Rate-limited at 20
+# messages / 10 minutes per IP: generous for a real conversation, but
+# enough to stop someone from scripting a loop against a free-tier
+# Gemini quota that's shared across every user of this backend.
+
+@app.post("/ai/chat")
+def ai_chat(body: AiChatRequest, request: Request):
+    enforce_rate_limit(request, "ai-chat", max_attempts=20, window_seconds=10 * 60)
+    try:
+        reply = generate_ai_reply(body.message, body.history)
+        return {"reply": reply, "source": "gemini"}
+    except GeminiNotConfigured:
+        ai_logger.info("Gemini not configured — falling back to canned replies")
+        return {"reply": None, "source": "canned"}
+    except Exception:
+        ai_logger.exception("Gemini call failed — falling back to canned replies")
+        return {"reply": None, "source": "canned"}

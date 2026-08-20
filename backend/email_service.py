@@ -95,24 +95,69 @@ def _welcome_html(name: str | None) -> str:
 """
 
 
-def send_welcome_email(to_email: str, name: str | None) -> None:
+def _reset_html(reset_link: str) -> str:
+    return f"""\
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f4;padding:32px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="background:{ACCENT};padding:28px 32px;">
+                <span style="color:#ffffff;font-size:20px;font-weight:800;">Cukai</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 16px;font-size:22px;color:#1a1a1a;">Reset your password</h1>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#44403c;">
+                  Someone (hopefully you) asked to reset the password on your Cukai account. This
+                  link works for 1 hour. If you didn't request this, you can safely ignore this
+                  email — your password won't change unless you click through and set a new one.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+                  <tr>
+                    <td style="border-radius:8px;background:{ACCENT};">
+                      <a href="{reset_link}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">
+                        Reset password
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+"""
+
+
+def _send(to_email: str, subject: str, html: str, log_label: str) -> None:
     if not RESEND_API_KEY:
-        logger.info("Welcome email not configured — skipped (%s)", to_email)
+        logger.info("%s not configured — skipped (%s)", log_label, to_email)
         return
     try:
         res = httpx.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
-            json={
-                "from": RESEND_FROM,
-                "to": [to_email],
-                "subject": "Welcome to Cukai",
-                "html": _welcome_html(name),
-            },
+            json={"from": RESEND_FROM, "to": [to_email], "subject": subject, "html": html},
             timeout=10,
         )
         if res.status_code >= 400:
-            logger.warning("Welcome email to %s failed: %s %s", to_email, res.status_code, res.text)
+            logger.warning("%s to %s failed: %s %s", log_label, to_email, res.status_code, res.text)
     except Exception:
-        # Sending a welcome email is never allowed to break signup/login.
-        logger.exception("Welcome email failed to send to %s", to_email)
+        # Sending an email is never allowed to break the request that triggered it.
+        logger.exception("%s failed to send to %s", log_label, to_email)
+
+
+def send_welcome_email(to_email: str, name: str | None) -> None:
+    _send(to_email, "Welcome to Cukai", _welcome_html(name), "Welcome email")
+
+
+def send_password_reset_email(to_email: str, reset_link: str) -> None:
+    _send(to_email, "Reset your Cukai password", _reset_html(reset_link), "Password reset email")

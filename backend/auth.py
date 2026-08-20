@@ -56,3 +56,27 @@ def decode_token(token: str) -> str | None:
         return payload.get("sub")
     except jwt.PyJWTError:
         return None
+
+
+RESET_TOKEN_TTL_MINUTES = 60
+
+
+def create_reset_token(user_id: str) -> str:
+    # A short-lived JWT with its own "purpose" claim, rather than a new DB
+    # table — it's self-verifying (no lookup needed) and expires on its own.
+    payload = {
+        "sub": user_id,
+        "purpose": "reset",
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_TTL_MINUTES),
+    }
+    return jwt.encode(payload, SECRET, algorithm=ALGORITHM)
+
+
+def decode_reset_token(token: str) -> str | None:
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+        if payload.get("purpose") != "reset":
+            return None
+        return payload.get("sub")
+    except jwt.PyJWTError:
+        return None
