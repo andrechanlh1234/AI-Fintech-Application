@@ -1,8 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, type Dispatch, type ReactNode } from 'react';
 import type { AppState, ManualData, BalanceDraft } from './types';
 import { reducer, type Action } from './reducer';
-import { buildInitialState, mergePersisted, persistState, clearPersisted } from './initialState';
+import { buildInitialState, mergePersisted, persistState, clearPersisted, buildSyncPayload } from './initialState';
 import { aiCraftReply } from '../lib/seedData';
+import {
+  getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage,
+  signup as apiSignup, login as apiLogin, logout as apiLogout,
+} from '../lib/api';
 
 const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
@@ -14,11 +18,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Restore a signed-in session on load: validate the saved token, then
+  // pull whatever this account last synced (overwriting the local-only
+  // state a guest may have accumulated before signing in).
+  useEffect(() => {
+    if (!getToken()) return;
+    (async () => {
+      try {
+        const user = await fetchMe();
+        dispatch({ type: 'SET_AUTH_USER', user });
+        const remote = await fetchRemoteState();
+        if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+      } catch {
+        apiLogout(); // expired/invalid token — fall back to local-only silently
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions]);
+
+  // Once signed in, also mirror every change to the backend (debounced —
+  // syncing on every keystroke would be wasteful and can race).
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!state.authUser) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    const payload = buildSyncPayload(state);
+    pushTimer.current = setTimeout(() => {
+      pushRemoteState(payload).catch(() => { /* offline / server down — localStorage still has it */ });
+    }, 800);
+    return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -186,9 +221,11 @@ export function useActions() {
       openScan: () => dispatch({ type: 'OPEN_SCAN' }),
       closeScan: () => dispatch({ type: 'CLOSE_SCAN' }),
       chooseManual: () => dispatch({ type: 'CHOOSE_MANUAL' }),
-      capturePhoto: () => {
+      capturePhotoFile: (file: File) => {
         dispatch({ type: 'CAPTURE_PHOTO_START' });
-        setTimeout(() => dispatch({ type: 'CAPTURE_PHOTO_DONE' }), 1500);
+        scanReceiptImage(file)
+          .then((receipt) => dispatch({ type: 'CAPTURE_PHOTO_RESULT', receipt }))
+          .catch((err: Error) => dispatch({ type: 'CAPTURE_PHOTO_FAILED', message: err.message }));
       },
       setScanMerchant: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanMerchant', value }),
       setScanAmount: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanAmount', value }),
@@ -211,6 +248,26 @@ export function useActions() {
         dispatch({ type: 'SUBMIT_AI_TEXT_USER', text: t });
         setTimeout(() => dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: aiCraftReply(t) }), 700);
       },
+
+      // accounts
+      authSignup: async (email: string, password: string) => {
+        const user = await apiSignup(email, password);
+        dispatch({ type: 'SET_AUTH_USER', user });
+        const remote = await fetchRemoteState();
+        if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+      },
+      authLogin: async (email: string, password: string) => {
+        const user = await apiLogin(email, password);
+        dispatch({ type: 'SET_AUTH_USER', user });
+        const remote = await fetchRemoteState();
+        if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+      },
+      authLogout: () => {
+        apiLogout();
+        dispatch({ type: 'SET_AUTH_USER', user: null });
+      },
+      openAuthPanel: () => dispatch({ type: 'OPEN_AUTH_PANEL' }),
+      closeAuthPanel: () => dispatch({ type: 'CLOSE_AUTH_PANEL' }),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.linkedIds]);

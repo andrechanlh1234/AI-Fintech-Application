@@ -4,8 +4,11 @@
 import type { AppState, ManualData, BalanceDraft } from './types';
 import { mkRecord, mkCategory, mkItem, mkInvestRow, REVIEW_ITEMS, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
-import { clamp } from '../lib/format';
+import { clamp, isoToDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
+import { mapOcrCategory } from '../lib/constants';
+import { applySyncPayload, type SyncPayload } from './initialState';
+import type { AuthUser, ScannedReceipt } from '../lib/api';
 
 const BLANK_SCAN_FIELDS = {
   scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
@@ -107,10 +110,16 @@ export type Action =
 
   | { type: 'OPEN_SCAN' } | { type: 'CLOSE_SCAN' }
   | { type: 'CHOOSE_MANUAL' }
-  | { type: 'CAPTURE_PHOTO_START' } | { type: 'CAPTURE_PHOTO_DONE' }
+  | { type: 'CAPTURE_PHOTO_START' }
+  | { type: 'CAPTURE_PHOTO_RESULT'; receipt: ScannedReceipt }
+  | { type: 'CAPTURE_PHOTO_FAILED'; message: string }
   | { type: 'SET_SCAN_FIELD'; field: 'scanMerchant' | 'scanAmount' | 'scanDate' | 'scanCategory'; value: string }
   | { type: 'SET_SCAN_DEDUCTIBLE'; value: boolean }
   | { type: 'SAVE_SCAN' } | { type: 'SCAN_ANOTHER' } | { type: 'VIEW_IN_TAX' }
+
+  | { type: 'SET_AUTH_USER'; user: AuthUser | null }
+  | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
+  | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
 
   | { type: 'TOGGLE_AI_VIEW' }
   | { type: 'START_NEW_AI_CHAT' }
@@ -426,21 +435,29 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan / capture receipt ----
     case 'OPEN_SCAN':
-      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, ...BLANK_SCAN_FIELDS };
+      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, scanError: null, ...BLANK_SCAN_FIELDS };
     case 'CLOSE_SCAN':
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
       // True manual entry — fields stay blank, no simulated OCR result.
       return { ...state, scanStep: 'confirm', scanMethod: 'manual' };
     case 'CAPTURE_PHOTO_START':
-      return { ...state, scanStep: 'processing' };
-    case 'CAPTURE_PHOTO_DONE':
-      // No real camera/OCR integration — this simulates what extraction
-      // would produce so the confirm step has something to review/edit.
+      return { ...state, scanStep: 'processing', scanError: null };
+    case 'CAPTURE_PHOTO_RESULT': {
+      const r = action.receipt;
       return {
-        ...state, scanStep: 'confirm', scanMethod: 'photo',
-        scanMerchant: 'Popular Bookstore', scanAmount: '86.00', scanCategory: 'Lifestyle', scanDeductible: true,
+        ...state, scanStep: 'confirm', scanMethod: 'photo', scanError: null,
+        scanMerchant: r.vendor, scanAmount: r.amount ? r.amount.toFixed(2) : '',
+        scanDate: isoToDisplayDate(r.date) || state.scanDate,
+        scanCategory: mapOcrCategory(r.category),
+        scanDeductible: !!r.relief_tag,
       };
+    }
+    case 'CAPTURE_PHOTO_FAILED':
+      // The scanning service couldn't read this photo (or isn't reachable)
+      // — fall back to manual entry with blank fields rather than either
+      // faking a result or leaving the user stuck on the spinner.
+      return { ...state, scanStep: 'confirm', scanMethod: 'manual', scanError: action.message };
     case 'SET_SCAN_FIELD':
       return { ...state, [action.field]: action.value };
     case 'SET_SCAN_DEDUCTIBLE':
@@ -457,7 +474,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, scanStep: 'saved', transactions: [...state.transactions, tx] };
     }
     case 'SCAN_ANOTHER':
-      return { ...state, scanStep: 'capture', ...BLANK_SCAN_FIELDS };
+      return { ...state, scanStep: 'capture', scanError: null, ...BLANK_SCAN_FIELDS };
     case 'VIEW_IN_TAX':
       return { ...state, scanOpen: false, tab: 'tax' };
 
@@ -474,6 +491,16 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, aiMessages: [...state.aiMessages, { from: 'user', text: action.text }], aiInput: '', aiTyping: true };
     case 'SUBMIT_AI_TEXT_REPLY':
       return { ...state, aiMessages: [...state.aiMessages, { from: 'ai', text: action.text }], aiTyping: false };
+
+    // ---- accounts ----
+    case 'SET_AUTH_USER':
+      return { ...state, authUser: action.user };
+    case 'APPLY_REMOTE_STATE':
+      return applySyncPayload(state, action.payload);
+    case 'OPEN_AUTH_PANEL':
+      return { ...state, authPanelOpen: true };
+    case 'CLOSE_AUTH_PANEL':
+      return { ...state, authPanelOpen: false };
 
     default:
       return state;

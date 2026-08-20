@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReliefImpact } from '../../store/selectors';
 import { CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
@@ -5,6 +6,7 @@ import { CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
 export function ScanFlow() {
   const { state } = useStore();
   const actions = useActions();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!state.scanOpen) return null;
 
@@ -44,9 +46,21 @@ export function ScanFlow() {
             <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.55)' }}>Align the receipt within the frame</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '22px 0 34px' }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) actions.capturePhotoFile(file);
+              }}
+            />
             <button
               type="button"
-              onClick={actions.capturePhoto}
+              onClick={() => fileInputRef.current?.click()}
               aria-label="Capture"
               className="pressable"
               style={{ width: 74, height: 74, borderRadius: '50%', background: 'transparent', border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -107,6 +121,11 @@ export function ScanFlow() {
           <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
             {state.scanMethod === 'photo' ? "Read from your photo — check it's right" : 'Enter the receipt details'}
           </div>
+          {state.scanError && (
+            <div style={{ fontSize: 12, color: 'var(--color-danger-700)', marginTop: -8, marginBottom: 16 }}>
+              Couldn't read that photo automatically ({state.scanError}) — enter the details below instead.
+            </div>
+          )}
 
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Merchant</label>

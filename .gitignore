@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 pipeline/tests/fixtures/
 .venv/
+backend/.venv/
+backend/cukai.db
+backend/.jwt_secret

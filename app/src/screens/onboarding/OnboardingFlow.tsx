@@ -8,6 +8,8 @@ import {
 } from '../../lib/constants';
 import type { RecordRow } from '../../lib/seedData';
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
+import { AuthForm } from '../../components/AuthForm';
+import { useState } from 'react';
 import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
 import { SubscriptionsStep } from './steps/SubscriptionsStep';
@@ -29,6 +31,7 @@ export function OnboardingFlow() {
   const { state } = useStore();
   const actions = useActions();
   const ob = state.ob;
+  const [oauthNote, setOauthNote] = useState<string | null>(null);
 
   const order = computeOrder(ob.multipleIncome, ob.setupMethod);
   const idx = order.indexOf(state.obStep);
@@ -77,8 +80,16 @@ export function OnboardingFlow() {
             <div style={{ fontSize: 13.5, color: 'var(--color-text-muted)', maxWidth: '28ch', lineHeight: 1.5, marginBottom: 28 }}>
               Your personal financial operating system — with an intelligent tax assistant built in.
             </div>
+            <AuthForm onSuccess={goNext} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '14px 0 6px' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--color-neutral-300)' }} />
+              <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>or</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--color-neutral-300)' }} />
+            </div>
+
             <button
-              type="button" onClick={goNext} className="pressable"
+              type="button" onClick={() => setOauthNote('Google sign-in needs a developer account we haven’t set up yet — use email for now.')} className="pressable"
               style={{ width: '100%', padding: 15, background: '#fff', border: '1.5px solid var(--color-neutral-400)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, font: '600 14px var(--font-body)', cursor: 'pointer', marginBottom: 10, boxSizing: 'border-box' }}
             >
               <svg width="17" height="17" viewBox="0 0 24 24">
@@ -90,7 +101,7 @@ export function OnboardingFlow() {
               Continue with Google
             </button>
             <button
-              type="button" onClick={goNext} className="pressable"
+              type="button" onClick={() => setOauthNote('Apple sign-in needs a paid developer account we haven’t set up yet — use email for now.')} className="pressable"
               style={{ width: '100%', padding: 15, background: '#000', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, font: '600 14px var(--font-body)', cursor: 'pointer', boxSizing: 'border-box' }}
             >
               <svg width="15" height="17" viewBox="0 0 17 20" fill="#fff">
@@ -98,11 +109,14 @@ export function OnboardingFlow() {
               </svg>
               Continue with Apple
             </button>
+            {oauthNote && (
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', maxWidth: '30ch' }}>{oauthNote}</div>
+            )}
             <button
               type="button" onClick={goNext} className="pressable"
               style={{ background: 'none', border: 'none', padding: 8, marginTop: 14, font: '600 13px var(--font-body)', color: 'var(--color-text-muted)', cursor: 'pointer' }}
             >
-              Skip for now
+              Skip for now — use this device only
             </button>
           </div>
         )}

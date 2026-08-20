@@ -61,6 +61,7 @@ export function buildInitialState(): AppState {
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
     budgetItemDetailOpen: null, addSubOpen: false, donutExpanded: false,
+    authUser: null, authPanelOpen: false, scanError: null,
     balanceDetailOpen: null, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' },
     investDetailOpen: null, expandedNwGroup: null,
     netWorthSeed: defaultNetWorthSeed(),
@@ -70,7 +71,11 @@ export function buildInitialState(): AppState {
 
 const STORAGE_KEY = 'cukai_v7_data';
 
-export function loadPersisted(): Partial<{
+// The exact shape synced both to localStorage (always, as an offline cache)
+// and to the backend's /state endpoint (only once signed in) — one payload
+// shape for both, so a signed-in user's data round-trips identically
+// whichever store it came from.
+export interface SyncPayload {
   manual: AppState['ob']['manual'];
   subs: AppState['ob']['subs'];
   buckets: AppState['finance']['buckets'];
@@ -78,7 +83,33 @@ export function loadPersisted(): Partial<{
   theme: AppState['theme'];
   netWorthSeed: AppState['netWorthSeed'];
   transactions: AppState['transactions'];
-}> | null {
+}
+
+export function buildSyncPayload(state: AppState): SyncPayload {
+  return {
+    manual: state.ob.manual,
+    subs: state.ob.subs,
+    buckets: state.finance.buckets,
+    obDone: state.appStage === 'app',
+    theme: state.theme,
+    netWorthSeed: state.netWorthSeed,
+    transactions: state.transactions,
+  };
+}
+
+export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppState {
+  const next = { ...base };
+  if (p.manual) next.ob = { ...next.ob, manual: { ...next.ob.manual, ...p.manual } };
+  if (p.subs) next.ob = { ...next.ob, subs: p.subs };
+  if (p.buckets) next.finance = { ...next.finance, buckets: p.buckets };
+  if (p.obDone) next.appStage = 'app';
+  if (p.theme) next.theme = p.theme;
+  if (p.transactions) next.transactions = p.transactions;
+  if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
+  return next;
+}
+
+export function loadPersisted(): Partial<SyncPayload> | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -89,15 +120,7 @@ export function loadPersisted(): Partial<{
 
 export function persistState(state: AppState) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      manual: state.ob.manual,
-      subs: state.ob.subs,
-      buckets: state.finance.buckets,
-      obDone: state.appStage === 'app',
-      theme: state.theme,
-      netWorthSeed: state.netWorthSeed,
-      transactions: state.transactions,
-    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSyncPayload(state)));
   } catch {
     // ignore write failures (private browsing / storage full)
   }
@@ -109,13 +132,5 @@ export function clearPersisted() {
 
 export function mergePersisted(base: AppState): AppState {
   const p = loadPersisted();
-  if (!p) return base;
-  if (p.manual) base.ob.manual = { ...base.ob.manual, ...p.manual };
-  if (p.subs) base.ob.subs = p.subs;
-  if (p.buckets) base.finance.buckets = p.buckets;
-  if (p.obDone) base.appStage = 'app';
-  if (p.theme) base.theme = p.theme;
-  if (p.transactions) base.transactions = p.transactions;
-  if (p.netWorthSeed) base.netWorthSeed = p.netWorthSeed;
-  return base;
+  return p ? applySyncPayload(base, p) : base;
 }

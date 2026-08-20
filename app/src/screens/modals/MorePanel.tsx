@@ -74,15 +74,28 @@ export function MorePanel() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
         <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--color-neutral-200)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
           {obInitials}
         </div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{obDisplayName}</div>
-          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{obDisplayEmail}</div>
+          <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+            {state.authUser ? state.authUser.email : obDisplayEmail}
+          </div>
         </div>
       </div>
+
+      {state.authUser ? (
+        <div className="tag tag-neutral" style={{ alignSelf: 'flex-start', marginBottom: 22 }}>Signed in — synced to your account</div>
+      ) : (
+        <button
+          type="button" onClick={actions.openAuthPanel} className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', font: '700 12.5px var(--font-body)', marginBottom: 22, display: 'inline-block' }}
+        >
+          Not signed in — data stays on this device. Tap to create an account →
+        </button>
+      )}
 
       <div style={sectionLabelStyle}>Account</div>
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
@@ -198,7 +211,11 @@ export function MorePanel() {
         <ChevronIcon />
       </button>
 
-      <button type="button" className="btn btn-ghost" style={{ marginTop: 26, color: 'var(--color-danger-700)' }}>Sign out</button>
+      {state.authUser && (
+        <button type="button" onClick={actions.authLogout} className="btn btn-ghost" style={{ marginTop: 26, color: 'var(--color-danger-700)' }}>
+          Sign out
+        </button>
+      )}
     </div>
   );
 }

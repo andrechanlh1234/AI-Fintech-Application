@@ -41,6 +41,21 @@ export const NETWORTH_MONTH_LABELS = [
 
 export const CATEGORY_OPTIONS = ['Food & Drink', 'Transport', 'Shopping', 'Bills', 'Health', 'Lifestyle', 'Income', 'Other'];
 
+// The OCR pipeline (pipeline/categorize.py) classifies into its own,
+// finer-grained vocabulary — map it onto the app's categories rather than
+// falling back to "Other" for anything that isn't an exact string match.
+const OCR_CATEGORY_MAP: Record<string, string> = {
+  Medical: 'Health',
+  Groceries: 'Food & Drink',
+  Dining: 'Food & Drink',
+  Lifestyle: 'Lifestyle',
+  Transport: 'Transport',
+};
+
+export function mapOcrCategory(category: string): string {
+  return OCR_CATEGORY_MAP[category] ?? 'Other';
+}
+
 export const TAX_SHADES = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#14B8A6'];
 
 export interface Brand { bg: string; letter: string; fg: string }

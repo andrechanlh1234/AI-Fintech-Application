@@ -123,6 +123,9 @@ export interface AppState {
   donateAmount: string;
   budgetItemDetailOpen: string | null;
   addSubOpen: boolean;
+  authUser: { id: string; email: string } | null;
+  authPanelOpen: boolean;
+  scanError: string | null;
   donutExpanded: boolean;
   balanceDetailOpen: string | null;
   balanceDraft: BalanceDraft;
