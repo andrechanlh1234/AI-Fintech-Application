@@ -29,7 +29,7 @@ if not logger.handlers:
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 # Configurable rather than hardcoded so a future Gemini model rename/retire
 # doesn't need a code change — see backend/GEMINI_SETUP.md.
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 # Kept accurate to what the app actually does today (app/README.md) so the
 # assistant never claims a feature that doesn't exist yet.
@@ -72,9 +72,14 @@ def generate_ai_reply(user_text: str, history: list[dict] | None = None) -> str:
         json={
             "contents": contents,
             "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-            "generationConfig": {"maxOutputTokens": 300},
+            # Generous headroom, not just for the visible reply: newer Gemini
+            # models spend a substantial hidden "thinking" token budget
+            # before producing output (observed ~350-900 tokens even for a
+            # simple prompt) — too low a cap here truncates mid-thought
+            # before any visible text comes out at all.
+            "generationConfig": {"maxOutputTokens": 2048},
         },
-        timeout=15,
+        timeout=30,  # thinking-model latency varies more than a typical API call
     )
     res.raise_for_status()
     data = res.json()

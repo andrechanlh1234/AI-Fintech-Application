@@ -34,7 +34,7 @@ you can leave this unconfigured for as long as you like with no downside.
 
 ## Free tier limits
 
-The default model (`gemini-2.0-flash`) has generous free-tier limits, but
+The default model (`gemini-3.6-flash`) has generous free-tier limits, but
 Google does change these over time — check the current numbers on the
 pricing page at https://ai.google.dev/gemini-api/docs/rate-limits rather
 than trusting a number written here months from now. As a safety net
@@ -45,12 +45,12 @@ quota.
 
 ## Changing the model
 
-If Google renames or retires `gemini-2.0-flash`, set `GEMINI_MODEL` in
+If Google renames or retires `gemini-3.6-flash`, set `GEMINI_MODEL` in
 `backend/.env` to whatever the current flash-tier model is called — no
 code change needed:
 
 ```
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash
 ```
 
 ## What it can and can't do
