@@ -120,6 +120,7 @@ export type Action =
   | { type: 'SET_AUTH_USER'; user: AuthUser | null }
   | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
+  | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
 
   | { type: 'TOGGLE_AI_VIEW' }
   | { type: 'START_NEW_AI_CHAT' }
@@ -501,6 +502,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, authPanelOpen: true };
     case 'CLOSE_AUTH_PANEL':
       return { ...state, authPanelOpen: false };
+    case 'OPEN_LEGAL':
+      return { ...state, legalOpen: action.doc };
+    case 'CLOSE_LEGAL':
+      return { ...state, legalOpen: null };
 
     default:
       return state;

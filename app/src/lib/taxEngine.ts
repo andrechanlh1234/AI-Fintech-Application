@@ -17,6 +17,20 @@ export const TAX_GROUPS_META = [
   { key: 'child', label: 'Child Relief', icon: 'isUsers' },
 ] as const;
 
+// TAX ACCURACY REVIEW (2026-08-20): these caps were checked against
+// Claude's general knowledge of LHDN's individual relief structure — not
+// a live LHDN lookup, and not a licensed tax advisor's sign-off. High
+// confidence on all except:
+//  - child_disabled (RM8,000, "Unmarried Child with Disabilities"): may
+//    conflate the base disabled-child relief (commonly cited as RM6,000)
+//    with the additional relief for a disabled child in higher education
+//    (commonly cited as RM8,000) — these may be two separate line items,
+//    not one combined RM8,000 relief.
+//  - life_ev (RM2,500, EV charging equipment / food-waste composting
+//    machine): bundling these two into a single relief item is unverified.
+// Get a licensed tax professional (or a direct LHDN source check) to
+// confirm every figure here before treating any of it as authoritative
+// for a real filing — see the disclaimer already shown in the Tax Center.
 export const TAX_ITEMS_META: Record<string, TaxItemMeta[]> = {
   individual: [
     { key: 'indiv_self', label: 'Individual & Dependent Relatives', cap: 9000, automatic: true },

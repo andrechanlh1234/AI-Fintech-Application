@@ -6,3 +6,5 @@ pipeline/tests/fixtures/
 backend/.venv/
 backend/cukai.db
 backend/.jwt_secret
+backend/backups/
+backend/.env

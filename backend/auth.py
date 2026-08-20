@@ -1,10 +1,13 @@
 """Password hashing and JWT session tokens.
 
-The signing secret is generated once and cached on disk (gitignored) so
-tokens survive server restarts during local dev; in a real deployment this
-would come from an environment variable instead.
+The signing secret comes from the CUKAI_JWT_SECRET environment variable
+when set — required for any real deployment, since every session token
+(and therefore every account) is only as safe as this value. For local
+dev, where setting an env var every run is friction with no real payoff,
+it falls back to a secret generated once and cached on disk (gitignored).
 """
 
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +21,9 @@ TOKEN_TTL_DAYS = 30
 
 
 def _load_or_create_secret() -> str:
+    env_secret = os.environ.get("CUKAI_JWT_SECRET")
+    if env_secret:
+        return env_secret
     if SECRET_PATH.exists():
         return SECRET_PATH.read_text().strip()
     secret = secrets.token_hex(32)

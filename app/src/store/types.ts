@@ -126,6 +126,7 @@ export interface AppState {
   authUser: { id: string; email: string } | null;
   authPanelOpen: boolean;
   scanError: string | null;
+  legalOpen: 'privacy' | 'terms' | null;
   donutExpanded: boolean;
   balanceDetailOpen: string | null;
   balanceDraft: BalanceDraft;

@@ -31,12 +31,33 @@ override with `VITE_API_BASE` in `../app/.env` if needed.
   `/state` (GET/PUT — the per-account data sync), `/receipts/scan`
 - `auth.py` — bcrypt password hashing, JWT session tokens
 - `db.py` — SQLite schema (`users`, `user_state`) and connection helper
+- `backup.py` — automatic local backups (below)
 - `cukai.db`, `.jwt_secret` — created on first run, gitignored (local
   dev data — delete `cukai.db` to reset all accounts)
 
 `/receipts/scan` wraps `../pipeline/receipt_ocr.py`, which already
 existed with its own passing test suite before this backend was built —
 this just exposes it over HTTP so the frontend can call it.
+
+## Backups
+
+The server takes a full copy of `cukai.db` into `backups/` on every
+startup and every 6 hours while running, keeping the last 14. This runs
+inside the app process — no cron/launchd setup needed. To restore, stop
+the server and copy the backup you want over `cukai.db`:
+
+```bash
+cp backend/backups/cukai-<timestamp>.db backend/cukai.db
+```
+
+## Secrets
+
+The JWT signing secret (what makes login sessions trustworthy) reads
+from the `CUKAI_JWT_SECRET` environment variable if set. For local dev
+this is optional — it falls back to a secret auto-generated into
+`.jwt_secret` on first run. **Before this ever runs anywhere but your
+own machine, set `CUKAI_JWT_SECRET` explicitly** (e.g. `openssl rand
+-hex 32` to generate one) rather than relying on the file fallback.
 
 ## Known gaps
 

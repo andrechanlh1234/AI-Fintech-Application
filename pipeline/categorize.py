@@ -20,7 +20,7 @@ RELIEF_CAPS: dict[str, tuple[str, int]] = {
     "Medical": ("Medical relief", 10000),
     "Education": ("Education relief", 7000),
     "Lifestyle": ("Lifestyle relief", 2500),
-    "EPF / Insurance": ("EPF/Insurance relief", 4000),
+    "EPF / Insurance": ("EPF/Insurance relief", 7000),
     "Parents' medical": ("Parents' medical relief", 8000),
 }
 
