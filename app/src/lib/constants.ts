@@ -132,9 +132,14 @@ export const GOAL_OPTS = [
   'Grow my investments', 'Retire comfortably', 'Just track my spending',
 ];
 
+// 'about' now also carries the "tax situation" questions that used to be
+// their own 'txPersonal' step (merged onto one page), and the standalone
+// starting-net-worth summary step was removed outright — the number is
+// still shown to the user, just as the real Home dashboard immediately
+// after onboarding, not as an extra page in between.
 export const OB_ORDER = [
-  'login', 'source', 'privacy', 'about', 'txPersonal', 'txIncomeTypes', 'txReliefs', 'txHealth',
-  'goals', 'budget', 'linkAccounts', 'manualSetup', 'subscriptions', 'netWorth', 'txDone',
+  'login', 'source', 'privacy', 'about', 'txIncomeTypes', 'txReliefs', 'txHealth',
+  'goals', 'budget', 'linkAccounts', 'manualSetup', 'subscriptions', 'txDone',
 ];
 
 export interface IconFlags {

@@ -1,12 +1,9 @@
 // Full onboarding flow ported from Cukai v7.dc.html lines 63-503 (obStep machine).
 // Not wrapped in the app's tab shell — this owns its own full-page layout.
 import { useStore, useActions } from '../../store/StoreProvider';
-import { selectNetWorth } from '../../store/selectors';
-import { moneyWhole } from '../../lib/format';
 import {
   OB_ORDER, SOURCE_OPTS, RELIEF_OPTS, INCOME_TYPE_OPTS, INCOME_RANGE_OPTS, EMPLOYMENT_OPTS, GOAL_OPTS,
 } from '../../lib/constants';
-import type { RecordRow } from '../../lib/seedData';
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
 import { AuthForm } from '../../components/AuthForm';
 import { googleLoginUrl } from '../../lib/api';
@@ -24,10 +21,6 @@ function computeOrder(multipleIncome: string | null, setupMethod: string | null)
   });
 }
 
-function sumRecords(rows: RecordRow[]) {
-  return rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-}
-
 export function OnboardingFlow() {
   const { state } = useStore();
   const actions = useActions();
@@ -41,9 +34,16 @@ export function OnboardingFlow() {
       : 'Google sign-in didn’t go through — use email for now, or try again.';
   });
 
+  // `order` drives actual navigation (goNext/goBack/nextAfter) and includes
+  // every step. The visible "Step X of N" counter excludes the final
+  // "You're all set" screen, which doesn't show a counter of its own —
+  // so every other step's denominator reflects the count a user actually
+  // experiences as "steps to fill in," not the raw array length.
   const order = computeOrder(ob.multipleIncome, ob.setupMethod);
   const idx = order.indexOf(state.obStep);
-  const progress = `Step ${idx + 1} of ${order.length}`;
+  const visibleOrder = order.filter((k) => k !== 'txDone');
+  const visibleIdx = visibleOrder.indexOf(state.obStep);
+  const progress = `Step ${visibleIdx + 1} of ${visibleOrder.length}`;
 
   const goNext = () => {
     if (idx >= 0 && idx < order.length - 1) actions.obNext(order[idx + 1]);
@@ -59,15 +59,6 @@ export function OnboardingFlow() {
   };
   const chooseManual = () => actions.chooseManualMethod(nextAfter('linkAccounts', { setupMethod: 'manual' }));
   const chooseLink = () => actions.chooseLinkMethod(nextAfter('linkAccounts', { setupMethod: 'link' }));
-
-  // ---- net worth summary (final onboarding screen) ----
-  const m = ob.manual;
-  const manualNetWorth = sumRecords(m.bankAccounts) + sumRecords(m.properties) + sumRecords(m.otherAssets)
-    + m.investments.reduce((s, r) => (r.name ? s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0) : s), 0)
-    - sumRecords(m.creditCards) - sumRecords(m.liabilities);
-  const linkedNetWorth = selectNetWorth(state).netWorth;
-  const obNetWorthValue = ob.setupMethod === 'manual' ? manualNetWorth : linkedNetWorth;
-  const obNetWorthSubtitle = ob.setupMethod === 'manual' ? 'Based on what you entered manually.' : 'Based on your connected accounts.';
 
   const hasReliefProfile = ob.reliefs.length > 0;
   const obDoneSubtitle = hasReliefProfile
@@ -211,20 +202,14 @@ export function OnboardingFlow() {
               <label>Occupation</label>
               <input className="input" value={ob.occupation} onChange={(e) => actions.setOb('occupation', e.target.value)} placeholder="e.g. Product designer" />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field" style={{ marginBottom: 20 }}>
               <label>Monthly income</label>
               <select className="input" value={ob.income} onChange={(e) => actions.setOb('income', e.target.value)}>
                 {INCOME_RANGE_OPTS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
-            <div style={{ flex: 1 }} />
-            <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
-          </div>
-        )}
 
-        {state.obStep === 'txPersonal' && (
-          <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <StepHeader progress={progress} onBack={goBack} onSkip={goNext} />
+            <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 20 }} />
             <div className="tag tag-tax" style={{ alignSelf: 'flex-start', marginBottom: 10 }}>Tax Setup</div>
             <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>A bit about your tax situation</div>
             <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>This personalises your Tax Center.</div>
@@ -358,22 +343,6 @@ export function OnboardingFlow() {
 
         {state.obStep === 'subscriptions' && (
           <SubscriptionsStep state={state} actions={actions} progress={progress} onBack={goBack} onSkip={goNext} onContinue={goNext} />
-        )}
-
-        {state.obStep === 'netWorth' && (
-          <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-            <div className="pop-in" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v20" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </div>
-            <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Your starting net worth</div>
-            <div className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 30, letterSpacing: '-0.02em', whiteSpace: 'nowrap', marginBottom: 10 }}>
-              RM {moneyWhole(obNetWorthValue)}
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', maxWidth: '28ch', lineHeight: 1.5, marginBottom: 30 }}>{obNetWorthSubtitle}</div>
-            <button type="button" onClick={goNext} className="btn btn-primary btn-lg" style={{ width: '100%' }}>Continue</button>
-          </div>
         )}
 
         {state.obStep === 'txDone' && (
