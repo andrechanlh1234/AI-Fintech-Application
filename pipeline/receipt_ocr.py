@@ -48,7 +48,14 @@ def preprocess(image_path: str) -> Image.Image:
     measurably helps Tesseract on phone-camera receipt photos (uneven
     lighting, low contrast, and — for anything already downscaled before
     reaching this pipeline — too few pixels per character)."""
-    img = Image.open(image_path).convert("L")
+    img = Image.open(image_path)
+    # Phone cameras (iPhone in particular) very commonly store the photo's
+    # actual pixel data unrotated and record the intended orientation as
+    # EXIF metadata instead — PIL doesn't apply that automatically, so
+    # without this, a portrait photo taken on a real phone gets OCR'd
+    # sideways or upside down, silently producing garbage text.
+    img = ImageOps.exif_transpose(img)
+    img = img.convert("L")
     img = ImageOps.autocontrast(img)
     if img.width < MIN_OCR_WIDTH:
         scale = MIN_OCR_WIDTH / img.width

@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReliefImpact } from '../../store/selectors';
 import { CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
@@ -7,6 +7,62 @@ export function ScanFlow() {
   const { state } = useStore();
   const actions = useActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [liveCameraReady, setLiveCameraReady] = useState(false);
+
+  const onCaptureStep = state.scanOpen && state.scanStep === 'capture';
+
+  // A real live viewfinder, not just a decorative frame — matches what
+  // "Align the receipt within the frame" actually implies. getUserMedia
+  // only works in a secure context (https, or localhost) though, so this
+  // quietly falls back to the native camera-app picker (the file input
+  // below, which has no such restriction) wherever it isn't available —
+  // e.g. testing over a plain-http LAN IP from a phone.
+  useEffect(() => {
+    if (!onCaptureStep) return;
+    let cancelled = false;
+    setLiveCameraReady(false);
+
+    if (!navigator.mediaDevices?.getUserMedia) return;
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then((stream) => {
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+        setLiveCameraReady(true);
+      })
+      .catch(() => { /* permission denied / no camera — fall back to the file input */ });
+
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, [onCaptureStep]);
+
+  const captureFromLiveVideo = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (blob) actions.capturePhotoFile(new File([blob], 'receipt.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.92);
+  };
+
+  const handleCaptureClick = () => {
+    if (liveCameraReady) captureFromLiveVideo();
+    else fileInputRef.current?.click();
+  };
 
   if (!state.scanOpen) return null;
 
@@ -38,12 +94,27 @@ export function ScanFlow() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path></svg>
             </div>
           </div>
-          <div style={{ flex: 1, position: 'relative', margin: '8px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ flex: 1, position: 'relative', margin: '8px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 12 }}>
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                opacity: liveCameraReady ? 1 : 0, transition: 'opacity .2s ease',
+              }}
+            />
             <div style={{ position: 'absolute', top: 0, left: 0, width: 34, height: 34, borderTop: '3px solid rgba(255,255,255,0.85)', borderLeft: '3px solid rgba(255,255,255,0.85)', borderRadius: '8px 0 0 0' }} />
             <div style={{ position: 'absolute', top: 0, right: 0, width: 34, height: 34, borderTop: '3px solid rgba(255,255,255,0.85)', borderRight: '3px solid rgba(255,255,255,0.85)', borderRadius: '0 8px 0 0' }} />
             <div style={{ position: 'absolute', bottom: 0, left: 0, width: 34, height: 34, borderBottom: '3px solid rgba(255,255,255,0.85)', borderLeft: '3px solid rgba(255,255,255,0.85)', borderRadius: '0 0 0 8px' }} />
             <div style={{ position: 'absolute', bottom: 0, right: 0, width: 34, height: 34, borderBottom: '3px solid rgba(255,255,255,0.85)', borderRight: '3px solid rgba(255,255,255,0.85)', borderRadius: '0 0 8px 0' }} />
-            <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.55)' }}>Align the receipt within the frame</span>
+            {!liveCameraReady && (
+              <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.55)', position: 'relative' }}>
+                Align the receipt within the frame
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '22px 0 34px' }}>
             <input
@@ -60,7 +131,7 @@ export function ScanFlow() {
             />
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleCaptureClick}
               aria-label="Capture"
               className="pressable"
               style={{ width: 74, height: 74, borderRadius: '50%', background: 'transparent', border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}

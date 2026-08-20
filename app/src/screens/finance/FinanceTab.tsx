@@ -24,17 +24,15 @@ export function FinanceTab() {
   };
 
   return (
-    <div>
-      <div style={{ padding: '58px 16px 0' }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 12 }}>Finance</div>
-        <div className="seg" style={{ marginBottom: 8, width: '100%' }}>
-          {SECTIONS.map((s) => (
-            <label key={s.key} className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
-              <input type="radio" name="financeSection" checked={state.financeSection === s.key} onChange={() => goSection(s.key)} />
-              {s.label}
-            </label>
-          ))}
-        </div>
+    <div style={{ padding: '58px 16px 0', boxSizing: 'border-box' }}>
+      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 12 }}>Finance</div>
+      <div className="seg" style={{ marginBottom: 8, width: '100%' }}>
+        {SECTIONS.map((s) => (
+          <label key={s.key} className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
+            <input type="radio" name="financeSection" checked={state.financeSection === s.key} onChange={() => goSection(s.key)} />
+            {s.label}
+          </label>
+        ))}
       </div>
 
       {state.financeSection === 'networth' && <NetWorthSection />}
