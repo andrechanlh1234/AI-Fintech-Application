@@ -2,6 +2,7 @@
 // buttons, and small inline icons. Ported from Cukai v7.dc.html lines 63-503.
 import type { CSSProperties, ReactNode } from 'react';
 import { chipStyle } from '../../../lib/constants';
+import { useStore } from '../../../store/StoreProvider';
 
 export function BackIcon() {
   return (
@@ -35,7 +36,12 @@ export function CheckIcon({ size = 13 }: { size?: number }) {
   );
 }
 
+// Skip is a developer-only shortcut through onboarding -- gated centrally
+// here (rather than at each of this component's ~17 call sites) so it's
+// impossible for a customer-mode session to accidentally show it.
 export function StepHeader({ progress, onBack, onSkip }: { progress: string; onBack: () => void; onSkip: () => void }) {
+  const { state } = useStore();
+  const canSkip = state.userMode === 'developer';
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22, gap: 8 }}>
       <button
@@ -47,7 +53,7 @@ export function StepHeader({ progress, onBack, onSkip }: { progress: string; onB
       <span style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', color: 'var(--color-text-muted)' }}>{progress}</span>
       <button
         type="button" onClick={onSkip} className="pressable"
-        style={{ background: 'none', border: 'none', padding: 8, marginRight: -8, cursor: 'pointer', font: '600 12px var(--font-body)', color: 'var(--color-text-muted)' }}
+        style={{ background: 'none', border: 'none', padding: 8, marginRight: -8, cursor: 'pointer', font: '600 12px var(--font-body)', color: 'var(--color-text-muted)', visibility: canSkip ? 'visible' : 'hidden' }}
       >
         Skip
       </button>

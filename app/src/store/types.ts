@@ -22,7 +22,10 @@ export interface ManualData {
 
 export interface OnboardingState {
   name: string;
-  age: string;
+  /** ISO date (YYYY-MM-DD) from a real <input type="date"> — display age is
+   * derived from this via computeAge() in lib/format.ts, never stored as a
+   * separately-editable number (it would silently go stale). */
+  dob: string;
   country: string;
   occupation: string;
   income: string;
@@ -65,6 +68,10 @@ export interface AppState {
   appStage: 'onboarding' | 'app';
   obStep: string;
   ob: OnboardingState;
+  /** null until the very first "are you a developer or a customer?" choice
+   * is made, before onboarding proper even starts. Gates onboarding's Skip
+   * link (developer-only) and is changeable later via a More panel toggle. */
+  userMode: 'developer' | 'customer' | null;
 
   tab: Tab;
   financeSection: FinanceSection;

@@ -100,9 +100,15 @@ export function marginalTaxRate(chargeableIncome: number): number {
   return 0.3;
 }
 
+// Mirrors lib/constants.ts's INCOME_RANGE_OPTS, whose boundaries are these
+// same MY_TAX_BRACKETS annual thresholds divided by 12 — an approximation
+// only, since gross monthly income isn't the same as annual chargeable/
+// post-relief income (same caveat as the app's "verify with HASiL" notices).
+// Update both lists together.
 const INCOME_RANGE_MID: Record<string, number> = {
-  'Below RM 3,000': 2500, 'RM 3,000–6,000': 4500, 'RM 6,000–10,000': 8000,
-  'RM 10,000–20,000': 15000, 'RM 20,000+': 25000,
+  'Below RM 500': 300, 'RM 500–1,700': 1100, 'RM 1,700–2,900': 2300, 'RM 2,900–4,200': 3550,
+  'RM 4,200–5,800': 5000, 'RM 5,800–8,300': 7050, 'RM 8,300–33,300': 20800,
+  'RM 33,300–50,000': 41650, 'RM 50,000–166,700': 108350, 'RM 166,700+': 200000,
 };
 
 export function estimateAnnualIncome(rangeLabel: string | null | undefined): number {

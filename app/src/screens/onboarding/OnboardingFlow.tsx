@@ -2,11 +2,12 @@
 // Not wrapped in the app's tab shell — this owns its own full-page layout.
 import { useStore, useActions } from '../../store/StoreProvider';
 import {
-  OB_ORDER, SOURCE_OPTS, RELIEF_OPTS, INCOME_TYPE_OPTS, INCOME_RANGE_OPTS, EMPLOYMENT_OPTS, GOAL_OPTS,
+  OB_ORDER, SOURCE_OPTS, RELIEF_OPTS, INCOME_TYPE_OPTS, INCOME_RANGE_OPTS, EMPLOYMENT_OPTS, GOAL_OPTS, COUNTRY_OPTIONS,
 } from '../../lib/constants';
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
 import { AuthForm } from '../../components/AuthForm';
 import { googleLoginUrl } from '../../lib/api';
+import { computeAge } from '../../lib/format';
 import { useState } from 'react';
 import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
@@ -69,7 +70,33 @@ export function OnboardingFlow() {
     <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 22px 32px', boxSizing: 'border-box' }}>
 
-        {state.obStep === 'login' && (
+        {state.obStep === 'login' && state.userMode === null && (
+          <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8 }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" style={{ marginBottom: 6 }}>
+              <path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)" />
+              <path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" strokeWidth={1.5} fill="none" strokeLinecap="round" opacity={0.5} />
+            </svg>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 26, marginBottom: 6 }}>Are you a developer or a customer?</div>
+            <div style={{ fontSize: 13.5, color: 'var(--color-text-muted)', maxWidth: '30ch', lineHeight: 1.5, marginBottom: 28 }}>
+              Developer mode unlocks a Skip link through onboarding for faster testing. You can change this later in More &gt; Settings.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+              <button
+                type="button" onClick={() => actions.setUserMode('customer')} className="btn btn-primary btn-lg"
+              >
+                I'm a customer
+              </button>
+              <button
+                type="button" onClick={() => actions.setUserMode('developer')} className="pressable"
+                style={{ width: '100%', padding: 15, background: 'none', border: '1.5px solid var(--color-neutral-400)', borderRadius: 'var(--radius-md)', font: '600 14px var(--font-body)', cursor: 'pointer', color: 'var(--color-text)', boxSizing: 'border-box' }}
+              >
+                I'm a developer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {state.obStep === 'login' && state.userMode !== null && (
           <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8 }}>
             <svg width="30" height="30" viewBox="0 0 24 24" style={{ marginBottom: 6 }}>
               <path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)" />
@@ -186,15 +213,16 @@ export function OnboardingFlow() {
             </div>
             <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
               <div className="field" style={{ flex: 1 }}>
-                <label>Age</label>
-                <input className="input" value={ob.age} onChange={(e) => actions.setOb('age', e.target.value)} placeholder="29" />
+                <label>Date of birth</label>
+                <input type="date" className="input" value={ob.dob} onChange={(e) => actions.setOb('dob', e.target.value)} />
+                {ob.dob && computeAge(ob.dob) !== null && (
+                  <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 4 }}>{computeAge(ob.dob)} years old</div>
+                )}
               </div>
               <div className="field" style={{ flex: 1 }}>
                 <label>Country</label>
                 <select className="input" value={ob.country} onChange={(e) => actions.setOb('country', e.target.value)}>
-                  <option value="Malaysia">Malaysia</option>
-                  <option value="Singapore">Singapore</option>
-                  <option value="Other">Other</option>
+                  {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>

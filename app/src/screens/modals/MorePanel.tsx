@@ -2,7 +2,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { Toggle } from '../../components/primitives';
 import { selectSubscriptions } from '../../store/selectors';
 import { subBadge } from '../../lib/constants';
-import { money } from '../../lib/format';
+import { money, isoToDisplayDate } from '../../lib/format';
 
 function CloseIcon() {
   return (
@@ -199,7 +199,7 @@ export function MorePanel() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.frequency} &middot; next {s.nextPayment || '—'}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.frequency} &middot; next {isoToDisplayDate(s.nextPayment) || '—'}</div>
             </div>
             <div className="type-numeric" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}>RM {money(parseFloat(s.amount) || 0)}</div>
             <button type="button" onClick={() => actions.removeSubscription(i)} aria-label="Remove" className="pressable" style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)' }}>
@@ -215,6 +215,18 @@ export function MorePanel() {
 
       <div style={sectionLabelStyle}>Developer</div>
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
+      <div style={{ padding: '13px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Developer mode</div>
+            <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Shows the Skip link through onboarding</div>
+          </div>
+          <Toggle
+            on={state.userMode === 'developer'}
+            onToggle={() => actions.setUserMode(state.userMode === 'developer' ? 'customer' : 'developer')}
+          />
+        </div>
+      </div>
       <button type="button" onClick={actions.resetOnboarding} className="pressable" style={{ ...rowButtonStyle, borderBottom: 'none' }}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Reset onboarding</div>

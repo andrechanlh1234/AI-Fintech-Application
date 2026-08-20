@@ -12,8 +12,9 @@ export function buildInitialState(): AppState {
   return {
     appStage: 'onboarding',
     obStep: 'login',
+    userMode: null,
     ob: {
-      name: '', age: '', country: 'Malaysia', occupation: '', income: '', source: null,
+      name: '', dob: '', country: 'Malaysia', occupation: '', income: '', source: null,
       residency: null, marital: null, dependants: null, employment: null, employer: '',
       hasDisability: null, hasHousingLoan: null,
       approxIncome: '', multipleIncome: null, incomeTypes: [], reliefs: [], otherText: {}, agreedTerms: false,
@@ -85,6 +86,7 @@ export interface SyncPayload {
   netWorthSeed: AppState['netWorthSeed'];
   transactions: AppState['transactions'];
   netWorthHistory: AppState['netWorthHistory'];
+  userMode: AppState['userMode'];
 }
 
 export function buildSyncPayload(state: AppState): SyncPayload {
@@ -97,6 +99,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     netWorthSeed: state.netWorthSeed,
     transactions: state.transactions,
     netWorthHistory: state.netWorthHistory,
+    userMode: state.userMode,
   };
 }
 
@@ -110,6 +113,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.transactions) next.transactions = p.transactions;
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
   if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
+  if (p.userMode) next.userMode = p.userMode;
   return next;
 }
 

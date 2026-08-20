@@ -30,3 +30,42 @@ export function isoToDisplayDate(iso: string | null): string {
   const [, year, month, day] = m;
   return `${parseInt(day, 10)} ${SHORT_MONTHS[parseInt(month, 10) - 1]} ${year}`;
 }
+
+// Subscriptions store startDate/nextPayment as ISO ("YYYY-MM-DD", what
+// <input type="date"> both reads and writes) -- this derives an
+// auto-suggested next payment from a start date + billing frequency,
+// recomputed whenever either changes (see reducer.ts's SET_SUB_DRAFT_FIELD).
+export function computeNextPayment(startDateIso: string, frequency: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDateIso);
+  if (!m) return '';
+  const [, y, mo, d] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d));
+  switch (frequency) {
+    case 'Weekly': date.setDate(date.getDate() + 7); break;
+    case 'Quarterly': date.setMonth(date.getMonth() + 3); break;
+    case 'Yearly': date.setFullYear(date.getFullYear() + 1); break;
+    case 'Monthly':
+    default: date.setMonth(date.getMonth() + 1); break;
+  }
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+// Onboarding stores date of birth (from <input type="date">) rather than a
+// free-text age, since a stored age would silently go stale -- display age
+// is always derived on the fly from this. Returns null for an empty/invalid
+// dob rather than a fabricated age.
+export function computeAge(dobIso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dobIso);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  const dob = new Date(Number(y), Number(mo) - 1, Number(d));
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const beforeBirthday = today.getMonth() < dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
+  if (beforeBirthday) age--;
+  return age >= 0 ? age : null;
+}
