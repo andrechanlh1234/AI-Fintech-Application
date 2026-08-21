@@ -102,8 +102,14 @@ export function ReviewFlow() {
               </div>
               <div style={{ fontWeight: 700, fontSize: 19, marginBottom: 4 }}>{curItem.merchant}</div>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 20 }}>{curItem.dateLabel}</div>
-              <div className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 30, marginBottom: 'auto' }}>
-                −RM {money(curItem.amount)}
+              <div
+                className="type-numeric"
+                style={{
+                  fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 30, marginBottom: 'auto',
+                  color: curItem.amount >= 0 ? 'var(--color-accent-700)' : 'inherit',
+                }}
+              >
+                {curItem.amount >= 0 ? '+' : '−'}RM {money(Math.abs(curItem.amount))}
               </div>
               <div style={{ height: 1, background: 'var(--color-neutral-300)', margin: '14px 0' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: 6 }}>

@@ -15,6 +15,13 @@ export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
+// ISO "today" (YYYY-MM-DD) — the default/fallback date for anything a user
+// hasn't explicitly dated yet (a new manual balance row, a balance-history
+// entry). Never used to fabricate a value, only to date one.
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function signedMoney(n: number): string {
   return (n >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(n));
 }
@@ -29,6 +36,38 @@ export function isoToDisplayDate(iso: string | null): string {
   if (!m) return iso;
   const [, year, month, day] = m;
   return `${parseInt(day, 10)} ${SHORT_MONTHS[parseInt(month, 10) - 1]} ${year}`;
+}
+
+// Today, in the same "D Mon YYYY" shape as isoToDisplayDate — the real
+// default for a fresh scan/manual-entry date field, instead of a fixed
+// placeholder date that goes stale the moment real time moves past it.
+export function todayDisplayDate(): string {
+  return isoToDisplayDate(todayIso());
+}
+
+// Parses "D Mon" or "D Mon YYYY" (what isoToDisplayDate produces, and what a
+// receipt-scan/manual date field holds) back into parts. Returns null for
+// anything else rather than guessing — callers fall back to today's real
+// date, never to a fabricated one.
+export function parseDisplayDate(label: string): { day: number; month: string; year: number | null } | null {
+  const m = /^(\d{1,2}) (\w{3})(?: (\d{4}))?$/.exec((label || '').trim());
+  if (!m) return null;
+  return { day: parseInt(m[1], 10), month: m[2], year: m[3] ? parseInt(m[3], 10) : null };
+}
+
+// Classifies a scan/manual date label against the real current date —
+// "Today"/"Yesterday" when it genuinely is, "This week" otherwise. Replaces
+// blindly hardcoding dateGroup: 'Today' on every save regardless of what
+// date was actually entered.
+export function dateGroupFor(label: string): 'Today' | 'Yesterday' | 'This week' {
+  const parsed = parseDisplayDate(label);
+  if (!parsed) return 'This week';
+  const now = new Date();
+  const entered = new Date(parsed.year ?? now.getFullYear(), SHORT_MONTHS.indexOf(parsed.month), parsed.day);
+  const diffDays = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - entered.getTime()) / 86400000);
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  return 'This week';
 }
 
 // Subscriptions store startDate/nextPayment as ISO ("YYYY-MM-DD", what

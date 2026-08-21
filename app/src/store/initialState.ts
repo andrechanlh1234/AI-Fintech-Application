@@ -2,11 +2,15 @@
 // every pre-filled example value removed — a fresh user starts at RM0 with
 // no transactions/subscriptions/accounts until they enter their own.
 import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
+import { todayDisplayDate } from '../lib/format';
 import type { AppState } from './types';
 
 const emptySubDraft = {
   name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Maybank Visa', category: 'Entertainment',
 };
+
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const today = new Date();
 
 export function buildInitialState(): AppState {
   return {
@@ -36,7 +40,7 @@ export function buildInitialState(): AppState {
     financeSection: 'networth',
     netWorthRange: '1Y',
     nwSelectedIdx: null,
-    historyMonth: 'Aug',
+    historyMonth: SHORT_MONTHS[today.getMonth()],
     showWhyDeductible: false,
     scanTaxAmount: '', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
     expandedBucket: null,
@@ -44,11 +48,12 @@ export function buildInitialState(): AppState {
     txSearch: '',
     txFilter: 'All',
     confirmedIds: {},
-    reviewOpen: false, reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
+    reviewOpen: false, pendingReviewItems: [], reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
+    statementUploading: false, statementUploadError: null,
     scanOpen: false, scanStep: 'capture', scanFrom: 'home', scanMethod: 'manual',
     // Blank until the user fills them in (manual entry) or capturePhoto's
     // simulated-OCR result fills them in (see CAPTURE_PHOTO_DONE in reducer.ts).
-    scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
+    scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
     scanCategory: 'Food & Drink', scanDeductible: false,
     taxYear: 'YA2026',
     mounted: false,
@@ -58,7 +63,7 @@ export function buildInitialState(): AppState {
     theme: 'light',
     morePanelOpen: false, notifPanelOpen: false, subscriptionTier: 'free',
     faceIdEnabled: true, taxPackOpen: false,
-    selectedDayMonth: 'Aug', selectedDay: 15, statsPeriod: 'This month', statsCategoryDetail: null,
+    selectedDayMonth: SHORT_MONTHS[today.getMonth()], selectedDay: today.getDate(), statsPeriod: 'This month', statsCategoryDetail: null,
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
     budgetItemDetailOpen: null, addSubOpen: false, donutExpanded: false,

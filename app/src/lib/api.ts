@@ -158,6 +158,26 @@ export async function scanReceiptImage(file: File): Promise<ScannedReceipt> {
   return request<ScannedReceipt>('/receipts/scan', { method: 'POST', body: form });
 }
 
+export interface ScannedStatementRecord {
+  source: string;
+  vendor: string;
+  date: string | null;
+  amount: number;
+  category: string;
+  relief_tag: string | null;
+  confidence: number;
+}
+
+// Real line items parsed from an uploaded CSV/PDF bank or e-wallet statement
+// (pipeline/statement_parser.py) — the caller turns these into pending
+// review items (accept/reject), same as a scanned receipt. Nothing is
+// written to the user's real transactions until they accept one.
+export async function uploadStatement(file: File): Promise<{ records: ScannedStatementRecord[] }> {
+  const form = new FormData();
+  form.append('file', file);
+  return request<{ records: ScannedStatementRecord[] }>('/statements/scan', { method: 'POST', body: form });
+}
+
 export interface AiChatResponse {
   reply: string | null;
   source: 'gemini' | 'canned';
@@ -167,10 +187,20 @@ export interface AiChatResponse {
 // call failed) — the caller should fall back to the client-side canned
 // reply generator (aiCraftReply in lib/seedData.ts), same as if this
 // request throws outright (network error, backend not running).
-export async function requestAiReply(message: string): Promise<AiChatResponse> {
+//
+// `history` and `context` ground the reply in what's actually true: history
+// is the prior turns of this conversation (so Gemini has continuity),
+// context is a real-data snapshot (net worth, budget, tax, subscriptions —
+// see selectAiContext) so a question like "what's my net worth" gets the
+// real figure instead of Gemini guessing one.
+export async function requestAiReply(
+  message: string,
+  history: { from: 'user' | 'ai'; text: string }[] = [],
+  context: unknown = null,
+): Promise<AiChatResponse> {
   return request<AiChatResponse>('/ai/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, history, context }),
   });
 }

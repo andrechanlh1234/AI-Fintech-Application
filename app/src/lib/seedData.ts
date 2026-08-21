@@ -19,12 +19,17 @@ export interface Transaction {
 }
 
 export interface BalanceEntry { id: string; amount: number; desc: string; date: string }
-export interface RecordRow { id: string; name: string; amount: string; history?: BalanceEntry[] }
+/** `date` (ISO, YYYY-MM-DD) is the "as of" date for `amount` on a manually-
+ * edited row (Finance > Net worth) — it's what lets the net-worth chart plot
+ * a balance change on the date it actually happened instead of always
+ * "today". Defaults to today via mkRecord(); absent on rows ported from
+ * before this existed, which computeNetWorthTimeline treats as "today". */
+export interface RecordRow { id: string; name: string; amount: string; date?: string; history?: BalanceEntry[] }
 export interface SeedRow extends RecordRow { brand: string | null }
 export interface InvestRow { id: string; name: string; qty: string; buy: string; cur: string; brand?: string | null }
 
-export function mkRecord(name: string, amount: string): RecordRow {
-  return { id: uid(), name, amount, history: [] };
+export function mkRecord(name: string, amount: string, date?: string): RecordRow {
+  return { id: uid(), name, amount, date, history: [] };
 }
 export function mkInvestRow(name: string, qty: string, buy: string, cur: string): InvestRow {
   return { id: uid(), name, qty, buy, cur };
@@ -48,9 +53,6 @@ export interface NetWorthSeed {
 export function defaultNetWorthSeed(): NetWorthSeed {
   return { cash: [], investments: [], creditCards: [] };
 }
-
-export const NETWORTH_SERIES = [44100, 45300, 46800, 47600, 49500, 51200, 52400, 54100, 56600, 60200, 63900, 67100, 71216];
-export const NETWORTH_1M = [67100, 67550, 68200, 69100, 69800, 70500, 71216];
 
 export interface BudgetItem { id: string; name: string; amount: number | string }
 export interface BudgetCategory { id: string; name: string; cap: number; items: BudgetItem[] }
@@ -81,15 +83,13 @@ export const MONTH_SUMMARIES: Record<string, { income: number; expenses: number 
   Jul: { income: 9800, expenses: 6960 }, Aug: { income: 9800, expenses: 6960 },
 };
 
+/** A pending, not-yet-accepted transaction awaiting the user's swipe
+ * decision — populated for real from an uploaded receipt/statement
+ * (state.pendingReviewItems, see StoreProvider's uploadStatement action),
+ * never from a fixed sample list. `amount` is signed, same convention as
+ * Transaction.amount: negative = expense, positive = income/credit — a
+ * statement can contain both (e.g. a salary deposit alongside spending). */
 export interface ReviewItem { id: string; merchant: string; amount: number; cat: string; dateLabel: string; brand: string; payment: string }
-
-export const REVIEW_ITEMS: ReviewItem[] = [
-  { id: 'r1', merchant: 'Grab', amount: 18.5, cat: 'Transport', dateLabel: 'Today, 8:12 AM', brand: 'grab', payment: 'GrabPay' },
-  { id: 'r2', merchant: 'Tealive', amount: 12.9, cat: 'Food & Drink', dateLabel: 'Today, 7:35 AM', brand: 'tealive', payment: 'Maybank Visa' },
-  { id: 'r3', merchant: 'Guardian', amount: 56.4, cat: 'Health', dateLabel: 'Yesterday', brand: 'guardian', payment: "Touch 'n Go eWallet" },
-  { id: 'r4', merchant: 'Shopee', amount: 89.9, cat: 'Shopping', dateLabel: 'Yesterday', brand: 'shopee', payment: 'CIMB Credit Card' },
-  { id: 'r5', merchant: 'Astro Invoice', amount: 240.0, cat: 'Bills', dateLabel: 'Detected from Gmail', brand: 'gmail', payment: 'Bank Transfer' },
-];
 
 export interface NotifItem { kind: string; title: string; sub: string; time: string }
 

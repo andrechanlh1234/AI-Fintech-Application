@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ChangeEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectRecordPage } from '../../store/selectors';
 import { money, signedMoney } from '../../lib/format';
@@ -59,7 +59,14 @@ export default function RecordSection() {
   const { state } = useStore();
   const actions = useActions();
   const railRef = useRef<HTMLDivElement>(null);
+  const statementInputRef = useRef<HTMLInputElement>(null);
   const rec = selectRecordPage(state);
+
+  const handleStatementFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset so re-selecting the same file still fires onChange
+    if (file) actions.uploadStatementFile(file);
+  };
 
   const scrollCalendar = (dir: 1 | -1) => {
     railRef.current?.scrollBy({ left: dir * 160, behavior: 'smooth' });
@@ -93,8 +100,25 @@ export default function RecordSection() {
         <button type="button" onClick={actions.goFinanceStats} aria-label="Back" className="pressable" style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer', color: 'var(--color-text)' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
         </button>
-        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>All transactions</span>
+        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, flex: 1 }}>All transactions</span>
+        <button
+          type="button"
+          onClick={() => statementInputRef.current?.click()}
+          disabled={state.statementUploading}
+          className="pressable"
+          style={{
+            all: 'unset', cursor: state.statementUploading ? 'default' : 'pointer', color: 'var(--color-accent-700)',
+            font: '700 12px var(--font-body)', opacity: state.statementUploading ? 0.6 : 1,
+          }}
+        >
+          {state.statementUploading ? 'Importing…' : '+ Import statement'}
+        </button>
+        <input ref={statementInputRef} type="file" accept=".csv,.pdf" onChange={handleStatementFile} style={{ display: 'none' }} />
       </div>
+
+      {state.statementUploadError && (
+        <div style={{ fontSize: 12.5, color: 'var(--color-danger-700)', marginBottom: 10 }}>{state.statementUploadError}</div>
+      )}
 
       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10 }}>{rec.recordMonthLabel}</div>
 

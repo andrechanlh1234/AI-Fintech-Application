@@ -1,5 +1,5 @@
 // State shape ported from Cukai v7.dc.html (lines 1967-2021).
-import type { RecordRow, InvestRow, NetWorthSeed, Bucket, AiMessage, BalanceEntry, Transaction } from '../lib/seedData';
+import type { RecordRow, InvestRow, NetWorthSeed, Bucket, AiMessage, BalanceEntry, Transaction, ReviewItem } from '../lib/seedData';
 
 export interface Subscription {
   name: string;
@@ -91,7 +91,12 @@ export interface AppState {
   txFilter: string;
   confirmedIds: Record<string, boolean>;
   reviewOpen: boolean;
+  /** Real pending items from an uploaded receipt/statement, awaiting an
+   * accept/reject swipe — see lib/seedData.ts's ReviewItem doc comment. */
+  pendingReviewItems: ReviewItem[];
   reviewDecisions: Record<string, 'accept' | 'reject'>;
+  statementUploading: boolean;
+  statementUploadError: string | null;
   reviewDragging: boolean;
   reviewDragX: number;
   reviewDragStartX: number;

@@ -3,10 +3,10 @@
 // no bound handlers. Screens read data from these and bind interactions via
 // useActions() directly (e.g. onClick={() => actions.openBalanceDetail(...)}).
 import type { AppState } from './types';
-import { money, moneyWhole, clamp } from '../lib/format';
+import { money, moneyWhole, clamp, todayIso } from '../lib/format';
 import {
-  MONTH_SUMMARIES, REVIEW_ITEMS,
-  type Transaction, type BudgetCategory,
+  MONTH_SUMMARIES,
+  type Transaction, type BudgetCategory, type BalanceEntry, type RecordRow,
 } from '../lib/seedData';
 import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER } from '../lib/constants';
 import {
@@ -49,6 +49,7 @@ export interface NwRow {
   isManual: boolean;
   qty?: string; buy?: string; cur?: string; idx?: number; // manual investment rows only
   rawAmount?: string; // manual asset/liability rows only — bind inputs to this, not balanceValue
+  rawDate?: string; // manual asset/liability rows only — the "as of" date behind computeNetWorthTimeline
 }
 
 export function selectNetWorth(state: AppState) {
@@ -67,28 +68,28 @@ export function selectNetWorth(state: AppState) {
 
   const nwSeedRow = (name: string, amount: number, listKey: string, id: string, brand?: string | null): NwRow =>
     ({ name, subLabel: 'Synced · tap to edit', balanceValue: amount, brand, clickable: true, listKey, id, isManual: false });
-  const nwManualRow = (name: string, amount: number, listKey: string, id: string, rawAmount: string): NwRow =>
-    ({ name, subLabel: 'Manual', balanceValue: amount, clickable: false, listKey, id, isManual: true, rawAmount });
+  const nwManualRow = (name: string, amount: number, listKey: string, id: string, rawAmount: string, rawDate?: string): NwRow =>
+    ({ name, subLabel: 'Manual', balanceValue: amount, clickable: false, listKey, id, isManual: true, rawAmount, rawDate });
   const nwInvestRow = (r: { name: string; qty: string; buy: string; cur: string; id: string; brand?: string | null }, listKey: string, isManual: boolean, idx?: number): NwRow =>
     ({ name: r.name, subLabel: isManual ? 'Manual' : 'Synced · tap to edit', balanceValue: (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), brand: r.brand, clickable: !isManual, listKey, id: r.id, isManual, qty: r.qty, buy: r.buy, cur: r.cur, idx });
 
   const groups = [
     { key: 'cash', label: 'Cash', totalVal: cashTotalVal, rows: [
       ...state.netWorthSeed.cash.map((r) => nwSeedRow(r.name, parseFloat(r.amount) || 0, 'seed.cash', r.id, r.brand)),
-      ...ob.manual.bankAccounts.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'bankAccounts', r.id, r.amount)),
+      ...ob.manual.bankAccounts.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'bankAccounts', r.id, r.amount, r.date)),
     ] },
     { key: 'invest', label: 'Investments', totalVal: investTotalVal, rows: [
       ...state.netWorthSeed.investments.map((r) => nwInvestRow(r, 'seed.investments', false)),
       ...ob.manual.investments.map((r, i) => nwInvestRow({ ...r, id: r.id || 'mi' + i }, 'investments', true, i)),
     ] },
     { key: 'other', label: 'Other assets', totalVal: otherAssetsTotalVal, rows: [
-      ...ob.manual.properties.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'properties', r.id, r.amount)),
-      ...ob.manual.otherAssets.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'otherAssets', r.id, r.amount)),
+      ...ob.manual.properties.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'properties', r.id, r.amount, r.date)),
+      ...ob.manual.otherAssets.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'otherAssets', r.id, r.amount, r.date)),
     ] },
     { key: 'liab', label: 'Liabilities', totalVal: liabTotalVal, rows: [
       ...state.netWorthSeed.creditCards.map((r) => nwSeedRow(r.name, parseFloat(r.amount) || 0, 'seed.creditCards', r.id, r.brand)),
-      ...ob.manual.creditCards.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'creditCards', r.id, r.amount)),
-      ...ob.manual.liabilities.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'liabilities', r.id, r.amount)),
+      ...ob.manual.creditCards.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'creditCards', r.id, r.amount, r.date)),
+      ...ob.manual.liabilities.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'liabilities', r.id, r.amount, r.date)),
     ] },
   ].map((g) => ({ ...g, icon: NW_GROUP_ICON[g.key], expanded: state.expandedNwGroup === g.key }));
 
@@ -99,13 +100,75 @@ export function selectNetWorth(state: AppState) {
   return { groups, assets, liabilities, netWorth };
 }
 
-// There is no real historical net-worth tracking (that needs a backend
-// recording snapshots over time, which doesn't exist yet). Rather than
-// show a fabricated up-and-to-the-right trend, the chart is a flat line at
-// real recorded snapshots (see StoreProvider's snapshot effect and the
-// RECORD_NET_WORTH_SNAPSHOT reducer case) — a brand-new account has at most
-// one snapshot, so the chart is honestly a single flat point until real
-// days of usage build up real history. Never fabricated backward.
+// Real historical net worth, reconstructed from the dated rows/entries the
+// user actually entered — never fabricated. Two dating mechanisms feed it:
+//  - "Synced" seed rows (netWorthSeed.cash/creditCards) carry a full dated
+//    delta history via the Add/Deduct-money modal (BalanceEntry[]); a row's
+//    balance at date d is its current amount minus every entry dated after d.
+//  - Manual rows (bank accounts, cards, properties, other assets,
+//    liabilities) carry a single "as of" date (RecordRow.date, defaulting to
+//    today) alongside their current amount — the row contributes 0 before
+//    that date and its full amount from that date on, since there's no
+//    finer-grained history to reconstruct from.
+// Investments (seed and manual) have no per-date tracking — market value is
+// inherently a "right now" number — so they contribute their current total
+// at every point rather than being excluded from history entirely.
+// A brand-new account has nothing dated yet, so this collapses to a single
+// point at today with the current total — honest, not a fabricated trend.
+function entryDate(d: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : todayIso();
+}
+
+function seededHistoryRows(rows: RecordRow[]) {
+  return rows.map((r) => {
+    const current = parseFloat(r.amount) || 0;
+    const entries = (r.history || []) as BalanceEntry[];
+    const deltaSum = entries.reduce((s, e) => s + e.amount, 0);
+    return { base: current - deltaSum, entries };
+  });
+}
+
+function seedValueAt(rows: ReturnType<typeof seededHistoryRows>, date: string): number {
+  return rows.reduce((sum, r) => {
+    const applied = r.entries.filter((e) => entryDate(e.date) <= date).reduce((s, e) => s + e.amount, 0);
+    return sum + r.base + applied;
+  }, 0);
+}
+
+function manualValueAt(rows: RecordRow[], date: string): number {
+  return rows.reduce((sum, r) => {
+    const effDate = r.date || todayIso();
+    return sum + (effDate <= date ? (parseFloat(r.amount) || 0) : 0);
+  }, 0);
+}
+
+export function computeNetWorthTimeline(state: AppState): { date: string; value: number }[] {
+  const cashSeed = seededHistoryRows(state.netWorthSeed.cash);
+  const creditSeed = seededHistoryRows(state.netWorthSeed.creditCards);
+  const cashManual = state.ob.manual.bankAccounts;
+  const creditManual = state.ob.manual.creditCards;
+  const otherManual = [...state.ob.manual.properties, ...state.ob.manual.otherAssets];
+  const liabManual = state.ob.manual.liabilities;
+
+  const investTotal =
+    state.netWorthSeed.investments.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), 0) +
+    state.ob.manual.investments.filter((r) => r.name).reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), 0);
+
+  const dates = new Set<string>([todayIso()]);
+  [...cashSeed, ...creditSeed].forEach((r) => r.entries.forEach((e) => dates.add(entryDate(e.date))));
+  [...cashManual, ...creditManual, ...otherManual, ...liabManual].forEach((r) => dates.add(r.date || todayIso()));
+
+  return Array.from(dates).sort().map((date) => ({
+    date,
+    value:
+      seedValueAt(cashSeed, date) + manualValueAt(cashManual, date) +
+      investTotal +
+      manualValueAt(otherManual, date) -
+      seedValueAt(creditSeed, date) - manualValueAt(creditManual, date) -
+      manualValueAt(liabManual, date),
+  }));
+}
+
 const RANGE_DAYS: Record<AppState['netWorthRange'], number> = {
   '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '3Y': 365 * 3, ALL: Infinity,
 };
@@ -261,7 +324,7 @@ export function selectHomeDashboard(state: AppState) {
   state.finance.buckets.forEach((b) => b.categories.forEach((c) => c.items.forEach((it) => {
     if (!it.name) return;
     const cat = CAT_ICON[c.name] ? c.name : b.key === 'insurance' ? 'Health' : b.key === 'goals' ? 'Lifestyle' : 'Bills';
-    budgetDerivedTx.push({ id: 'bud-' + it.id, merchant: it.name, cat, dateLabel: 'Recurring', dateGroup: 'This week', month: 'Aug', amount: -(parseFloat(String(it.amount)) || 0), tax: false, payment: b.name + ' budget' });
+    budgetDerivedTx.push({ id: 'bud-' + it.id, merchant: it.name, cat, dateLabel: 'Recurring', dateGroup: 'This week', month: SHORT_MONTHS[new Date().getMonth()], amount: -(parseFloat(String(it.amount)) || 0), tax: false, payment: b.name + ' budget' });
   })));
   const combinedTx = state.transactions.concat(budgetDerivedTx);
 
@@ -275,9 +338,10 @@ export function selectHomeDashboard(state: AppState) {
 }
 
 export function selectReviewFlow(state: AppState) {
-  const reviewCount = REVIEW_ITEMS.filter((i) => !state.reviewDecisions[i.id]).length;
-  const reviewPreview = REVIEW_ITEMS.filter((i) => !state.reviewDecisions[i.id] && i.amount > 50).slice(0, 2);
-  const pending = REVIEW_ITEMS.filter((i) => !state.reviewDecisions[i.id]);
+  const items = state.pendingReviewItems;
+  const reviewCount = items.filter((i) => !state.reviewDecisions[i.id]).length;
+  const reviewPreview = items.filter((i) => !state.reviewDecisions[i.id] && Math.abs(i.amount) > 50).slice(0, 2);
+  const pending = items.filter((i) => !state.reviewDecisions[i.id]);
   const curItem = pending[0] || null;
   const nextItem = pending[1] || null;
   const dragX = state.reviewDragging ? state.reviewDragX : 0;
@@ -346,19 +410,33 @@ export function selectReliefImpact(state: AppState) {
   };
 }
 
+const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 export function selectRecordPage(state: AppState) {
   const { combinedTx } = selectHomeDashboard(state);
   const expenseDayKeys = new Set<string>();
   combinedTx.forEach((t) => { if (t.amount < 0) { const d = deriveTxDate(t); expenseDayKeys.add(d.month + '-' + d.day); } });
-  const CAL_SPANS = [{ name: 'Aug', mIdx: 7, days: 31 }, { name: 'Sep', mIdx: 8, days: 15 }];
+
+  // The strip always centers on the real current month (full) plus a
+  // partial view into next month, so "today" and any real scanned receipt's
+  // date land in the right place regardless of what month it actually is —
+  // never a fixed calendar frozen to one hardcoded month/year.
+  const now = new Date();
+  const curYear = now.getFullYear(), curMonthIdx = now.getMonth(), curDay = now.getDate();
+  const nextMonthIdx = (curMonthIdx + 1) % 12, nextMonthYear = curMonthIdx === 11 ? curYear + 1 : curYear;
+  const daysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
+  const CAL_SPANS = [
+    { name: SHORT_MONTHS[curMonthIdx], mIdx: curMonthIdx, year: curYear, days: daysInMonth(curYear, curMonthIdx) },
+    { name: SHORT_MONTHS[nextMonthIdx], mIdx: nextMonthIdx, year: nextMonthYear, days: curDay },
+  ];
   const calendarDays: { key: string; day: number; month: string; weekday: string; isToday: boolean; isSelected: boolean; hasExpense: boolean }[] = [];
   CAL_SPANS.forEach((cm) => {
     for (let d = 1; d <= cm.days; d++) {
-      const weekday = new Date(2026, cm.mIdx, d).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
+      const weekday = new Date(cm.year, cm.mIdx, d).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
       const key = cm.name + '-' + d;
       calendarDays.push({
         key, day: d, month: cm.name, weekday,
-        isToday: cm.name === 'Aug' && d === 15,
+        isToday: cm.name === SHORT_MONTHS[curMonthIdx] && cm.year === curYear && d === curDay,
         isSelected: cm.name === state.selectedDayMonth && d === state.selectedDay,
         hasExpense: expenseDayKeys.has(key),
       });
@@ -373,7 +451,8 @@ export function selectRecordPage(state: AppState) {
   const selectedDayIncome = selectedDayTxRaw.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0);
   const selectedDayExpense = selectedDayTxRaw.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const selectedDayNet = selectedDayIncome - selectedDayExpense;
-  const selectedDayLabel = new Date(2026, state.selectedDayMonth === 'Aug' ? 7 : 8, state.selectedDay)
+  const selectedDaySpan = CAL_SPANS.find((cm) => cm.name === state.selectedDayMonth) ?? CAL_SPANS[0];
+  const selectedDayLabel = new Date(selectedDaySpan.year, selectedDaySpan.mIdx, state.selectedDay)
     .toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const categoryChips = ['All', ...Object.keys(CAT_ICON)];
@@ -384,7 +463,7 @@ export function selectRecordPage(state: AppState) {
   });
 
   return {
-    recordMonthLabel: 'August 2026', calendarDays, selectedDayTx, selectedDayIncome, selectedDayExpense,
+    recordMonthLabel: `${FULL_MONTHS[curMonthIdx]} ${curYear}`, calendarDays, selectedDayTx, selectedDayIncome, selectedDayExpense,
     selectedDayNet, selectedDayLabel, categoryChips, filteredTx,
   };
 }
@@ -425,4 +504,44 @@ export function selectSubscriptions(state: AppState) {
   const subs = state.ob.subs;
   const monthlyTotal = subs.reduce((s, x) => s + (parseFloat(x.amount) || 0) * (FREQ_MONTHLY_FACTOR[x.frequency] || 1), 0);
   return { subs, monthlyTotal, yearlyLabel: moneyWhole(monthlyTotal * 12) };
+}
+
+// A compact, real-data-only snapshot sent alongside every AI chat message so
+// Gemini can answer questions about "my net worth" / "my budget" grounded in
+// what the user actually entered, instead of guessing plausible-sounding
+// numbers — the AI screen tells the user "I can see your accounts, budgets,
+// receipts and tax profile", so it actually needs to. Deliberately small
+// (a handful of totals, not full transaction/row dumps) to keep free-tier
+// token use down; every figure here is a real computed value, never invented.
+export function selectAiContext(state: AppState) {
+  const nw = selectNetWorth(state);
+  const chart = selectNetWorthChart(state);
+  const { buckets, totalSpent, totalPlan } = selectBudgets(state);
+  const tax = selectTaxCenter(state);
+  const { subs, monthlyTotal } = selectSubscriptions(state);
+
+  return {
+    netWorth: {
+      total: Math.round(nw.netWorth), assets: Math.round(nw.assets), liabilities: Math.round(nw.liabilities),
+      changeOverSelectedRange: Math.round(chart.delta), changePct: chart.deltaPct,
+    },
+    budget: {
+      totalSpentThisMonth: Math.round(totalSpent), totalPlannedThisMonth: Math.round(totalPlan),
+      categories: buckets.flatMap((b) => b.categories.map((c) => ({ name: c.name, spent: Math.round(c.spent), cap: Math.round(c.total) }))),
+    },
+    tax: {
+      taxYear: state.taxYear, grossAnnualIncomeEstimate: Math.round(tax.grossAnnualIncome), marginalTaxBracketPct: tax.taxBracketPct,
+      reliefsCapturedRM: Math.round(tax.totalCaptured), reliefsCapRM: Math.round(tax.totalCap),
+    },
+    subscriptions: { count: subs.length, monthlyTotalRM: Math.round(monthlyTotal) },
+    profile: {
+      maritalStatus: state.ob.marital, dependants: state.ob.dependants,
+      employmentStatus: state.ob.employment, taxResidency: state.ob.residency,
+    },
+    // Real scanned/reviewed receipts only (state.transactions) — not the
+    // budget-derived synthetic rows selectHomeDashboard overlays for display.
+    recentReceipts: state.transactions.slice(-10).map((t) => ({
+      merchant: t.merchant, amount: Math.round(t.amount), category: t.cat, date: t.dateLabel, taxDeductible: t.tax,
+    })),
+  };
 }

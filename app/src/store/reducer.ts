@@ -2,18 +2,32 @@
 // Each Action variant corresponds 1:1 to an original `this.xyz = (...) => this.setState(...)` method,
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
 import type { AppState, ManualData, BalanceDraft } from './types';
-import { mkRecord, mkCategory, mkItem, mkInvestRow, REVIEW_ITEMS, type ReviewItem, type Transaction } from '../lib/seedData';
+import { mkRecord, mkCategory, mkItem, mkInvestRow, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
-import { clamp, isoToDisplayDate, computeNextPayment } from '../lib/format';
+import { clamp, isoToDisplayDate, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
 import { mapOcrCategory } from '../lib/constants';
+import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
 import type { AuthUser, ScannedReceipt } from '../lib/api';
 
-const BLANK_SCAN_FIELDS = {
-  scanMerchant: '', scanAmount: '', scanDate: '15 Aug 2026',
-  scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '', scanMethod: 'manual',
-} as const;
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// A function, not a static object, so scanDate is always *today* — computed
+// fresh each time the scan flow opens/resets, not frozen at module load.
+function blankScanFields() {
+  return {
+    scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
+    scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '', scanMethod: 'manual' as const,
+  };
+}
+
+// The month a scan/manual transaction actually happened in, derived from its
+// real entered date label ("3 Jul 2026") — falls back to the real current
+// month only if the label doesn't parse, never to a fixed placeholder month.
+function monthFromDateLabel(label: string): string {
+  return parseDisplayDate(label)?.month ?? SHORT_MONTHS[new Date().getMonth()];
+}
 
 type ManualListKey = keyof ManualData;
 
@@ -30,6 +44,8 @@ export type Action =
   | { type: 'TOGGLE_LINK_TARGET_COMPLETE'; id: string }
   | { type: 'TOGGLE_LINK_TARGET_REMOVE'; id: string }
   | { type: 'RESET_ONBOARDING' }
+  | { type: 'LOAD_TRIAL_DATA' }
+  | { type: 'CLEAR_ALL_DATA' }
 
   | { type: 'GO_TAB'; tab: AppState['tab'] }
   | { type: 'OPEN_MORE_PANEL' } | { type: 'CLOSE_MORE_PANEL' }
@@ -80,7 +96,7 @@ export type Action =
   | { type: 'SET_THEME'; theme: 'light' | 'dark' }
 
   | { type: 'ADD_RECORD'; listKey: Exclude<ManualListKey, 'investments'> }
-  | { type: 'SET_RECORD_FIELD'; listKey: Exclude<ManualListKey, 'investments'>; id: string; field: 'name' | 'amount'; value: string }
+  | { type: 'SET_RECORD_FIELD'; listKey: Exclude<ManualListKey, 'investments'>; id: string; field: 'name' | 'amount' | 'date'; value: string }
   | { type: 'REMOVE_RECORD'; listKey: Exclude<ManualListKey, 'investments'>; id: string }
   | { type: 'SET_INVEST_FIELD'; idx: number; field: 'name' | 'qty' | 'buy' | 'cur'; value: string }
   | { type: 'ADD_INVESTMENT_ROW' }
@@ -107,6 +123,9 @@ export type Action =
   | { type: 'REVIEW_DOWN'; clientX: number }
   | { type: 'REVIEW_MOVE'; clientX: number }
   | { type: 'REVIEW_UP' }
+  | { type: 'ADD_PENDING_REVIEW_ITEMS'; items: ReviewItem[] }
+  | { type: 'SET_STATEMENT_UPLOADING'; value: boolean }
+  | { type: 'SET_STATEMENT_UPLOAD_ERROR'; message: string | null }
 
   | { type: 'OPEN_SCAN' } | { type: 'CLOSE_SCAN' }
   | { type: 'CHOOSE_MANUAL' }
@@ -123,7 +142,7 @@ export type Action =
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
   | { type: 'SET_RESET_TOKEN'; token: string | null }
-  | { type: 'RECORD_NET_WORTH_SNAPSHOT'; date: string; value: number }
+  | { type: 'SET_NET_WORTH_HISTORY'; history: { date: string; value: number }[] }
   | { type: 'SET_USER_MODE'; mode: 'developer' | 'customer' }
 
   | { type: 'TOGGLE_AI_VIEW' }
@@ -141,7 +160,7 @@ function updateManual(state: AppState, fn: (m: ManualData) => ManualData): AppSt
 }
 
 function applyBalanceDelta(list: { id: string; amount: string | number; history?: { id: string; amount: number; desc: string; date: string }[] }[], id: string, delta: number, desc: string, date: string) {
-  const entry = { id: uid(), amount: delta, desc, date: date || 'Today' };
+  const entry = { id: uid(), amount: delta, desc, date: date || todayIso() };
   return list.map((r) => r.id !== id ? r : { ...r, amount: (parseFloat(String(r.amount)) || 0) + delta, history: [...(r.history || []), entry] });
 }
 
@@ -161,8 +180,8 @@ function seedKeyName(listKey: string) {
   return listKey.slice(5) as 'cash' | 'creditCards' | 'investments';
 }
 
-function reviewPending(decisions: Record<string, string>): ReviewItem[] {
-  return REVIEW_ITEMS.filter((i) => !decisions[i.id]);
+function reviewPending(items: ReviewItem[], decisions: Record<string, string>): ReviewItem[] {
+  return items.filter((i) => !decisions[i.id]);
 }
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -202,6 +221,26 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, ob: { ...state.ob, linkedIds: state.ob.linkedIds.filter((x) => x !== action.id) } };
     case 'RESET_ONBOARDING':
       return state; // side effect (localStorage clear + reload) handled by caller
+    case 'LOAD_TRIAL_DATA': {
+      const trial = buildTrialData();
+      return {
+        ...state,
+        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: trial.manual.bankAccounts, creditCards: trial.manual.creditCards }, subs: trial.subs },
+        transactions: trial.transactions,
+        finance: { buckets: trial.buckets },
+      };
+    }
+    case 'CLEAR_ALL_DATA': {
+      const empty = emptyTrialData();
+      return {
+        ...state,
+        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: empty.manual.bankAccounts, creditCards: empty.manual.creditCards }, subs: empty.subs },
+        transactions: empty.transactions,
+        finance: { buckets: empty.buckets },
+        pendingReviewItems: [], reviewDecisions: {},
+        netWorthSeed: defaultNetWorthSeed(),
+      };
+    }
 
     // ---- navigation ----
     case 'GO_TAB':
@@ -329,7 +368,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- manual records (assets/liabilities/investments) ----
     case 'ADD_RECORD':
-      return updateManual(state, (m) => ({ ...m, [action.listKey]: [...(m[action.listKey] as any[]), mkRecord('', '')] }));
+      return updateManual(state, (m) => ({ ...m, [action.listKey]: [...(m[action.listKey] as any[]), mkRecord('', '', todayIso())] }));
     case 'SET_RECORD_FIELD':
       return updateManual(state, (m) => ({ ...m, [action.listKey]: (m[action.listKey] as any[]).map((r) => r.id === action.id ? { ...r, [action.field]: action.value } : r) }));
     case 'REMOVE_RECORD':
@@ -376,7 +415,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- balance detail (net worth edit) ----
     case 'OPEN_BALANCE_DETAIL':
-      return { ...state, balanceDetailOpen: action.listKey + ':' + action.id, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' } };
+      return { ...state, balanceDetailOpen: action.listKey + ':' + action.id, balanceDraft: { mode: 'add', amount: '', desc: '', date: todayIso() } };
     case 'CLOSE_BALANCE_DETAIL':
       return { ...state, balanceDetailOpen: null };
     case 'SET_BALANCE_DRAFT_FIELD':
@@ -389,7 +428,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const nextState = isSeedKey(action.listKey)
         ? { ...state, netWorthSeed: { ...state.netWorthSeed, [seedKeyName(action.listKey)]: applyBalanceDelta(state.netWorthSeed[seedKeyName(action.listKey)] as any, action.id, delta, desc, date) } }
         : updateManual(state, (m) => ({ ...m, [action.listKey]: applyBalanceDelta(m[action.listKey as ManualListKey] as any, action.id, delta, desc, date) }));
-      return { ...nextState, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' } };
+      return { ...nextState, balanceDraft: { mode: 'add', amount: '', desc: '', date: todayIso() } };
     }
     case 'REMOVE_BALANCE_ENTRY': {
       return isSeedKey(action.listKey)
@@ -420,18 +459,27 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, reviewOpen: true };
     case 'CLOSE_REVIEW':
       return { ...state, reviewOpen: false };
+    case 'ADD_PENDING_REVIEW_ITEMS':
+      return { ...state, pendingReviewItems: [...state.pendingReviewItems, ...action.items] };
+    case 'SET_STATEMENT_UPLOADING':
+      return { ...state, statementUploading: action.value };
+    case 'SET_STATEMENT_UPLOAD_ERROR':
+      return { ...state, statementUploadError: action.message };
     case 'REVIEW_DECIDE': {
-      const pending = reviewPending(state.reviewDecisions);
+      const pending = reviewPending(state.pendingReviewItems, state.reviewDecisions);
       const item = pending[0];
       if (!item) return state;
       let transactions = state.transactions;
       if (action.dir === 'accept') {
-        const reliefKey = categoryToReliefKey(item.cat) ?? undefined;
-        const dateGroup = item.dateLabel.startsWith('Today') ? 'Today' : item.dateLabel === 'Yesterday' ? 'Yesterday' : 'This week';
+        // Only expenses (negative amount) count toward tax relief — an
+        // income/credit line (e.g. a salary deposit) is never deductible,
+        // regardless of what categorize() guessed its category as.
+        const reliefKey = item.amount < 0 ? categoryToReliefKey(item.cat) ?? undefined : undefined;
+        const dateGroup = dateGroupFor(item.dateLabel);
         const tx: Transaction = {
           id: 'rev-' + item.id, merchant: item.merchant, cat: item.cat,
-          dateLabel: item.dateLabel, dateGroup, month: 'Aug',
-          amount: -item.amount, tax: !!reliefKey, brand: item.brand, payment: item.payment, reliefKey,
+          dateLabel: item.dateLabel, dateGroup, month: monthFromDateLabel(item.dateLabel),
+          amount: item.amount, tax: !!reliefKey, brand: item.brand, payment: item.payment, reliefKey,
         };
         transactions = [...state.transactions, tx];
       }
@@ -450,7 +498,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan / capture receipt ----
     case 'OPEN_SCAN':
-      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, scanError: null, ...BLANK_SCAN_FIELDS };
+      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, scanError: null, ...blankScanFields() };
     case 'CLOSE_SCAN':
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
@@ -483,13 +531,13 @@ export function reducer(state: AppState, action: Action): AppState {
       const reliefKey = state.scanDeductible ? (categoryToReliefKey(state.scanCategory) ?? undefined) : undefined;
       const tx: Transaction = {
         id: 'scan-' + uid(), merchant: state.scanMerchant, cat: state.scanCategory,
-        dateLabel: state.scanDate, dateGroup: 'Today', month: 'Aug',
+        dateLabel: state.scanDate, dateGroup: dateGroupFor(state.scanDate), month: monthFromDateLabel(state.scanDate),
         amount: -amount, tax: state.scanDeductible, payment: state.scanPaymentMethod, reliefKey,
       };
       return { ...state, scanStep: 'saved', transactions: [...state.transactions, tx] };
     }
     case 'SCAN_ANOTHER':
-      return { ...state, scanStep: 'capture', scanError: null, ...BLANK_SCAN_FIELDS };
+      return { ...state, scanStep: 'capture', scanError: null, ...blankScanFields() };
     case 'VIEW_IN_TAX':
       return { ...state, scanOpen: false, tab: 'tax' };
 
@@ -529,17 +577,14 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, legalOpen: null };
     case 'SET_RESET_TOKEN':
       return { ...state, resetToken: action.token };
-    case 'RECORD_NET_WORTH_SNAPSHOT': {
-      // Upsert today's entry rather than appending on every change — one
-      // real data point per calendar day is what makes the chart move
-      // without turning into a point-per-keystroke timeline.
-      const history = state.netWorthHistory;
-      const last = history[history.length - 1];
-      if (last && last.date === action.date) {
-        if (last.value === action.value) return state;
-        return { ...state, netWorthHistory: [...history.slice(0, -1), { date: action.date, value: action.value }] };
-      }
-      return { ...state, netWorthHistory: [...history, { date: action.date, value: action.value }] };
+    case 'SET_NET_WORTH_HISTORY': {
+      // Recomputed wholesale from the dated balance rows/entries (see
+      // computeNetWorthTimeline) every time one of them changes, rather than
+      // upserted — a backdated entry needs to reorder/insert a point in the
+      // middle of the timeline, not just touch the last one.
+      const a = state.netWorthHistory, b = action.history;
+      const unchanged = a.length === b.length && a.every((p, i) => p.date === b[i].date && p.value === b[i].value);
+      return unchanged ? state : { ...state, netWorthHistory: b };
     }
     case 'SET_USER_MODE':
       return { ...state, userMode: action.mode };

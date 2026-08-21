@@ -88,16 +88,26 @@ function NwManualRowView({ row }: { row: NwRow }) {
           </div>
         </div>
       ) : (
-        <>
-          <input
-            className="input" value={row.name} placeholder="Name" style={{ flex: 1.3 }}
-            onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'name', e.target.value)}
-          />
-          <input
-            className="input" value={row.rawAmount ?? ''} placeholder="Amount (RM)" style={{ flex: 1 }}
-            onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'amount', e.target.value)}
-          />
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              className="input" value={row.name} placeholder="Name" style={{ flex: 1.3 }}
+              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'name', e.target.value)}
+            />
+            <input
+              className="input" value={row.rawAmount ?? ''} placeholder="Amount (RM)" style={{ flex: 1 }}
+              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'amount', e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', flexShrink: 0 }}>As of</span>
+            <input
+              className="input" type="date" value={row.rawDate ?? ''} style={{ fontSize: 12.5, flex: 1 }}
+              aria-label="As of date"
+              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'date', e.target.value)}
+            />
+          </div>
+        </div>
       )}
       <button
         type="button" onClick={remove} aria-label="Remove" className="pressable"

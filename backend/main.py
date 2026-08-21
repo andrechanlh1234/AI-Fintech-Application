@@ -35,6 +35,7 @@ from backend.email_service import FRONTEND_URL, send_password_reset_email, send_
 from backend.google_oauth import router as google_oauth_router
 from backend.rate_limit import enforce_rate_limit
 from pipeline.receipt_ocr import process_receipt_image
+from pipeline.statement_parser import parse_csv, parse_statement_pdf
 
 app = FastAPI(title="Cukai API")
 app.include_router(google_oauth_router)
@@ -90,6 +91,10 @@ class ResetPasswordRequest(BaseModel):
 class AiChatRequest(BaseModel):
     message: str
     history: list[dict] = []
+    # Real-data snapshot from selectAiContext (net worth, budget, tax,
+    # subscriptions) — grounds the reply so Gemini answers from what the user
+    # actually entered instead of guessing plausible-sounding figures.
+    context: dict | None = None
 
 
 # ---- auth dependency ----
@@ -218,6 +223,36 @@ async def scan_receipt(file: UploadFile = File(...)):
     return record.to_dict()
 
 
+# ---- statement upload ----
+# Same auth stance as /receipts/scan — stateless file-in/records-out, no
+# account data touched here. The frontend turns the returned records into
+# pending review items (accept/reject), same flow as a scanned receipt;
+# nothing is written to a real account until the user accepts it.
+
+@app.post("/statements/scan")
+async def scan_statement(file: UploadFile = File(...)):
+    filename = file.filename or "statement"
+    suffix = Path(filename).suffix.lower()
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "Empty file")
+
+    if suffix == ".csv":
+        records = parse_csv(data.decode("utf-8", errors="replace"))
+    elif suffix == ".pdf":
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp:
+            tmp.write(data)
+            tmp.flush()
+            try:
+                records = parse_statement_pdf(tmp.name)
+            except Exception as e:
+                raise HTTPException(422, f"Could not read this statement: {e}") from e
+    else:
+        raise HTTPException(400, "Only .csv and .pdf statements are supported")
+
+    return {"records": [r.to_dict() for r in records]}
+
+
 # ---- AI chat ----
 # Deliberately not behind auth, same reasoning as /receipts/scan — no
 # per-account data involved, works for guests too. Rate-limited at 20
@@ -229,7 +264,7 @@ async def scan_receipt(file: UploadFile = File(...)):
 def ai_chat(body: AiChatRequest, request: Request):
     enforce_rate_limit(request, "ai-chat", max_attempts=20, window_seconds=10 * 60)
     try:
-        reply = generate_ai_reply(body.message, body.history)
+        reply = generate_ai_reply(body.message, body.history, body.context)
         return {"reply": reply, "source": "gemini"}
     except GeminiNotConfigured:
         ai_logger.info("Gemini not configured — falling back to canned replies")

@@ -1,4 +1,7 @@
 // Ported verbatim from Cukai v7.dc.html (lines 1610-1666, 1850-1902, 1958-1964).
+import { parseDisplayDate } from './format';
+
+const SHORT_MONTHS_3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export const CAT_ICON: Record<string, string> = {
   Transport: 'isCar',
@@ -201,13 +204,15 @@ export function rowBadge(item: { brand?: string | null; cat?: string }): RowBadg
 }
 
 export function deriveTxDate(t: { dateLabel?: string; dateGroup?: string; month: string }): { day: number; month: string } {
-  const m = (t.dateLabel || '').match(/^(\d{1,2}) (\w{3})$/);
-  if (m) return { day: +m[1], month: m[2] };
-  if (t.dateGroup === 'Today') return { day: 15, month: 'Aug' };
-  if (t.dateGroup === 'Yesterday') return { day: 14, month: 'Aug' };
-  if (t.dateLabel === 'Mon') return { day: 11, month: 'Aug' };
-  if (t.dateLabel === 'Sun') return { day: 10, month: 'Aug' };
-  if (t.dateLabel === 'Recurring') return { day: 5, month: 'Aug' };
+  const parsed = parseDisplayDate(t.dateLabel || '');
+  if (parsed) return { day: parsed.day, month: parsed.month };
+  const now = new Date();
+  const nowParts = { day: now.getDate(), month: SHORT_MONTHS_3[now.getMonth()] };
+  if (t.dateGroup === 'Today' || t.dateLabel === 'Recurring') return nowParts;
+  if (t.dateGroup === 'Yesterday') {
+    const y = new Date(now); y.setDate(y.getDate() - 1);
+    return { day: y.getDate(), month: SHORT_MONTHS_3[y.getMonth()] };
+  }
   return { day: 1, month: t.month };
 }
 

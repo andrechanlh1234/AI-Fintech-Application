@@ -227,13 +227,31 @@ export function MorePanel() {
           />
         </div>
       </div>
-      <button type="button" onClick={actions.resetOnboarding} className="pressable" style={{ ...rowButtonStyle, borderBottom: 'none' }}>
+      <button type="button" onClick={actions.resetOnboarding} className="pressable" style={rowButtonStyle}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Reset onboarding</div>
           <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Clears saved setup data and restarts from Step 1</div>
         </div>
         <ChevronIcon />
       </button>
+      {state.userMode === 'developer' && (
+        <>
+          <button type="button" onClick={actions.loadTrialData} className="pressable" style={rowButtonStyle}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Load trial data</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Fills accounts, transactions, budget and a subscription with realistic sample data — keeps your onboarding profile</div>
+            </div>
+            <ChevronIcon />
+          </button>
+          <button type="button" onClick={actions.clearAllData} className="pressable" style={{ ...rowButtonStyle, borderBottom: 'none' }}>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Clear all data</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Empties accounts, transactions, budget and subscriptions — keeps your onboarding profile</div>
+            </div>
+            <ChevronIcon />
+          </button>
+        </>
+      )}
 
       {state.authUser && (
         <button type="button" onClick={actions.authLogout} className="btn btn-ghost" style={{ marginTop: 26, color: 'var(--color-danger-700)' }}>

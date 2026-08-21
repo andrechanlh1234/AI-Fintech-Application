@@ -13,7 +13,17 @@ CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
     ("Transport", ["grab", "mygrab", "touch n go", "tng", "toll", "petrol", "shell", "petronas", "ekspres", "primax", "ron95", "ron97"]),
     ("Groceries", ["speedmart", "mydin", "tesco", "aeon", "jaya grocer", "lotus", "giant", "grocer"]),
     ("Dining", ["mcdonald", "kfc", "starbucks", "restoran", "restaurant", "cafe", "food", "mamak", "roti canai", "dining hall", "warung"]),
-    ("Lifestyle", ["shopee", "lazada", "netflix", "spotify", "apple", "gym"]),
+    ("Lifestyle", [
+        "shopee", "lazada", "netflix", "spotify", "apple", "gym",
+        # LHDN Lifestyle relief also covers sports equipment/gym membership,
+        # books, and computers/phones — a vendor-name keyword match (no line
+        # items to reason over, unlike the vision-OCR path) is the best this
+        # can do for statement-derived transactions with only a merchant name.
+        "decathlon", "sports direct", "world of sports", "planet sports",
+        "fitness first", "celebrity fitness", "anytime fitness", "yoga",
+        "badminton", "futsal", "kinokuniya", "popular bookstore", "mph",
+        "harvey norman", "senheng", "machines",
+    ]),
 ]
 
 RELIEF_CAPS: dict[str, tuple[str, int]] = {

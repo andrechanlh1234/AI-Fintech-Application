@@ -1,12 +1,15 @@
-"""Receipt photo -> structured Record, via local Tesseract OCR.
+"""Receipt photo -> structured Record.
 
-This is tier 1 of the feasibility doc's tiered OCR plan (free, offline,
-good on clean/flat receipts). It does not attempt to handle heavily
-angled or crumpled photos — that's tier 2 (a cloud vision API fallback),
-deliberately left as a pluggable seam (`OCR_ENGINE`) rather than built
-now, since it needs an API key this environment doesn't have.
+Tier 2 (vision-model field extraction, via backend/ocr_provider.py) is tried
+first now that a GEMINI_API_KEY is configured — it reads the photo directly
+instead of raw-OCR-text + regex-guessing, which handles angled/crumpled
+receipts and varied layouts far better. Tier 1 (local Tesseract, this file's
+original approach) is the fallback when the vision call isn't configured or
+fails for any reason, so a scan never comes back empty just because a cloud
+call had a bad moment.
 """
 
+import mimetypes
 import re
 from datetime import date, datetime
 
@@ -158,6 +161,55 @@ def parse_receipt_text(text: str, ocr_confidence: float = 1.0) -> Record:
     )
 
 
+_KNOWN_CATEGORIES = {"Medical", "Education", "EPF / Insurance", "Transport", "Groceries", "Dining", "Lifestyle", "Other"}
+
+
+def _record_from_vision_fields(fields: dict, raw_text: str = "") -> Record:
+    vendor = (fields.get("vendor") or "").strip() or "Unknown vendor"
+    amount = fields.get("amount")
+    amount = float(amount) if amount is not None else 0.0
+    txn_date = None
+    if fields.get("date"):
+        try:
+            txn_date = datetime.strptime(fields["date"], "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    # Trust the vision model's own category reasoning (it saw the actual line
+    # items, including things a vendor-name keyword table would never catch —
+    # e.g. sports equipment bought from a store with no "sports" in its name)
+    # over the keyword fallback, but only if it returned a category this app
+    # actually recognises; otherwise fall back to the keyword match.
+    vision_category = fields.get("category")
+    category = vision_category if vision_category in _KNOWN_CATEGORIES else categorize(vendor, raw_text)
+    # An explicit false from the model suppresses the relief tag even for a
+    # relief-eligible category (e.g. Lifestyle) — it was told to prefer false
+    # over guessing when genuinely unsure.
+    relief_eligible = fields.get("taxDeductible") is not False
+    # A vision model either read a field or it didn't (it's told to return
+    # null rather than guess) — same field_penalty logic as the Tesseract
+    # path, just without an OCR word-confidence score to start from.
+    confidence = 1.0 - (0.0 if txn_date else 0.15) - (0.0 if fields.get("amount") is not None else 0.25)
+    return Record(
+        source="receipt_photo", vendor=vendor, txn_date=txn_date, amount=amount,
+        category=category, relief_tag=relief_tag_for(category) if relief_eligible else None,
+        confidence=max(0.0, confidence), raw_text=raw_text,
+    )
+
+
 def process_receipt_image(image_path: str) -> Record:
+    from backend.ocr_provider import VisionOCRNotConfigured, extract_receipt_fields
+
+    try:
+        with open(image_path, "rb") as f:
+            file_bytes = f.read()
+        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        fields = extract_receipt_fields(file_bytes, mime_type)
+        return _record_from_vision_fields(fields)
+    except VisionOCRNotConfigured:
+        pass
+    except Exception:
+        import logging
+        logging.getLogger("cukai.ocr").exception("Vision OCR failed — falling back to Tesseract")
+
     text, ocr_confidence = extract_text(image_path)
     return parse_receipt_text(text, ocr_confidence)

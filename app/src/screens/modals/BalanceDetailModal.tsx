@@ -1,5 +1,5 @@
 import { useStore, useActions } from '../../store/StoreProvider';
-import { money } from '../../lib/format';
+import { money, isoToDisplayDate } from '../../lib/format';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
 
@@ -70,7 +70,7 @@ export function BalanceDetailModal() {
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Date</label>
-          <input className="input" value={draft.date} onChange={(e) => actions.setBalanceDraftField('date', e.target.value)} placeholder="Today" />
+          <input className="input" type="date" value={draft.date} onChange={(e) => actions.setBalanceDraftField('date', e.target.value)} />
         </div>
       </div>
 
@@ -87,7 +87,7 @@ export function BalanceDetailModal() {
       {history.length === 0 && <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>No changes yet</div>}
       {history.map((h) => {
         const descLabel = h.desc || (h.amount >= 0 ? 'Added' : 'Deducted');
-        const dateLabel = h.date || '—';
+        const dateLabel = isoToDisplayDate(h.date) || h.date || '—';
         const amountLabel = (h.amount >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(h.amount));
         const amountColor = h.amount >= 0 ? 'var(--color-accent-700)' : 'var(--color-danger-700)';
         return (

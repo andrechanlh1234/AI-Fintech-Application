@@ -294,6 +294,58 @@ def parse_tng_pdf(path: str) -> list[Record]:
     return records
 
 
+def _record_from_vision_transaction(t: dict, raw_text: str) -> Record:
+    vendor = (t.get("description") or "").strip() or "Unknown vendor"
+    amount = t.get("amount")
+    amount = float(amount) if amount is not None else 0.0
+    txn_date = None
+    if t.get("date"):
+        try:
+            txn_date = datetime.strptime(t["date"], "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    category = categorize(vendor)
+    confidence = 1.0 - (0.0 if txn_date else 0.15) - (0.0 if t.get("amount") is not None else 0.25)
+    return Record(
+        source="statement_upload", vendor=vendor, txn_date=txn_date, amount=amount,
+        category=category, relief_tag=relief_tag_for(category),
+        confidence=max(0.0, confidence), raw_text=raw_text,
+    )
+
+
+def parse_statement_pdf(path: str) -> list[Record]:
+    """Tries the hand-tuned layout parsers for banks this module already
+    knows (CIMB Clicks, TNG Wallet) first — they're higher-confidence since
+    they're built from real column positions, not a model's best guess.
+    Falls back to vision-model extraction (backend/ocr_provider.py) for any
+    other bank's layout, or if a known parser finds nothing on the page
+    (e.g. the layout drifted). Returns [] rather than raising if nothing
+    could be extracted at all — never fabricates a transaction."""
+    for parser in (parse_cimb_pdf, parse_tng_pdf):
+        try:
+            records = parser(path)
+        except Exception:
+            records = []
+        if records:
+            return records
+
+    try:
+        from backend.ocr_provider import VisionOCRNotConfigured, extract_statement_transactions
+    except ImportError:
+        return []
+    try:
+        with open(path, "rb") as f:
+            file_bytes = f.read()
+        transactions = extract_statement_transactions(file_bytes, "application/pdf")
+        return [_record_from_vision_transaction(t, str(t)) for t in transactions]
+    except VisionOCRNotConfigured:
+        return []
+    except Exception:
+        import logging
+        logging.getLogger("cukai.ocr").exception("Vision statement extraction failed")
+        return []
+
+
 def parse_csv(text: str) -> list[Record]:
     """Generic e-wallet/bank CSV parser. Auto-detects date/description/amount
     columns by common header aliases rather than assuming one bank's export

@@ -3,13 +3,17 @@ import type { AppState, ManualData, BalanceDraft } from './types';
 import { reducer, type Action } from './reducer';
 import { buildInitialState, mergePersisted, persistState, clearPersisted, buildSyncPayload } from './initialState';
 import { aiCraftReply } from '../lib/seedData';
-import { selectNetWorth } from './selectors';
+import { computeNetWorthTimeline, selectAiContext } from './selectors';
 import {
   getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
   forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, readResetTokenFromUrl,
-  requestAiReply,
+  requestAiReply, uploadStatement, type ScannedStatementRecord,
 } from '../lib/api';
+import { isoToDisplayDate } from '../lib/format';
+import { uid } from '../lib/ids';
+import { mapOcrCategory } from '../lib/constants';
+import type { ReviewItem } from '../lib/seedData';
 
 const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
@@ -49,17 +53,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode]);
 
-  // Record a real net-worth snapshot whenever it actually changes — this is
-  // the only thing that makes the Finance > Net worth chart a real line
-  // instead of a flat repeat of the current value. Upserts today's entry
-  // (see the reducer case), so this fires safely on every keystroke without
-  // spamming a point per keystroke.
+  // Recompute the real net-worth timeline whenever a dated balance row or
+  // entry changes — this is what makes the Finance > Net worth chart plot
+  // real movement on the date each change actually happened (a backdated
+  // "as of" date on a manual row, or a dated Add/Deduct-money entry) instead
+  // of always stamping everything as "today". See computeNetWorthTimeline.
   useEffect(() => {
-    const value = selectNetWorth(state).netWorth;
-    const today = new Date().toISOString().slice(0, 10);
-    dispatch({ type: 'RECORD_NET_WORTH_SNAPSHOT', date: today, value });
+    dispatch({ type: 'SET_NET_WORTH_HISTORY', history: computeNetWorthTimeline(state) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.netWorthSeed, state.transactions]);
+  }, [state.ob.manual, state.netWorthSeed]);
 
   // Once signed in, also mirror every change to the backend (debounced —
   // syncing on every keystroke would be wasteful and can race).
@@ -120,6 +122,8 @@ export function useActions() {
         clearPersisted();
         window.location.reload();
       },
+      loadTrialData: () => dispatch({ type: 'LOAD_TRIAL_DATA' }),
+      clearAllData: () => dispatch({ type: 'CLEAR_ALL_DATA' }),
 
       // navigation
       goHome: () => dispatch({ type: 'GO_TAB', tab: 'home' }),
@@ -200,7 +204,7 @@ export function useActions() {
 
       // manual records
       addRecord: (listKey: Exclude<ManualListKey, 'investments'>) => dispatch({ type: 'ADD_RECORD', listKey }),
-      setRecordField: (listKey: Exclude<ManualListKey, 'investments'>, id: string, field: 'name' | 'amount', value: string) => dispatch({ type: 'SET_RECORD_FIELD', listKey, id, field, value }),
+      setRecordField: (listKey: Exclude<ManualListKey, 'investments'>, id: string, field: 'name' | 'amount' | 'date', value: string) => dispatch({ type: 'SET_RECORD_FIELD', listKey, id, field, value }),
       removeRecord: (listKey: Exclude<ManualListKey, 'investments'>, id: string) => dispatch({ type: 'REMOVE_RECORD', listKey, id }),
       setInvestField: (idx: number, field: 'name' | 'qty' | 'buy' | 'cur', value: string) => dispatch({ type: 'SET_INVEST_FIELD', idx, field, value }),
       addInvestmentRow: () => dispatch({ type: 'ADD_INVESTMENT_ROW' }),
@@ -236,6 +240,29 @@ export function useActions() {
       reviewDown: (clientX: number) => dispatch({ type: 'REVIEW_DOWN', clientX }),
       reviewMove: (clientX: number) => dispatch({ type: 'REVIEW_MOVE', clientX }),
       reviewUp: () => dispatch({ type: 'REVIEW_UP' }),
+      uploadStatementFile: (file: File) => {
+        dispatch({ type: 'SET_STATEMENT_UPLOADING', value: true });
+        dispatch({ type: 'SET_STATEMENT_UPLOAD_ERROR', message: null });
+        uploadStatement(file)
+          .then(({ records }) => {
+            const items: ReviewItem[] = records.map((r: ScannedStatementRecord) => ({
+              id: 'stmt-' + uid(), merchant: r.vendor, amount: r.amount, cat: mapOcrCategory(r.category),
+              dateLabel: r.date ? isoToDisplayDate(r.date) : 'Unknown date',
+              brand: '', payment: 'Bank statement',
+            }));
+            dispatch({ type: 'SET_STATEMENT_UPLOADING', value: false });
+            if (items.length === 0) {
+              dispatch({ type: 'SET_STATEMENT_UPLOAD_ERROR', message: "Couldn't find any transactions in that file." });
+              return;
+            }
+            dispatch({ type: 'ADD_PENDING_REVIEW_ITEMS', items });
+            dispatch({ type: 'OPEN_REVIEW' });
+          })
+          .catch((err: Error) => {
+            dispatch({ type: 'SET_STATEMENT_UPLOADING', value: false });
+            dispatch({ type: 'SET_STATEMENT_UPLOAD_ERROR', message: err.message || 'Could not read that file.' });
+          });
+      },
 
       // scan / capture receipt
       openScan: () => dispatch({ type: 'OPEN_SCAN' }),
@@ -273,7 +300,9 @@ export function useActions() {
         // fall back to the same client-side canned reply — the chat must
         // never go silent or error out.
         const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
-        Promise.all([requestAiReply(t).catch(() => null), minDelay])
+        const history = state.aiMessages; // prior turns, before this user message is appended above
+        const context = selectAiContext(state);
+        Promise.all([requestAiReply(t, history, context).catch(() => null), minDelay])
           .then(([res]) => {
             const reply = res && res.source === 'gemini' && res.reply ? res.reply : aiCraftReply(t);
             dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: reply });
