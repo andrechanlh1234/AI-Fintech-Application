@@ -5,7 +5,6 @@
 import type { AppState } from './types';
 import { money, moneyWhole, clamp, todayIso } from '../lib/format';
 import {
-  MONTH_SUMMARIES,
   type Transaction, type BudgetCategory, type BalanceEntry, type RecordRow,
 } from '../lib/seedData';
 import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER } from '../lib/constants';
@@ -21,7 +20,7 @@ import {
  * scan categories with no clear LHDN mapping) are omitted rather than
  * guessed into a bucket. */
 function buildCapturedData(transactions: Transaction[], taxYear: string): Record<string, TaxItemData> {
-  const targetYear = taxYear === 'YA2025' ? '2025' : '2026';
+  const targetYear = taxYear.replace(/^YA/, '');
   const data: Record<string, TaxItemData> = {};
   transactions.forEach((t) => {
     if (!t.tax || !t.reliefKey) return;
@@ -229,9 +228,22 @@ export function selectNetWorthChart(state: AppState) {
 }
 
 export function selectBudgets(state: AppState) {
+  const nowMonth = SHORT_MONTHS[new Date().getMonth()];
   const buckets = state.finance.buckets.map((b) => {
     const categories = b.categories.map((c: BudgetCategory) => {
-      const spent = c.items.reduce((s, it) => s + (parseFloat(String(it.amount)) || 0), 0);
+      const itemsSpent = c.items.reduce((s, it) => s + (parseFloat(String(it.amount)) || 0), 0);
+      // A category named after a real transaction category (Food & Drink,
+      // Transport, ...) also counts this month's actual spending toward its
+      // total -- not just manually-typed line items -- so scanning a
+      // receipt or accepting a reviewed statement line moves the budget bar.
+      // Custom categories (Housing, Emergency fund, ...) have no matching
+      // transaction category and stay purely manual, same as before.
+      const txSpent = CAT_ICON[c.name]
+        ? state.transactions
+            .filter((t) => t.cat === c.name && t.month === nowMonth && t.amount < 0)
+            .reduce((s, t) => s + Math.abs(t.amount), 0)
+        : 0;
+      const spent = itemsSpent + txSpent;
       const total = c.cap;
       const pct = state.mounted && total > 0 ? Math.round((spent / total) * 100) : 0;
       const over = spent > total;
@@ -371,7 +383,7 @@ export function selectTaxCenter(state: AppState) {
   const marginalRate = grossAnnualIncome > 0 ? marginalTaxRate(chargeableIncomeEst) : ASSUMED_TAX_RATE;
   const taxBracketPct = Math.round(marginalRate * 100);
   const taxModel = buildTaxModel(profile, capturedData, marginalRate);
-  const prevTaxYear = state.taxYear === 'YA2026' ? 'YA2025' : 'YA2026';
+  const prevTaxYear = 'YA' + (parseInt(state.taxYear.replace(/^YA/, ''), 10) - 1);
   const prevCapturedData = buildCapturedData(state.transactions, prevTaxYear);
   const prevTaxModel = buildTaxModel(profile, prevCapturedData, marginalRate);
   const { totalCaptured, totalCap, totalRemaining: totalAvailable, totalPotentialBenefit } = taxModel;
@@ -384,7 +396,7 @@ export function selectTaxCenter(state: AppState) {
 
   const visibleGroups = taxModel.groups.filter((g) => g.items.length > 0);
   const taxReceiptsAll = taxModel.allReceipts;
-  const taxReceiptsVisible = state.showAllTaxReceipts ? taxReceiptsAll : taxReceiptsAll.slice(0, 4);
+  const taxReceiptsVisible = taxReceiptsAll.slice(0, 4);
 
   let taxItemDetail: { item: (typeof taxModel.groups)[number]['items'][number]; groupName: string } | null = null;
   if (state.taxItemDetailOpen) {
@@ -424,34 +436,39 @@ const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 export function selectRecordPage(state: AppState) {
   const { combinedTx } = selectHomeDashboard(state);
   const expenseDayKeys = new Set<string>();
-  combinedTx.forEach((t) => { if (t.amount < 0) { const d = deriveTxDate(t); expenseDayKeys.add(d.month + '-' + d.day); } });
+  const monthsWithData = new Set<string>();
+  combinedTx.forEach((t) => {
+    if (t.amount >= 0) return;
+    const d = deriveTxDate(t);
+    expenseDayKeys.add(d.year + '-' + d.month + '-' + d.day);
+    monthsWithData.add(d.year + '-' + d.month);
+  });
 
-  // The strip always centers on the real current month (full) plus a
-  // partial view into next month, so "today" and any real scanned receipt's
-  // date land in the right place regardless of what month it actually is —
-  // never a fixed calendar frozen to one hardcoded month/year.
+  // The day strip renders whichever month/year the picker above it is set
+  // to (state.recordMonth/recordYear) -- "today" is only special-cased for
+  // the isToday dot, never for which month is shown.
   const now = new Date();
   const curYear = now.getFullYear(), curMonthIdx = now.getMonth(), curDay = now.getDate();
-  const nextMonthIdx = (curMonthIdx + 1) % 12, nextMonthYear = curMonthIdx === 11 ? curYear + 1 : curYear;
+  const viewMonthIdx = MONTH_ORDER.indexOf(state.recordMonth);
+  const viewYear = state.recordYear;
   const daysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
-  const CAL_SPANS = [
-    { name: SHORT_MONTHS[curMonthIdx], mIdx: curMonthIdx, year: curYear, days: daysInMonth(curYear, curMonthIdx) },
-    { name: SHORT_MONTHS[nextMonthIdx], mIdx: nextMonthIdx, year: nextMonthYear, days: curDay },
-  ];
+  const numDays = daysInMonth(viewYear, viewMonthIdx);
+
   const calendarDays: { key: string; day: number; month: string; weekday: string; isToday: boolean; isSelected: boolean; hasExpense: boolean }[] = [];
-  CAL_SPANS.forEach((cm) => {
-    for (let d = 1; d <= cm.days; d++) {
-      const weekday = new Date(cm.year, cm.mIdx, d).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
-      const key = cm.name + '-' + d;
-      calendarDays.push({
-        key, day: d, month: cm.name, weekday,
-        isToday: cm.name === SHORT_MONTHS[curMonthIdx] && cm.year === curYear && d === curDay,
-        isSelected: cm.name === state.selectedDayMonth && d === state.selectedDay,
-        hasExpense: expenseDayKeys.has(key),
-      });
-    }
+  for (let d = 1; d <= numDays; d++) {
+    const weekday = new Date(viewYear, viewMonthIdx, d).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
+    const key = state.recordMonth + '-' + d;
+    calendarDays.push({
+      key, day: d, month: state.recordMonth, weekday,
+      isToday: state.recordMonth === SHORT_MONTHS[curMonthIdx] && viewYear === curYear && d === curDay,
+      isSelected: state.recordMonth === state.selectedDayMonth && d === state.selectedDay,
+      hasExpense: expenseDayKeys.has(viewYear + '-' + state.recordMonth + '-' + d),
+    });
+  }
+  const selectedDayTxRaw = combinedTx.filter((t) => {
+    const d = deriveTxDate(t);
+    return d.month === state.selectedDayMonth && d.day === state.selectedDay && d.year === viewYear;
   });
-  const selectedDayTxRaw = combinedTx.filter((t) => { const d = deriveTxDate(t); return d.month === state.selectedDayMonth && d.day === state.selectedDay; });
   const selectedDayTx = selectedDayTxRaw.map((t) => ({
     ...t, ...rowBadge(t), catLabel: t.cat,
     amountLabel: (t.amount >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(t.amount)),
@@ -460,8 +477,7 @@ export function selectRecordPage(state: AppState) {
   const selectedDayIncome = selectedDayTxRaw.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0);
   const selectedDayExpense = selectedDayTxRaw.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const selectedDayNet = selectedDayIncome - selectedDayExpense;
-  const selectedDaySpan = CAL_SPANS.find((cm) => cm.name === state.selectedDayMonth) ?? CAL_SPANS[0];
-  const selectedDayLabel = new Date(selectedDaySpan.year, selectedDaySpan.mIdx, state.selectedDay)
+  const selectedDayLabel = new Date(viewYear, viewMonthIdx, state.selectedDay)
     .toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
 
   const categoryChips = ['All', ...Object.keys(CAT_ICON)];
@@ -472,18 +488,34 @@ export function selectRecordPage(state: AppState) {
   });
 
   return {
-    recordMonthLabel: `${FULL_MONTHS[curMonthIdx]} ${curYear}`, calendarDays, selectedDayTx, selectedDayIncome, selectedDayExpense,
+    recordMonthLabel: `${FULL_MONTHS[viewMonthIdx]} ${viewYear}`, calendarDays, selectedDayTx, selectedDayIncome, selectedDayExpense,
     selectedDayNet, selectedDayLabel, categoryChips, filteredTx,
+    hasDataInMonth: (month: string, year: number) => monthsWithData.has(year + '-' + month),
   };
 }
 
 export function selectStatsPage(state: AppState) {
-  const statsPeriodOptions = ['This month', 'Last 3 months', 'This year'];
-  const statsMonths = state.statsPeriod === 'This month' ? [state.historyMonth]
-    : state.statsPeriod === 'Last 3 months' ? MONTH_ORDER.slice(Math.max(0, MONTH_ORDER.indexOf(state.historyMonth) - 2), MONTH_ORDER.indexOf(state.historyMonth) + 1)
-    : MONTH_ORDER.filter((m) => MONTH_SUMMARIES[m]);
+  const statsPeriodOptions = ['This month', 'Last 3 months', 'This year', 'Choose month'];
+  const historyIdx = MONTH_ORDER.indexOf(state.historyMonth);
+  // Every period is a set of {month, year} pairs, not bare month names --
+  // "Aug" alone would match Aug of every year the account has history for.
+  const statsPeriods: { month: string; year: number }[] =
+    state.statsPeriod === 'This year'
+      ? MONTH_ORDER.map((m) => ({ month: m, year: state.historyYear }))
+      : state.statsPeriod === 'Last 3 months'
+      ? [0, 1, 2].map((back) => {
+          const total = historyIdx - back;
+          const year = state.historyYear + Math.floor(total / 12);
+          const mIdx = ((total % 12) + 12) % 12;
+          return { month: MONTH_ORDER[mIdx], year };
+        })
+      : [{ month: state.historyMonth, year: state.historyYear }]; // 'This month' / 'Choose month'
   const { combinedTx } = selectHomeDashboard(state);
-  const statsTx = combinedTx.filter((t) => statsMonths.includes(t.month) && t.amount < 0);
+  const statsTx = combinedTx.filter((t) => {
+    if (t.amount >= 0) return false;
+    const d = deriveTxDate(t);
+    return statsPeriods.some((p) => p.month === d.month && p.year === d.year);
+  });
   const statsCatTotals: Record<string, number> = {};
   statsTx.forEach((t) => { statsCatTotals[t.cat] = (statsCatTotals[t.cat] || 0) + Math.abs(t.amount); });
   const statsCatSum = Object.values(statsCatTotals).reduce((s, v) => s + v, 0);

@@ -2,6 +2,13 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectTaxCenter } from '../../store/selectors';
 import { Card } from '../../components/primitives';
 import { moneyWhole, money } from '../../lib/format';
+import { YearPicker } from '../../components/PeriodPicker';
+
+const REAL_CURRENT_YEAR = new Date().getFullYear();
+// Two years back (still filable/relevant for reference) through two years
+// ahead -- so a future assessment year becomes selectable as it rolls
+// around without redesigning this component.
+const TAX_YEAR_OPTIONS = [-2, -1, 0, 1, 2].map((offset) => REAL_CURRENT_YEAR + offset);
 
 // Ported from Cukai v7.dc.html lines 1405-1501 (Tax Center screen).
 // Data comes from selectTaxCenter(state); tax-year switch, relief-group
@@ -17,9 +24,9 @@ export function TaxCenter() {
   const actions = useActions();
   const tax = selectTaxCenter(state);
 
-  const isYA2026 = state.taxYear === 'YA2026';
-  const isYA2025 = state.taxYear === 'YA2025';
-  const taxHeroLabel = isYA2026 ? 'Deductible expenses YTD' : 'Total deductible expenses';
+  const selectedYear = parseInt(state.taxYear.replace(/^YA/, ''), 10);
+  const isCurrentTaxYear = selectedYear === REAL_CURRENT_YEAR;
+  const taxHeroLabel = isCurrentTaxYear ? 'Deductible expenses YTD' : 'Total deductible expenses';
   const taxYtdLabel = moneyWhole(tax.totalCaptured);
   const taxDeltaAbsLabel = Math.abs(tax.taxDeltaPct);
   const taxDeltaDirectionLabel = tax.taxDeltaPct >= 0 ? 'ahead' : 'behind';
@@ -28,16 +35,9 @@ export function TaxCenter() {
 
   return (
     <div className="screen-in" style={{ padding: '58px 16px 24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 10 }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, whiteSpace: 'nowrap', flexShrink: 0 }}>Tax Center</div>
-        <div className="seg" style={{ flexShrink: 0 }}>
-          <label className="seg-opt" style={{ padding: '7px 9px', fontSize: 12 }}>
-            <input type="radio" name="taxyear" checked={isYA2026} onChange={actions.setYA2026} />2026
-          </label>
-          <label className="seg-opt" style={{ padding: '7px 9px', fontSize: 12 }}>
-            <input type="radio" name="taxyear" checked={isYA2025} onChange={actions.setYA2025} />2025
-          </label>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 10 }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, whiteSpace: 'nowrap', flexShrink: 0, paddingTop: 6 }}>Tax Center</div>
+        <YearPicker year={selectedYear} years={TAX_YEAR_OPTIONS} onChange={(y) => actions.setTaxYear('YA' + y)} />
       </div>
 
       {tax.hasReliefProfile && (
@@ -74,7 +74,7 @@ export function TaxCenter() {
         <div className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 34, letterSpacing: '-0.02em', lineHeight: 1, color: 'var(--color-text)' }}>
           RM {taxYtdLabel}
         </div>
-        {isYA2026 && (
+        {isCurrentTaxYear ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: taxDeltaColor, fontWeight: 600, fontSize: 12 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ transform: taxDeltaArrowRotate }}>
               <path d="M7 17 17 7"></path>
@@ -82,10 +82,9 @@ export function TaxCenter() {
             </svg>
             {taxDeltaAbsLabel}% {taxDeltaDirectionLabel} of this time last year
           </div>
-        )}
-        {isYA2025 && (
+        ) : (
           <span className="tag tag-outline" style={{ alignSelf: 'flex-start', borderColor: 'var(--color-tax-600)', color: 'var(--color-tax-700)' }}>
-            Filed — year closed
+            {selectedYear < REAL_CURRENT_YEAR ? 'Filed — year closed' : 'Upcoming year'}
           </span>
         )}
       </Card>
@@ -118,7 +117,7 @@ export function TaxCenter() {
                       RM {moneyWhole(g.captured)} <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(g.cap)}</span>
                     </div>
                     <span className="tag" style={{ background: gStyle.bg, color: gStyle.color, flexShrink: 0, whiteSpace: 'nowrap', fontSize: 11, fontWeight: 700, padding: '4px 8px' }}>
-                      {g.status}
+                      {g.pct}% Complete
                     </span>
                   </div>
                   <div style={{ height: 7, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
@@ -148,16 +147,16 @@ export function TaxCenter() {
                             <span style={{ fontWeight: 600, flex: 1, minWidth: 0 }}>{it.label}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                               <span className="tag" style={{ background: itStyle.bg, color: itStyle.color, whiteSpace: 'nowrap', fontSize: 10.5, fontWeight: 700, padding: '3px 7px' }}>
-                                {it.status}
+                                {it.pct}% Complete
                               </span>
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                                 <path d="m9 18 6-6-6-6"></path>
                               </svg>
                             </span>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 5 }}>
-                            <span className="type-numeric" style={{ fontWeight: 600 }}>RM {moneyWhole(it.captured)}</span>
-                            <span className="type-numeric" style={{ color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(it.cap)}</span>
+                          <div className="type-numeric" style={{ fontSize: 11.5, marginBottom: 5 }}>
+                            <span style={{ fontWeight: 600 }}>RM {moneyWhole(it.captured)}</span>{' '}
+                            <span style={{ color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(it.cap)}</span>
                           </div>
                           <div style={{ height: 5, background: 'var(--color-neutral-300)', borderRadius: 3, overflow: 'hidden' }}>
                             <div className="bar-fill" style={{ height: '100%', width: `${it.pct}%`, background: 'var(--color-accent)', borderRadius: 3 }} />
@@ -182,11 +181,11 @@ export function TaxCenter() {
             {tax.taxReceiptsHasMore && (
               <button
                 type="button"
-                onClick={actions.toggleShowAllTaxReceipts}
+                onClick={actions.openTaxReceipts}
                 className="pressable"
                 style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', font: '700 11.5px var(--font-body)' }}
               >
-                {state.showAllTaxReceipts ? 'Show less' : `See all (${tax.taxReceiptsAll.length})`}
+                {`See all (${tax.taxReceiptsAll.length})`}
               </button>
             )}
           </div>

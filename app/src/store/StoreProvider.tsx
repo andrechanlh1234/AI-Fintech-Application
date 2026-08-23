@@ -147,7 +147,9 @@ export function useActions() {
 
       // record / history
       setHistoryMonth: (month: string) => dispatch({ type: 'SET_HISTORY_MONTH', month }),
+      setHistoryYear: (year: number) => dispatch({ type: 'SET_HISTORY_YEAR', year }),
       selectRecordDay: (month: string, day: number) => dispatch({ type: 'SELECT_RECORD_DAY', month, day }),
+      setRecordMonth: (month: string, year: number) => dispatch({ type: 'SET_RECORD_MONTH', month, year }),
       setTxSearch: (value: string) => dispatch({ type: 'SET_TX_SEARCH', value }),
       setTxFilter: (value: string) => dispatch({ type: 'SET_TX_FILTER', value }),
 
@@ -183,12 +185,12 @@ export function useActions() {
       toggleDonutExpanded: () => dispatch({ type: 'TOGGLE_DONUT_EXPANDED' }),
 
       // tax
-      setYA2026: () => dispatch({ type: 'SET_TAX_YEAR', year: 'YA2026' }),
-      setYA2025: () => dispatch({ type: 'SET_TAX_YEAR', year: 'YA2025' }),
+      setTaxYear: (year: string) => dispatch({ type: 'SET_TAX_YEAR', year }),
       toggleTaxGroup: (key: string) => dispatch({ type: 'TOGGLE_TAX_GROUP', key }),
       openTaxItemDetail: (key: string) => dispatch({ type: 'OPEN_TAX_ITEM_DETAIL', key }),
       closeTaxItemDetail: () => dispatch({ type: 'CLOSE_TAX_ITEM_DETAIL' }),
-      toggleShowAllTaxReceipts: () => dispatch({ type: 'TOGGLE_SHOW_ALL_TAX_RECEIPTS' }),
+      openTaxReceipts: () => dispatch({ type: 'OPEN_TAX_RECEIPTS' }),
+      closeTaxReceipts: () => dispatch({ type: 'CLOSE_TAX_RECEIPTS' }),
       openTaxPack: () => dispatch({ type: 'OPEN_TAX_PACK' }),
       closeTaxPack: () => dispatch({ type: 'CLOSE_TAX_PACK' }),
       upgradeFromTaxPack: () => dispatch({ type: 'UPGRADE_FROM_TAX_PACK' }),

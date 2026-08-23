@@ -143,32 +143,48 @@ export function NetWorthSection() {
             <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1a1a1a' }} />
           </div>
         )}
-        <svg width="100%" height="150" viewBox="0 0 300 140" preserveAspectRatio="none" style={{ margin: '6px 0 4px', display: 'block', touchAction: 'none' }}>
-          <defs>
-            <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.16} />
-              <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <line x1="0" y1="128" x2="300" y2="128" stroke="var(--color-neutral-400)" strokeWidth={1} strokeDasharray="3,4" />
-          {chart.hasSelection && (
-            <line x1={chart.selCx} y1={0} x2={chart.selCx} y2={140} stroke="var(--color-accent)" strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
-          )}
-          <polygon points={chart.areaPoints} fill="url(#nwFill)" />
-          <polyline points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        <div style={{ position: 'relative', margin: '6px 0 4px' }}>
+          <svg width="100%" height="150" viewBox="0 0 300 140" preserveAspectRatio="none" style={{ display: 'block', touchAction: 'none' }}>
+            <defs>
+              <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.16} />
+                <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="128" x2="300" y2="128" stroke="var(--color-neutral-400)" strokeWidth={1} strokeDasharray="3,4" />
+            {chart.hasSelection && (
+              <line x1={chart.selCx} y1={0} x2={chart.selCx} y2={140} stroke="var(--color-accent)" strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+            )}
+            <polygon points={chart.areaPoints} fill="url(#nwFill)" />
+            <polyline points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            {chart.seriesLabels && chart.pts.map(([cx, cy], i) => (
+              <circle key={i} cx={cx} cy={cy} r={9} fill="transparent" onClick={() => actions.selectNwPoint(i)} style={{ cursor: 'pointer' }} />
+            ))}
+          </svg>
+          {/* The dots below are HTML, not SVG, deliberately: the svg above
+              uses preserveAspectRatio="none" so the line/area fill stretch to
+              exactly fill the card width, but that stretch is non-uniform
+              (x-scale != y-scale) and would turn an SVG <circle> into an
+              ellipse. Position these by percentage of the same 300x140
+              coordinate space instead, so they render as true fixed-size
+              circles regardless of card width. */}
           {/* A single real point (a brand-new account, or a range with only
               one snapshot) needs an explicit dot -- a 1-point polyline/
               polygon renders nothing at all, leaving the chart blank. */}
           {chart.pts.length === 1 && (
-            <circle cx={chart.pts[0][0]} cy={chart.pts[0][1]} r={4} fill="var(--color-accent)" />
+            <div style={{
+              position: 'absolute', left: `${(chart.pts[0][0] / 300) * 100}%`, top: `${(chart.pts[0][1] / 140) * 100}%`,
+              width: 8, height: 8, borderRadius: '50%', background: 'var(--color-accent)', transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+            }} />
           )}
-          {chart.seriesLabels && chart.pts.map(([cx, cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r={9} fill="transparent" onClick={() => actions.selectNwPoint(i)} style={{ cursor: 'pointer' }} />
-          ))}
           {chart.hasSelection && (
-            <circle cx={chart.selCx} cy={chart.selCy} r={5} fill="var(--color-accent)" stroke="#fff" strokeWidth={2} />
+            <div style={{
+              position: 'absolute', left: `${(chart.selCx / 300) * 100}%`, top: `${(chart.selCy / 140) * 100}%`,
+              width: 10, height: 10, borderRadius: '50%', background: 'var(--color-accent)', border: '2px solid #fff', boxSizing: 'border-box',
+              transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+            }} />
           )}
-        </svg>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 28, margin: '10px 0 20px' }}>

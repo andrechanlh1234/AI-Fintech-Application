@@ -13,6 +13,7 @@ import { NotifPanel } from './screens/modals/NotifPanel';
 import { BalanceDetailModal } from './screens/modals/BalanceDetailModal';
 import { InvestDetailModal } from './screens/modals/InvestDetailModal';
 import { HistoryScreen } from './screens/modals/HistoryScreen';
+import { TaxReceiptsScreen } from './screens/tax/TaxReceiptsScreen';
 import { BudgetItemDetailModal } from './screens/modals/BudgetItemDetailModal';
 import { TaxItemDetailModal } from './screens/modals/TaxItemDetailModal';
 import { TaxPackModal } from './screens/modals/TaxPackModal';
@@ -85,6 +86,9 @@ function AppShell() {
       </BottomSheet>
       <BottomSheet open={!!state.historyOpen} onClose={actions.closeHistory} align="full">
         <HistoryScreen />
+      </BottomSheet>
+      <BottomSheet open={state.taxReceiptsOpen} onClose={actions.closeTaxReceipts} align="full">
+        <TaxReceiptsScreen />
       </BottomSheet>
       <BottomSheet open={state.donateOpen} onClose={actions.closeDonate}>
         <DonateModal />

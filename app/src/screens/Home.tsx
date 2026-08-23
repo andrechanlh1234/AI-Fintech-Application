@@ -2,6 +2,7 @@ import { useStore, useActions } from '../store/StoreProvider';
 import { selectHomeDashboard, selectNetWorth, selectNetWorthChart, selectReviewFlow } from '../store/selectors';
 import { moneyWhole } from '../lib/format';
 import { NOTIFICATIONS } from '../lib/seedData';
+import { NetWorthSparkline } from '../components/NetWorthSparkline';
 
 const ICONS = {
   car: (
@@ -98,6 +99,9 @@ export function Home() {
             RM {moneyWhole(Math.abs(chart.delta))} ({chart.deltaPct}%)
           </div>
         </button>
+        <div style={{ margin: '10px 0 2px' }}>
+          <NetWorthSparkline chart={chart} />
+        </div>
         <div style={{ borderTop: '1px solid var(--color-divider)', margin: '16px 0 14px' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
           <span style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Monthly budget</span>

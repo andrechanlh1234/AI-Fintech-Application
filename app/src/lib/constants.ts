@@ -203,17 +203,18 @@ export function rowBadge(item: { brand?: string | null; cat?: string }): RowBadg
   return { hasBrand: false, badgeBg: 'var(--color-neutral-200)', badgeLetter: '', badgeFg: 'var(--color-text-muted)', ...iconFlags(item.cat ?? null) };
 }
 
-export function deriveTxDate(t: { dateLabel?: string; dateGroup?: string; month: string }): { day: number; month: string } {
+export function deriveTxDate(t: { dateLabel?: string; dateGroup?: string; month: string }): { day: number; month: string; year: number } {
   const parsed = parseDisplayDate(t.dateLabel || '');
-  if (parsed) return { day: parsed.day, month: parsed.month };
+  const thisYear = new Date().getFullYear();
+  if (parsed) return { day: parsed.day, month: parsed.month, year: parsed.year ?? thisYear };
   const now = new Date();
-  const nowParts = { day: now.getDate(), month: SHORT_MONTHS_3[now.getMonth()] };
+  const nowParts = { day: now.getDate(), month: SHORT_MONTHS_3[now.getMonth()], year: now.getFullYear() };
   if (t.dateGroup === 'Today' || t.dateLabel === 'Recurring') return nowParts;
   if (t.dateGroup === 'Yesterday') {
     const y = new Date(now); y.setDate(y.getDate() - 1);
-    return { day: y.getDate(), month: SHORT_MONTHS_3[y.getMonth()] };
+    return { day: y.getDate(), month: SHORT_MONTHS_3[y.getMonth()], year: y.getFullYear() };
   }
-  return { day: 1, month: t.month };
+  return { day: 1, month: t.month, year: thisYear };
 }
 
 // Shared by the onboarding budget step and the post-onboarding Budgets

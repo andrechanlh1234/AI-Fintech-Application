@@ -44,7 +44,7 @@ export function buildInitialState(): AppState {
     showWhyDeductible: false,
     scanTaxAmount: '', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
     expandedBucket: null,
-    expandedTaxGroup: null, taxItemDetailOpen: null, showAllTaxReceipts: false,
+    expandedTaxGroup: null, taxItemDetailOpen: null, taxReceiptsOpen: false,
     txSearch: '',
     txFilter: 'All',
     confirmedIds: {},
@@ -55,7 +55,7 @@ export function buildInitialState(): AppState {
     // simulated-OCR result fills them in (see CAPTURE_PHOTO_DONE in reducer.ts).
     scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
     scanCategory: 'Food & Drink', scanDeductible: false,
-    taxYear: 'YA2026',
+    taxYear: 'YA' + today.getFullYear(),
     mounted: false,
     transactions: [],
 
@@ -64,6 +64,7 @@ export function buildInitialState(): AppState {
     morePanelOpen: false, notifPanelOpen: false, subscriptionTier: 'free',
     faceIdEnabled: true, taxPackOpen: false,
     selectedDayMonth: SHORT_MONTHS[today.getMonth()], selectedDay: today.getDate(), statsPeriod: 'This month', statsCategoryDetail: null,
+    recordMonth: SHORT_MONTHS[today.getMonth()], recordYear: today.getFullYear(), historyYear: today.getFullYear(),
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
     budgetItemDetailOpen: null, addSubOpen: false, donutExpanded: false,
@@ -93,6 +94,8 @@ export interface SyncPayload {
   transactions: AppState['transactions'];
   netWorthHistory: AppState['netWorthHistory'];
   userMode: AppState['userMode'];
+  pendingReviewItems: AppState['pendingReviewItems'];
+  reviewDecisions: AppState['reviewDecisions'];
 }
 
 export function buildSyncPayload(state: AppState): SyncPayload {
@@ -106,6 +109,8 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     transactions: state.transactions,
     netWorthHistory: state.netWorthHistory,
     userMode: state.userMode,
+    pendingReviewItems: state.pendingReviewItems,
+    reviewDecisions: state.reviewDecisions,
   };
 }
 
@@ -120,6 +125,8 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
   if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
   if (p.userMode) next.userMode = p.userMode;
+  if (p.pendingReviewItems) next.pendingReviewItems = p.pendingReviewItems;
+  if (p.reviewDecisions) next.reviewDecisions = p.reviewDecisions;
   return next;
 }
 

@@ -56,7 +56,9 @@ export type Action =
   | { type: 'SELECT_NW_POINT'; idx: number | null }
 
   | { type: 'SET_HISTORY_MONTH'; month: string }
+  | { type: 'SET_HISTORY_YEAR'; year: number }
   | { type: 'SELECT_RECORD_DAY'; month: string; day: number }
+  | { type: 'SET_RECORD_MONTH'; month: string; year: number }
   | { type: 'SET_TX_SEARCH'; value: string }
   | { type: 'SET_TX_FILTER'; value: string }
 
@@ -84,10 +86,10 @@ export type Action =
   | { type: 'OPEN_BUDGET_ITEM_DETAIL'; key: string } | { type: 'CLOSE_BUDGET_ITEM_DETAIL' }
   | { type: 'TOGGLE_DONUT_EXPANDED' }
 
-  | { type: 'SET_TAX_YEAR'; year: 'YA2026' | 'YA2025' }
+  | { type: 'SET_TAX_YEAR'; year: string }
   | { type: 'TOGGLE_TAX_GROUP'; key: string }
   | { type: 'OPEN_TAX_ITEM_DETAIL'; key: string } | { type: 'CLOSE_TAX_ITEM_DETAIL' }
-  | { type: 'TOGGLE_SHOW_ALL_TAX_RECEIPTS' }
+  | { type: 'OPEN_TAX_RECEIPTS' } | { type: 'CLOSE_TAX_RECEIPTS' }
   | { type: 'OPEN_TAX_PACK' } | { type: 'CLOSE_TAX_PACK' } | { type: 'UPGRADE_FROM_TAX_PACK' }
   | { type: 'TOGGLE_SUBSCRIPTION_TIER' }
 
@@ -267,8 +269,21 @@ export function reducer(state: AppState, action: Action): AppState {
     // ---- record / history ----
     case 'SET_HISTORY_MONTH':
       return { ...state, historyMonth: action.month };
+    case 'SET_HISTORY_YEAR':
+      return { ...state, historyYear: action.year };
     case 'SELECT_RECORD_DAY':
       return { ...state, selectedDayMonth: action.month, selectedDay: action.day };
+    case 'SET_RECORD_MONTH': {
+      // Land on today's day when paging back to the real current month,
+      // otherwise the 1st -- never a day number left over from whatever
+      // month was viewed before.
+      const now = new Date();
+      const isCurrent = action.month === SHORT_MONTHS[now.getMonth()] && action.year === now.getFullYear();
+      return {
+        ...state, recordMonth: action.month, recordYear: action.year,
+        selectedDayMonth: action.month, selectedDay: isCurrent ? now.getDate() : 1,
+      };
+    }
     case 'SET_TX_SEARCH':
       return { ...state, txSearch: action.value };
     case 'SET_TX_FILTER':
@@ -347,8 +362,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, taxItemDetailOpen: action.key };
     case 'CLOSE_TAX_ITEM_DETAIL':
       return { ...state, taxItemDetailOpen: null };
-    case 'TOGGLE_SHOW_ALL_TAX_RECEIPTS':
-      return { ...state, showAllTaxReceipts: !state.showAllTaxReceipts };
+    case 'OPEN_TAX_RECEIPTS':
+      return { ...state, taxReceiptsOpen: true };
+    case 'CLOSE_TAX_RECEIPTS':
+      return { ...state, taxReceiptsOpen: false };
     case 'OPEN_TAX_PACK':
       return { ...state, taxPackOpen: true, morePanelOpen: false, notifPanelOpen: false };
     case 'CLOSE_TAX_PACK':

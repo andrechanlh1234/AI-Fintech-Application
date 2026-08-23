@@ -3,6 +3,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectRecordPage } from '../../store/selectors';
 import { money, signedMoney } from '../../lib/format';
 import { rowBadge } from '../../lib/constants';
+import { MonthPicker } from '../../components/PeriodPicker';
 
 // Ported from Cukai v7.dc.html lines 1180-1230 ("All transactions" / Record screen).
 // The day-strip calendar + selected-day summary is the source layout; the search
@@ -83,7 +84,7 @@ export default function RecordSection() {
     if (!child) return;
     el.scrollTo({ left: child.offsetLeft - el.clientWidth / 2 + child.offsetWidth / 2, behavior: 'auto' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.selectedDayMonth, state.selectedDay]);
+  }, [state.selectedDayMonth, state.selectedDay, state.recordYear]);
 
   const searchActive = !!state.txSearch || state.txFilter !== 'All';
   const netColor = rec.selectedDayNet >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)';
@@ -120,7 +121,9 @@ export default function RecordSection() {
         <div style={{ fontSize: 12.5, color: 'var(--color-danger-700)', marginBottom: 10 }}>{state.statementUploadError}</div>
       )}
 
-      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10 }}>{rec.recordMonthLabel}</div>
+      <div style={{ marginBottom: 14 }}>
+        <MonthPicker month={state.recordMonth} year={state.recordYear} onChange={actions.setRecordMonth} hasDataInMonth={rec.hasDataInMonth} />
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 18 }}>
         <button type="button" onClick={() => scrollCalendar(-1)} aria-label="Scroll earlier" className="pressable" style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}>

@@ -86,7 +86,7 @@ export interface AppState {
   expandedBucket: string | null;
   expandedTaxGroup: string | null;
   taxItemDetailOpen: string | null;
-  showAllTaxReceipts: boolean;
+  taxReceiptsOpen: boolean;
   txSearch: string;
   txFilter: string;
   confirmedIds: Record<string, boolean>;
@@ -112,7 +112,10 @@ export interface AppState {
   scanDate: string;
   scanCategory: string;
   scanDeductible: boolean;
-  taxYear: 'YA2026' | 'YA2025';
+  /** "YA" + assessment year, e.g. "YA2026". A plain string, not a fixed
+   * union, so future years become selectable without a type change --
+   * see YearPicker in TaxCenter. */
+  taxYear: string;
   mounted: boolean;
 
   aiView: 'chat' | 'history';
@@ -127,8 +130,11 @@ export interface AppState {
   taxPackOpen: boolean;
   selectedDayMonth: string;
   selectedDay: number;
+  recordMonth: string;
+  recordYear: number;
   statsPeriod: string;
   statsCategoryDetail: string | null;
+  historyYear: number;
   settingsToggles: { budgetAlerts: boolean; taxReminders: boolean; weeklySummary: boolean };
   donateOpen: boolean;
   donateDone: boolean;

@@ -1,6 +1,7 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectStatsPage } from '../../store/selectors';
 import { Card } from '../../components/primitives';
+import { MonthPicker } from '../../components/PeriodPicker';
 
 function TxIcon({ tx }: { tx: ReturnType<typeof selectStatsPage>['statsCategoryDetailTx'][number] }) {
   if (tx.hasBrand) return <>{tx.badgeLetter}</>;
@@ -131,18 +132,30 @@ export default function StatsSection() {
   return (
     <>
       <div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18 }}>
-          <select
-            className="input"
-            value={state.statsPeriod}
-            onChange={(e) => actions.setStatsPeriod(e.target.value)}
-            style={{ fontWeight: 600, fontSize: 12.5, cursor: 'pointer', width: 'auto' }}
-          >
-            {data.statsPeriodOptions.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginBottom: 14, flexWrap: 'wrap' }}>
+          {data.statsPeriodOptions.map((opt) => {
+            const active = state.statsPeriod === opt;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => actions.setStatsPeriod(opt)}
+                className="pressable"
+                style={{
+                  padding: '6px 10px', borderRadius: 999, border: 'none', cursor: 'pointer', font: '700 11px var(--font-body)',
+                  background: active ? 'var(--color-accent)' : 'transparent', color: active ? '#fff' : 'var(--color-text-muted)',
+                }}
+              >
+                {opt}
+              </button>
+            );
+          })}
         </div>
+        {state.statsPeriod === 'Choose month' && (
+          <div style={{ marginBottom: 14 }}>
+            <MonthPicker month={state.historyMonth} year={state.historyYear} onChange={(m, y) => { actions.setHistoryMonth(m); actions.setHistoryYear(y); }} />
+          </div>
+        )}
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, marginBottom: 12 }}>Spend by category</div>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
           <div style={{ position: 'relative', width: 180, height: 180, borderRadius: '50%', background: data.statsPieGradient }}>
