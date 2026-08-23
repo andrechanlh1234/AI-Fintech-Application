@@ -151,7 +151,7 @@ export function NetWorthSection() {
   };
 
   return (
-    <div className="screen-in">
+    <div>
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Net worth</div>
       <div className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1, whiteSpace: 'nowrap', margin: '4px 0 6px' }}>RM {netWorthLabel}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', fontWeight: 600, fontSize: 12.5, marginBottom: 14 }}>

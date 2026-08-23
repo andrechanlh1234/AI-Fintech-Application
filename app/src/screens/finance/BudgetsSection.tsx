@@ -20,7 +20,7 @@ export function BudgetsSection() {
   const [addingFor, setAddingFor] = useState<string | null>(null);
 
   return (
-    <div className="screen-in">
+    <div>
       <BudgetGauge />
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 16 }} />
       {buckets.map((b) => (

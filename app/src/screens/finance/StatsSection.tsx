@@ -130,7 +130,7 @@ export default function StatsSection() {
 
   return (
     <>
-      <div className="screen-in">
+      <div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 18 }}>
           <select
             className="input"

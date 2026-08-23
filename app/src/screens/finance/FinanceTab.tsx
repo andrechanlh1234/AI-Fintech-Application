@@ -46,10 +46,12 @@ export function FinanceTab() {
         ))}
       </div>
 
-      {state.financeSection === 'networth' && <NetWorthSection />}
-      {state.financeSection === 'record' && <RecordSection />}
-      {state.financeSection === 'budgets' && <BudgetsSection />}
-      {state.financeSection === 'stats' && <StatsSection />}
+      <div key={state.financeSection} className="tab-panel-in">
+        {state.financeSection === 'networth' && <NetWorthSection />}
+        {state.financeSection === 'record' && <RecordSection />}
+        {state.financeSection === 'budgets' && <BudgetsSection />}
+        {state.financeSection === 'stats' && <StatsSection />}
+      </div>
     </div>
   );
 }
