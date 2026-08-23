@@ -23,15 +23,26 @@ export function FinanceTab() {
     else actions.goFinanceStats();
   };
 
+  const activeIdx = SECTIONS.findIndex((s) => s.key === state.financeSection);
+
   return (
     <div style={{ padding: '58px 16px 0', boxSizing: 'border-box' }}>
       <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 12 }}>Finance</div>
-      <div className="seg" style={{ marginBottom: 8, width: '100%' }}>
+      <div className="tab-track" role="tablist" style={{ marginBottom: 8, width: '100%' }}>
+        <div
+          className="tab-indicator"
+          style={{ left: `calc(3px + (100% - 6px)/${SECTIONS.length}*${activeIdx})`, width: `calc((100% - 6px)/${SECTIONS.length})` }}
+        />
         {SECTIONS.map((s) => (
-          <label key={s.key} className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
-            <input type="radio" name="financeSection" checked={state.financeSection === s.key} onChange={() => goSection(s.key)} />
+          <button
+            key={s.key}
+            type="button"
+            role="tab"
+            aria-selected={state.financeSection === s.key}
+            onClick={() => goSection(s.key)}
+          >
             {s.label}
-          </label>
+          </button>
         ))}
       </div>
 

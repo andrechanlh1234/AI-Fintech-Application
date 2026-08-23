@@ -206,6 +206,29 @@ textarea.input { min-height: 90px; resize: vertical; }
 .seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 
+/* Sliding pill tab-switch (Finance sub-tabs): unlike .seg above, the active
+   state is one indicator div sliding to a `left` offset rather than each
+   option's own background flipping -- gives the transition between tabs
+   instead of a snap. */
+.tab-track {
+  position: relative; display: flex;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  background: var(--color-surface); padding: 3px; box-sizing: border-box;
+}
+.tab-indicator {
+  position: absolute; top: 3px; bottom: 3px;
+  background: var(--color-accent); border-radius: calc(var(--radius-md) - 3px);
+  transition: left .3s cubic-bezier(.4,0,.2,1);
+  z-index: 0;
+}
+.tab-track button {
+  position: relative; z-index: 1; flex: 1;
+  background: none; border: none; cursor: pointer;
+  padding: 7px 4px; font: 700 13px var(--font-body);
+  color: var(--color-text-muted); transition: color .3s ease;
+}
+.tab-track button[aria-selected="true"] { color: #fff; }
+
 /* — cards — */
 .card {
   display: flex; flex-direction: column; gap: var(--space-2);
