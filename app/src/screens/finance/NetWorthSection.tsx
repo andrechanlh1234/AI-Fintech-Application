@@ -64,6 +64,7 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
 function NwManualRowView({ row }: { row: NwRow }) {
   const actions = useActions();
   const isInvest = row.listKey === 'investments';
+  const badge = subBadge(row.name || '?');
 
   const remove = () => {
     if (isInvest && row.idx != null) actions.removeInvestmentRow(row.idx);
@@ -72,6 +73,12 @@ function NwManualRowView({ row }: { row: NwRow }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontWeight: 700, fontSize: 12.5, background: badge.bg, color: badge.fg,
+      }}>
+        {badge.letter}
+      </div>
       {isInvest ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
           <input
