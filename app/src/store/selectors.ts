@@ -69,9 +69,9 @@ export function selectNetWorth(state: AppState) {
   const nwSeedRow = (name: string, amount: number, listKey: string, id: string, brand?: string | null): NwRow =>
     ({ name, subLabel: 'Synced · tap to edit', balanceValue: amount, brand, clickable: true, listKey, id, isManual: false });
   const nwManualRow = (name: string, amount: number, listKey: string, id: string, rawAmount: string, rawDate?: string): NwRow =>
-    ({ name, subLabel: 'Manual', balanceValue: amount, clickable: false, listKey, id, isManual: true, rawAmount, rawDate });
+    ({ name, subLabel: 'Manual · tap for details', balanceValue: amount, clickable: true, listKey, id, isManual: true, rawAmount, rawDate });
   const nwInvestRow = (r: { name: string; qty: string; buy: string; cur: string; id: string; brand?: string | null }, listKey: string, isManual: boolean, idx?: number): NwRow =>
-    ({ name: r.name, subLabel: isManual ? 'Manual' : 'Synced · tap to edit', balanceValue: (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), brand: r.brand, clickable: !isManual, listKey, id: r.id, isManual, qty: r.qty, buy: r.buy, cur: r.cur, idx });
+    ({ name: r.name, subLabel: isManual ? 'Manual · tap for details' : 'Synced · tap to edit', balanceValue: (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), brand: r.brand, clickable: true, listKey, id: r.id, isManual, qty: r.qty, buy: r.buy, cur: r.cur, idx });
 
   const groups = [
     { key: 'cash', label: 'Cash', totalVal: cashTotalVal, rows: [

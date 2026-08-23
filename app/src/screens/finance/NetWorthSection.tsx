@@ -1,11 +1,9 @@
-import { useState, type PointerEvent as ReactPointerEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { BRAND, subBadge } from '../../lib/constants';
-import type { AppState, ManualData } from '../../store/types';
-
-type ManualListKey = Exclude<keyof ManualData, 'investments'>;
+import type { AppState } from '../../store/types';
 
 const RANGE_OPTIONS: AppState['netWorthRange'][] = ['1M', '3M', '6M', '1Y', '3Y', 'ALL'];
 
@@ -54,116 +52,6 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
         </svg>
       )}
     </button>
-  );
-}
-
-// Manual entries (the normal case — there's no real bank sync) show as a
-// plain row like a synced account (matches the design) until tapped, which
-// reveals the same name/amount fields in place -- editing right where the
-// row is, rather than a separate screen. A blank row (just added) opens
-// straight into edit mode since a nameless compact row has nothing to show.
-function NwManualRowView({ row }: { row: NwRow }) {
-  const actions = useActions();
-  const isInvest = row.listKey === 'investments';
-  const badge = subBadge(row.name || '?');
-  const [editing, setEditing] = useState(!row.name.trim());
-
-  const remove = () => {
-    if (isInvest && row.idx != null) actions.removeInvestmentRow(row.idx);
-    else if (row.id) actions.removeRecord(row.listKey as ManualListKey, row.id);
-  };
-
-  if (!editing) {
-    return (
-      <button
-        type="button"
-        onClick={() => setEditing(true)}
-        className="pressable"
-        style={{
-          all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center',
-          gap: 12, width: '100%', boxSizing: 'border-box', padding: '11px 0', borderBottom: '1px solid var(--color-neutral-300)',
-        }}
-      >
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontWeight: 700, fontSize: 12.5, background: badge.bg, color: badge.fg,
-        }}>
-          {badge.letter}
-        </div>
-        <div style={{ flex: 1, textAlign: 'left' }}>
-          <div style={{ fontSize: 13.5, fontWeight: 600 }}>{row.name}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Manual · tap to edit</div>
-        </div>
-        <div className="type-numeric" style={{ fontSize: 14, fontWeight: 600 }}>RM {money(row.balanceValue)}</div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-          <path d="m9 6 6 6-6 6" />
-        </svg>
-      </button>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
-      <div style={{
-        width: 32, height: 32, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontWeight: 700, fontSize: 12.5, background: badge.bg, color: badge.fg,
-      }}>
-        {badge.letter}
-      </div>
-      {isInvest ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-          <input
-            className="input" value={row.name} placeholder="Investment name"
-            onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'name', e.target.value)}
-          />
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input className="input" value={row.qty ?? ''} placeholder="Qty" style={{ flex: 1 }}
-              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'qty', e.target.value)} />
-            <input className="input" value={row.buy ?? ''} placeholder="Buy price" style={{ flex: 1 }}
-              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'buy', e.target.value)} />
-            <input className="input" value={row.cur ?? ''} placeholder="Current price" style={{ flex: 1 }}
-              onChange={(e) => row.idx != null && actions.setInvestField(row.idx, 'cur', e.target.value)} />
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              className="input" value={row.name} placeholder="Name" style={{ flex: 1.3 }}
-              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'name', e.target.value)}
-            />
-            <input
-              className="input" value={row.rawAmount ?? ''} placeholder="Amount (RM)" style={{ flex: 1 }}
-              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'amount', e.target.value)}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', flexShrink: 0 }}>As of</span>
-            <input
-              className="input" type="date" value={row.rawDate ?? ''} style={{ fontSize: 12.5, flex: 1 }}
-              aria-label="As of date"
-              onChange={(e) => row.id && actions.setRecordField(row.listKey as ManualListKey, row.id, 'date', e.target.value)}
-            />
-          </div>
-        </div>
-      )}
-      <button
-        type="button" onClick={() => setEditing(false)} aria-label="Done" className="pressable"
-        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-accent-700)', flexShrink: 0 }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-      </button>
-      <button
-        type="button" onClick={remove} aria-label="Remove" className="pressable"
-        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-        </svg>
-      </button>
-    </div>
   );
 }
 
@@ -316,9 +204,7 @@ export function NetWorthSection() {
             {grp.expanded && (
               <div className="pop-in" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--color-neutral-300)' }}>
                 {grp.rows.map((row) => (
-                  row.isManual
-                    ? <NwManualRowView key={row.listKey + ':' + (row.id ?? row.idx)} row={row} />
-                    : <NwRowView key={row.listKey + ':' + row.id} row={row} onOpen={() => openRow(row)} />
+                  <NwRowView key={row.listKey + ':' + (row.id ?? row.idx)} row={row} onOpen={() => openRow(row)} />
                 ))}
                 {grp.rows.length === 0 && (
                   <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', padding: '4px 0 10px' }}>Nothing here yet.</div>

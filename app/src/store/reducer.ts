@@ -2,7 +2,7 @@
 // Each Action variant corresponds 1:1 to an original `this.xyz = (...) => this.setState(...)` method,
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
 import type { AppState, ManualData, BalanceDraft } from './types';
-import { mkRecord, mkCategory, mkItem, mkInvestRow, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
+import { mkCategory, mkItem, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
@@ -367,14 +367,24 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, theme: action.theme };
 
     // ---- manual records (assets/liabilities/investments) ----
-    case 'ADD_RECORD':
-      return updateManual(state, (m) => ({ ...m, [action.listKey]: [...(m[action.listKey] as any[]), mkRecord('', '', todayIso())] }));
+    case 'ADD_RECORD': {
+      // The new row's id is generated here (not inside mkRecord) so it can
+      // also open the record's detail dialog immediately -- there's no more
+      // inline-edit row for a blank record to land in, so without this it
+      // would sit invisible/unnamed in the compact list.
+      const id = uid();
+      const next = updateManual(state, (m) => ({ ...m, [action.listKey]: [...(m[action.listKey] as any[]), { id, name: '', amount: '', date: todayIso(), history: [] }] }));
+      return { ...next, balanceDetailOpen: action.listKey + ':' + id, balanceDraft: { mode: 'add', amount: '', desc: '', date: todayIso() } };
+    }
     case 'SET_RECORD_FIELD':
       return updateManual(state, (m) => ({ ...m, [action.listKey]: (m[action.listKey] as any[]).map((r) => r.id === action.id ? { ...r, [action.field]: action.value } : r) }));
     case 'REMOVE_RECORD':
       return updateManual(state, (m) => ({ ...m, [action.listKey]: (m[action.listKey] as any[]).filter((r) => r.id !== action.id) }));
-    case 'ADD_INVESTMENT_ROW':
-      return updateManual(state, (m) => ({ ...m, investments: [...m.investments, mkInvestRow('', '', '', '')] }));
+    case 'ADD_INVESTMENT_ROW': {
+      const id = uid();
+      const next = updateManual(state, (m) => ({ ...m, investments: [...m.investments, { id, name: '', qty: '', buy: '', cur: '' }] }));
+      return { ...next, investDetailOpen: 'investments:' + id };
+    }
     case 'REMOVE_INVESTMENT_ROW':
       return updateManual(state, (m) => ({ ...m, investments: m.investments.filter((_, i) => i !== action.idx) }));
     case 'SET_INVEST_FIELD':

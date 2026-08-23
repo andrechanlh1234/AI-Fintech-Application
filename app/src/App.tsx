@@ -76,10 +76,10 @@ function AppShell() {
       <BottomSheet open={state.notifPanelOpen} onClose={actions.closeNotifPanel}>
         <NotifPanel />
       </BottomSheet>
-      <BottomSheet open={!!state.balanceDetailOpen} onClose={actions.closeBalanceDetail}>
+      <BottomSheet open={!!state.balanceDetailOpen} onClose={actions.closeBalanceDetail} align="center">
         <BalanceDetailModal />
       </BottomSheet>
-      <BottomSheet open={!!state.investDetailOpen} onClose={actions.closeInvestDetail}>
+      <BottomSheet open={!!state.investDetailOpen} onClose={actions.closeInvestDetail} align="center">
         <InvestDetailModal />
       </BottomSheet>
       <BottomSheet open={state.donateOpen} onClose={actions.closeDonate}>

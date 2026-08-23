@@ -25,6 +25,7 @@ export function InvestDetailModal() {
   const rec = resolveRow(state, listKey, id);
   if (!rec) return null;
 
+  const isManual = !listKey.startsWith('seed.');
   const qty = parseFloat(rec.qty) || 0;
   const buy = parseFloat(rec.buy) || 0;
   const cur = parseFloat(rec.cur) || 0;
@@ -36,7 +37,16 @@ export function InvestDetailModal() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17 }}>{rec.name}</span>
+        {isManual ? (
+          <input
+            className="input" autoFocus={!rec.name} placeholder="Investment name"
+            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17, border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
+            value={rec.name}
+            onChange={(e) => actions.setInvestDetailField(listKey, id, 'name', e.target.value)}
+          />
+        ) : (
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17 }}>{rec.name}</span>
+        )}
         <button
           type="button"
           onClick={actions.closeInvestDetail}
@@ -71,6 +81,21 @@ export function InvestDetailModal() {
           <input className="input" value={rec.cur} onChange={(e) => actions.setInvestDetailField(listKey, id, 'cur', e.target.value)} placeholder="0.00" />
         </div>
       </div>
+
+      {isManual && (
+        <button
+          type="button"
+          onClick={() => {
+            const idx = state.ob.manual.investments.findIndex((r) => r.id === id);
+            if (idx >= 0) actions.removeInvestmentRow(idx);
+            actions.closeInvestDetail();
+          }}
+          className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', display: 'block', marginTop: 4, color: 'var(--color-danger-700)', font: '600 12.5px var(--font-body)' }}
+        >
+          Remove investment
+        </button>
+      )}
     </div>
   );
 }

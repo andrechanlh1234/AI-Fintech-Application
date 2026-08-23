@@ -3,6 +3,8 @@ import { money, isoToDisplayDate } from '../../lib/format';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
 
+type ManualListKey = Exclude<keyof ManualData, 'investments'>;
+
 interface BalRow { id: string; name: string; amount: string | number; history?: BalanceEntry[] }
 
 function resolveRow(state: ReturnType<typeof useStore>['state'], listKey: string, id: string): BalRow | null {
@@ -26,6 +28,7 @@ export function BalanceDetailModal() {
   const rec = resolveRow(state, listKey, id);
   if (!rec) return null;
 
+  const isManual = !listKey.startsWith('seed.');
   const balanceLabel = money(parseFloat(String(rec.amount)) || 0);
   const draft = state.balanceDraft;
   const isAdd = draft.mode !== 'deduct';
@@ -35,7 +38,16 @@ export function BalanceDetailModal() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17 }}>{rec.name}</span>
+        {isManual ? (
+          <input
+            className="input" autoFocus={!rec.name} placeholder="Account name"
+            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17, border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
+            value={rec.name}
+            onChange={(e) => actions.setRecordField(listKey as ManualListKey, id, 'name', e.target.value)}
+          />
+        ) : (
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17 }}>{rec.name}</span>
+        )}
         <button
           type="button"
           onClick={actions.closeBalanceDetail}
@@ -52,12 +64,18 @@ export function BalanceDetailModal() {
 
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 20 }}>RM {balanceLabel}</div>
 
-      <div className="seg" style={{ marginBottom: 14 }}>
-        <label className="seg-opt">
+      <div className="seg" style={{ marginBottom: 14, width: '100%' }}>
+        <label
+          className="seg-opt"
+          style={{ flex: 1, justifyContent: 'center', background: isAdd ? 'var(--color-accent)' : 'transparent', color: isAdd ? '#fff' : 'var(--color-text)' }}
+        >
           <input type="radio" name="balMode" checked={isAdd} onChange={() => actions.setBalanceDraftField('mode', 'add')} />
           Add money
         </label>
-        <label className="seg-opt">
+        <label
+          className="seg-opt"
+          style={{ flex: 1, justifyContent: 'center', background: isDeduct ? 'var(--color-danger)' : 'transparent', color: isDeduct ? '#fff' : 'var(--color-text)' }}
+        >
           <input type="radio" name="balMode" checked={isDeduct} onChange={() => actions.setBalanceDraftField('mode', 'deduct')} />
           Deduct money
         </label>
@@ -112,6 +130,17 @@ export function BalanceDetailModal() {
           </div>
         );
       })}
+
+      {isManual && (
+        <button
+          type="button"
+          onClick={() => { actions.removeRecord(listKey as ManualListKey, id); actions.closeBalanceDetail(); }}
+          className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', display: 'block', marginTop: 20, color: 'var(--color-danger-700)', font: '600 12.5px var(--font-body)' }}
+        >
+          Remove account
+        </button>
+      )}
     </div>
   );
 }
