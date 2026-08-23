@@ -60,6 +60,17 @@ export interface BalanceDraft {
   date: string;
 }
 
+export interface TxDraft {
+  merchant: string;
+  cat: string;
+  amount: string;
+  type: 'expense' | 'income';
+  /** ISO (YYYY-MM-DD) -- what <input type="date"> reads and writes. */
+  date: string;
+  tax: boolean;
+  payment: string;
+}
+
 export type FinanceSection = 'networth' | 'record' | 'budgets' | 'stats' | 'history';
 export type Tab = 'home' | 'finance' | 'tax' | 'ai';
 export type ScanStep = 'capture' | 'processing' | 'confirm' | 'saved';
@@ -165,6 +176,10 @@ export interface AppState {
    * there. Budget line items and REVIEW_ITEMS are derived/overlaid on top
    * of this in selectors, not stored here. */
   transactions: Transaction[];
+  /** Id of the transaction currently open in the edit/delete detail sheet
+   * (Record page row tap), or null when closed. */
+  txDetailOpen: string | number | null;
+  txDraft: TxDraft;
 }
 
 export type { BalanceEntry };

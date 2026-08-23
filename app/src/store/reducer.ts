@@ -1,10 +1,10 @@
 // Reducer ported from Cukai v7.dc.html's action methods (lines 2069-2343).
 // Each Action variant corresponds 1:1 to an original `this.xyz = (...) => this.setState(...)` method,
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
-import type { AppState, ManualData, BalanceDraft } from './types';
+import type { AppState, ManualData, BalanceDraft, TxDraft } from './types';
 import { mkCategory, mkItem, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
 import { uid } from '../lib/ids';
-import { clamp, isoToDisplayDate, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
+import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
 import { mapOcrCategory } from '../lib/constants';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
@@ -113,6 +113,9 @@ export type Action =
   | { type: 'SET_BALANCE_DRAFT_FIELD'; field: keyof BalanceDraft; value: string }
   | { type: 'SUBMIT_BALANCE_ENTRY'; listKey: string; id: string }
   | { type: 'REMOVE_BALANCE_ENTRY'; listKey: string; id: string; entryId: string }
+  | { type: 'OPEN_TX_DETAIL'; id: string | number } | { type: 'CLOSE_TX_DETAIL' }
+  | { type: 'SET_TX_DRAFT_FIELD'; field: keyof TxDraft; value: string | boolean }
+  | { type: 'SAVE_TX_DETAIL' } | { type: 'DELETE_TX_DETAIL' }
   | { type: 'OPEN_HISTORY'; listKey: string; id: string } | { type: 'CLOSE_HISTORY' }
 
   | { type: 'TOGGLE_NW_GROUP'; key: string }
@@ -228,7 +231,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const trial = buildTrialData();
       return {
         ...state,
-        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: trial.manual.bankAccounts, creditCards: trial.manual.creditCards }, subs: trial.subs },
+        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: trial.manual.bankAccounts, creditCards: trial.manual.creditCards, investments: trial.manual.investments }, subs: trial.subs },
         transactions: trial.transactions,
         finance: { buckets: trial.buckets },
         pendingReviewItems: trial.pendingReviewItems, reviewDecisions: {},
@@ -238,7 +241,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const empty = emptyTrialData();
       return {
         ...state,
-        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: empty.manual.bankAccounts, creditCards: empty.manual.creditCards }, subs: empty.subs },
+        ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: empty.manual.bankAccounts, creditCards: empty.manual.creditCards, investments: empty.manual.investments }, subs: empty.subs },
         transactions: empty.transactions,
         finance: { buckets: empty.buckets },
         pendingReviewItems: [], reviewDecisions: {},
@@ -468,6 +471,52 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, historyOpen: action.listKey + ':' + action.id };
     case 'CLOSE_HISTORY':
       return { ...state, historyOpen: null };
+
+    // ---- transaction detail (Record row tap: edit/delete) ----
+    case 'OPEN_TX_DETAIL': {
+      const tx = state.transactions.find((t) => t.id === action.id);
+      if (!tx) return state;
+      return {
+        ...state, txDetailOpen: action.id,
+        txDraft: {
+          merchant: tx.merchant, cat: tx.cat, amount: String(Math.abs(tx.amount)),
+          type: tx.amount >= 0 ? 'income' : 'expense', date: displayDateToIso(tx.dateLabel),
+          tax: tx.tax, payment: tx.payment,
+        },
+      };
+    }
+    case 'CLOSE_TX_DETAIL':
+      return { ...state, txDetailOpen: null };
+    case 'SET_TX_DRAFT_FIELD': {
+      // Picking "Income" always resets the category to Income (it's the
+      // only category that pairs with a positive amount) rather than
+      // leaving a stale expense category selected underneath a hidden
+      // picker; switching back to "Expense" hands the category back.
+      const draft = { ...state.txDraft, [action.field]: action.value };
+      if (action.field === 'type') {
+        draft.cat = action.value === 'income' ? 'Income' : (state.txDraft.cat === 'Income' ? 'Food & Drink' : state.txDraft.cat);
+      }
+      return { ...state, txDraft: draft };
+    }
+    case 'SAVE_TX_DETAIL': {
+      if (!state.txDetailOpen) return state;
+      const amt = parseFloat(state.txDraft.amount) || 0;
+      if (!state.txDraft.merchant || !amt) return state;
+      const dateLabel = isoToDisplayDate(state.txDraft.date) || todayDisplayDate();
+      const signedAmount = state.txDraft.type === 'income' ? amt : -amt;
+      const reliefKey = state.txDraft.tax && state.txDraft.type === 'expense' ? (categoryToReliefKey(state.txDraft.cat) ?? undefined) : undefined;
+      const id = state.txDetailOpen;
+      const transactions = state.transactions.map((t) => t.id !== id ? t : {
+        ...t, merchant: state.txDraft.merchant, cat: state.txDraft.cat, amount: signedAmount,
+        dateLabel, dateGroup: dateGroupFor(dateLabel), month: monthFromDateLabel(dateLabel),
+        tax: state.txDraft.tax, reliefKey, payment: state.txDraft.payment,
+      });
+      return { ...state, transactions, txDetailOpen: null };
+    }
+    case 'DELETE_TX_DETAIL': {
+      if (!state.txDetailOpen) return state;
+      return { ...state, transactions: state.transactions.filter((t) => t.id !== state.txDetailOpen), txDetailOpen: null };
+    }
 
     case 'TOGGLE_NW_GROUP':
       return { ...state, expandedNwGroup: state.expandedNwGroup === action.key ? null : action.key };

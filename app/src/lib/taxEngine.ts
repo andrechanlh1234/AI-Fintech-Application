@@ -150,14 +150,18 @@ export function isTaxItemRelevant(key: string, im: TaxItemMeta, profile: TaxProf
 }
 
 export interface TaxModelItem {
-  key: string; label: string; cap: number; captured: number; pct: number; remaining: number;
+  // pct is the TRUE capture rate, uncapped -- barPct is the same value
+  // clamped to 100 for progress-bar width only. Claiming past a relief's
+  // cap is a real (if unusual) case; the % Complete badge must show it,
+  // not silently read back as 100%.
+  key: string; label: string; cap: number; captured: number; pct: number; barPct: number; remaining: number;
   potentialBenefit: number; status: string;
   receipts: { merchant: string; amount: number; dateLabel: string; isOther: boolean }[];
   rawReceipts: TaxReceipt[];
 }
 export interface TaxModelGroup {
   key: string; label: string; icon: string; items: TaxModelItem[];
-  captured: number; cap: number; pct: number; remaining: number; potentialBenefit: number; status: string;
+  captured: number; cap: number; pct: number; barPct: number; remaining: number; potentialBenefit: number; status: string;
 }
 export interface TaxModel {
   groups: TaxModelGroup[]; totalCaptured: number; totalCap: number; totalRemaining: number;
@@ -182,19 +186,19 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
         const otherAmount = Math.max(0, captured - receiptsSum);
         const receipts = d.receipts.map((x) => ({ merchant: x.merchant, amount: x.amount, dateLabel: x.dateLabel, isOther: false }));
         if (otherAmount > 0.5) receipts.push({ merchant: 'Other eligible expenses', amount: otherAmount, dateLabel: '', isOther: true });
-        const pct = cap > 0 ? Math.min(100, Math.round((captured / cap) * 100)) : 0;
+        const pct = cap > 0 ? Math.round((captured / cap) * 100) : 0;
         const remaining = Math.max(0, cap - captured);
         const potentialBenefit = Math.round(remaining * r);
         const status = im.automatic ? 'Automatic' : pct >= 85 ? 'Optimised' : captured > 0 ? 'In progress' : 'Available';
-        return { key: im.key, label: im.label, cap, captured, pct, remaining, potentialBenefit, status, receipts, rawReceipts: d.receipts };
+        return { key: im.key, label: im.label, cap, captured, pct, barPct: Math.min(100, pct), remaining, potentialBenefit, status, receipts, rawReceipts: d.receipts };
       });
     const captured = items.reduce((s, it) => s + it.captured, 0);
     const cap = items.reduce((s, it) => s + it.cap, 0);
-    const pct = cap > 0 ? Math.min(100, Math.round((captured / cap) * 100)) : 0;
+    const pct = cap > 0 ? Math.round((captured / cap) * 100) : 0;
     const remaining = Math.max(0, cap - captured);
     const potentialBenefit = Math.round(remaining * r);
     const status = pct >= 85 ? 'Optimised' : captured > 0 ? 'In progress' : 'Available';
-    return { key: g.key, label: g.label, icon: g.icon, items, captured, cap, pct, remaining, potentialBenefit, status };
+    return { key: g.key, label: g.label, icon: g.icon, items, captured, cap, pct, barPct: Math.min(100, pct), remaining, potentialBenefit, status };
   });
   const totalCaptured = groups.reduce((s, g) => s + g.captured, 0);
   const totalCap = groups.reduce((s, g) => s + g.cap, 0);

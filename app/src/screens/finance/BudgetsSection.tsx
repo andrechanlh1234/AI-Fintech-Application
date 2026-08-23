@@ -4,6 +4,7 @@ import { selectBudgets, selectSubscriptions } from '../../store/selectors';
 import { Card } from '../../components/primitives';
 import { moneyWhole, isoToDisplayDate } from '../../lib/format';
 import { BudgetGauge } from './BudgetGauge';
+import { BudgetUtilisationBar } from '../../components/BudgetUtilisationBar';
 import { AddBudgetCategoryForm } from '../../components/AddBudgetCategoryForm';
 import { BUDGET_COMMON_CATEGORIES } from '../../lib/constants';
 
@@ -45,9 +46,7 @@ export function BudgetsSection() {
               RM {b.spentLabel}{' '}
               <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {b.totalLabel}</span>
             </div>
-            <div style={{ height: 7, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
-              <div className="bar-fill" style={{ height: '100%', width: `${b.pct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
-            </div>
+            <BudgetUtilisationBar pct={b.pct} barPct={b.barPct} spent={b.spent} cap={b.total} />
           </button>
 
           {b.expanded && (
@@ -69,9 +68,7 @@ export function BudgetsSection() {
                         </svg>
                       </span>
                     </div>
-                    <div style={{ height: 5, background: 'var(--color-neutral-300)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div className="bar-fill" style={{ height: '100%', width: `${c.pct}%`, background: c.barColor, borderRadius: 3 }} />
-                    </div>
+                    <BudgetUtilisationBar pct={c.pct} barPct={c.barPct} spent={c.spent} cap={c.total} />
                   </button>
                   {c.note && (
                     <div style={{ fontSize: 10.5, color: c.noteColor, marginTop: 4 }}>{c.note}</div>

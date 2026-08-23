@@ -1,4 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
@@ -66,7 +67,63 @@ export function NetWorthSection() {
   const assetsLabel = moneyWhole(nw.assets);
   const liabilitiesLabel = moneyWhole(nw.liabilities);
 
-  const nwTooltipLeftPct = Math.min(92, Math.max(8, (chart.selCx / 300) * 100));
+  // Robust tooltip positioning: a fixed percentage clamp (the old approach)
+  // assumes a tooltip width that never actually matches its rendered width,
+  // so at responsive/narrow widths or long labels (e.g. the last point's
+  // date + value) the pill would run past the clamp and sit on top of the
+  // marker dot instead of beside it. Measure the pill's real width and the
+  // chart's real width after each render/resize and clamp in pixels, so the
+  // pill always stays fully inside the card and never overlaps the dot. The
+  // dashed vertical guideline (drawn in the SVG below, at the true selCx)
+  // is what visually ties the pill back to the exact selected point once
+  // the pill itself has to shift away from directly above it.
+  const chartWrapRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltipLeftPx, setTooltipLeftPx] = useState<number | null>(null);
+  const [tooltipTopPx, setTooltipTopPx] = useState<number | null>(null);
+
+  // The SVG's own height is fixed (only its width is responsive), so the
+  // pixel offset from the chart wrapper's top edge to the svg's y=0 is a
+  // constant: the svg-container's 6px top margin.
+  const SVG_PX_HEIGHT = 150;
+  const SVG_TOP_MARGIN = 6;
+  const DOT_RADIUS = 8;
+  const GAP = 8;
+
+  useLayoutEffect(() => {
+    if (!chart.hasSelection) return;
+    const wrap = chartWrapRef.current;
+    const tip = tooltipRef.current;
+    if (!wrap || !tip) return;
+    const recompute = () => {
+      const containerWidth = wrap.clientWidth;
+      if (!containerWidth) return;
+      const anchorPx = (chart.selCx / 300) * containerWidth;
+      const tipWidth = tip.offsetWidth;
+      const pad = 4;
+      const maxLeft = Math.max(pad, containerWidth - tipWidth - pad);
+      const rawLeft = anchorPx - tipWidth / 2;
+      setTooltipLeftPx(Math.min(maxLeft, Math.max(pad, rawLeft)));
+
+      // Vertical: place the pill directly above the selected dot by
+      // default (matching every other point on the line), but a point
+      // near the TOP of the chart's own value range (a local peak or the
+      // series max) puts the dot too close to that default band for the
+      // pill to clear it -- flip to below the dot instead whenever there
+      // isn't enough headroom, rather than special-casing "first/last" or
+      // nudging a fixed offset by a few px.
+      const dotYAbs = SVG_TOP_MARGIN + (chart.selCy / 140) * SVG_PX_HEIGHT;
+      const tipHeight = tip.offsetHeight;
+      const topPad = -4;
+      const above = dotYAbs - DOT_RADIUS - GAP - tipHeight;
+      setTooltipTopPx(above >= topPad ? above : dotYAbs + DOT_RADIUS + GAP);
+    };
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(wrap);
+    window.addEventListener('resize', recompute);
+    return () => { ro.disconnect(); window.removeEventListener('resize', recompute); };
+  }, [chart.hasSelection, chart.selCx, chart.selCy, chart.selectedLabel, chart.selectedValueLabel]);
 
   const scrubAt = (clientX: number, el: HTMLElement) => {
     const rect = el.getBoundingClientRect();
@@ -133,14 +190,19 @@ export function NetWorthSection() {
         </div>
       )}
 
-      <div style={{ position: 'relative' }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}>
+      <div ref={chartWrapRef} style={{ position: 'relative' }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}>
         {chart.hasSelection && (
-          <div style={{ position: 'absolute', top: -4, left: `${nwTooltipLeftPct}%`, transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none', zIndex: 2 }}>
-            <div style={{ background: '#1a1a1a', color: '#fff', borderRadius: 8, padding: '6px 10px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, boxShadow: 'var(--shadow-sm)' }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{chart.selectedLabel}</span>
-              <span className="type-numeric" style={{ fontWeight: 700, fontSize: 12.5 }}>RM {chart.selectedValueLabel}</span>
-            </div>
-            <div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1a1a1a' }} />
+          <div
+            ref={tooltipRef}
+            style={{
+              position: 'absolute', top: tooltipTopPx ?? -4, left: tooltipLeftPx ?? 0,
+              visibility: tooltipLeftPx == null || tooltipTopPx == null ? 'hidden' : 'visible',
+              background: '#1a1a1a', color: '#fff', borderRadius: 8, padding: '6px 10px', whiteSpace: 'nowrap',
+              display: 'flex', alignItems: 'center', gap: 6, boxShadow: 'var(--shadow-sm)', pointerEvents: 'none', zIndex: 2,
+            }}
+          >
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{chart.selectedLabel}</span>
+            <span className="type-numeric" style={{ fontWeight: 700, fontSize: 12.5 }}>RM {chart.selectedValueLabel}</span>
           </div>
         )}
         <div style={{ position: 'relative', margin: '6px 0 4px' }}>
@@ -174,14 +236,20 @@ export function NetWorthSection() {
           {chart.pts.length === 1 && (
             <div style={{
               position: 'absolute', left: `${(chart.pts[0][0] / 300) * 100}%`, top: `${(chart.pts[0][1] / 140) * 100}%`,
-              width: 8, height: 8, borderRadius: '50%', background: 'var(--color-accent)', transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+              width: 12, height: 12, borderRadius: '50%', background: 'var(--color-accent)', border: '3px solid var(--color-surface)', boxSizing: 'border-box',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.35)', transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 3,
             }} />
           )}
           {chart.hasSelection && (
+            // Deliberately larger than the line stroke (2.5px) and with a
+            // thick surface-color ring + shadow, not just a bare fill dot --
+            // at the same accent color as the line itself, a thin ring was
+            // the only thing distinguishing "selected point" from "the line
+            // has a vertex here", and it read as invisible at a glance.
             <div style={{
               position: 'absolute', left: `${(chart.selCx / 300) * 100}%`, top: `${(chart.selCy / 140) * 100}%`,
-              width: 10, height: 10, borderRadius: '50%', background: 'var(--color-accent)', border: '2px solid #fff', boxSizing: 'border-box',
-              transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+              width: 16, height: 16, borderRadius: '50%', background: 'var(--color-accent)', border: '3px solid var(--color-surface)', boxSizing: 'border-box',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.35)', transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 3,
             }} />
           )}
         </div>

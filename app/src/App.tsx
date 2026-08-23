@@ -11,6 +11,7 @@ import { ReviewFlow } from './screens/modals/ReviewFlow';
 import { MorePanel } from './screens/modals/MorePanel';
 import { NotifPanel } from './screens/modals/NotifPanel';
 import { BalanceDetailModal } from './screens/modals/BalanceDetailModal';
+import { TxDetailModal } from './screens/modals/TxDetailModal';
 import { InvestDetailModal } from './screens/modals/InvestDetailModal';
 import { HistoryScreen } from './screens/modals/HistoryScreen';
 import { TaxReceiptsScreen } from './screens/tax/TaxReceiptsScreen';
@@ -83,6 +84,9 @@ function AppShell() {
       </BottomSheet>
       <BottomSheet open={!!state.investDetailOpen} onClose={actions.closeInvestDetail} align="full">
         <InvestDetailModal />
+      </BottomSheet>
+      <BottomSheet open={!!state.txDetailOpen} onClose={actions.closeTxDetail} align="full">
+        <TxDetailModal />
       </BottomSheet>
       <BottomSheet open={!!state.historyOpen} onClose={actions.closeHistory} align="full">
         <HistoryScreen />

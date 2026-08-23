@@ -1,0 +1,79 @@
+import { useState } from 'react';
+import { useDismissOnOutside } from './PeriodPicker';
+
+/** Apple-style single-select filter dropdown: a "Filter ▾" trigger that
+ * opens a floating, frosted (.material-chrome) popover -- same pattern as
+ * PeriodPicker's YearPicker, generalized to an arbitrary option list.
+ * Not a native <select> and not an always-visible chip row: the trigger
+ * stays compact when a filter is applied, and the popover dismisses on an
+ * outside tap or Escape. `allLabel` is the "no filter" option (shown first,
+ * and what makes the trigger read as inactive again). */
+export function FilterPicker({
+  value, options, onChange, allLabel = 'All',
+}: {
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  allLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useDismissOnOutside(open, () => setOpen(false));
+  const active = value !== allLabel;
+
+  return (
+    <div ref={rootRef} style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="pressable"
+        style={{
+          all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '9px 14px', borderRadius: 999, font: '700 13px var(--font-body)', whiteSpace: 'nowrap',
+          border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+          background: active ? 'var(--color-accent-100)' : 'var(--color-surface)',
+          color: active ? 'var(--color-accent-700)' : 'var(--color-text)',
+        }}
+      >
+        {active ? value : 'Filter'}
+        <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          className="material-chrome pop-in"
+          style={{
+            position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 30, minWidth: 196, maxHeight: 320, overflowY: 'auto',
+            borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
+            padding: 6,
+          }}
+        >
+          {[allLabel, ...options].map((opt, i, arr) => {
+            const selected = opt === value;
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { onChange(opt); setOpen(false); }}
+                className="pressable"
+                style={{
+                  all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
+                  font: '600 14px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
+                  borderBottom: i < arr.length - 1 ? '1px solid var(--color-divider)' : 'none',
+                }}
+              >
+                {opt}
+                {selected && (
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

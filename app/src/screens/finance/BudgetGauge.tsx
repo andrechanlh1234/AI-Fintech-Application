@@ -21,7 +21,7 @@ export function BudgetGauge() {
           >
             <svg width={300} height={280} viewBox="0 0 300 280" style={{ position: 'absolute', inset: 0 }}>
               <path d={g.gaugeArcPath} fill="none" stroke="var(--color-neutral-300)" strokeWidth={16} strokeLinecap="round" />
-              <path d={g.availableArcPath} fill="none" stroke="var(--color-accent)" strokeWidth={16} strokeLinecap="round" style={{ transition: 'd .6s ease' }} />
+              <path d={g.availableArcPath} fill="none" stroke={g.gaugeOverspent ? 'var(--color-danger)' : 'var(--color-accent)'} strokeWidth={16} strokeLinecap="round" style={{ transition: 'd .6s ease, stroke .2s ease' }} />
               {g.donutBranches.map((br) => (
                 <g key={br.bucketKey + ':' + br.catId}>
                   <circle cx={br.x1} cy={br.y1} r={3} fill={br.color} />
@@ -35,6 +35,25 @@ export function BudgetGauge() {
             </div>
             <div className="type-numeric" style={{ position: 'absolute', left: 40, top: 222, transform: 'translateX(-50%)', fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>RM0</div>
             <div className="type-numeric" style={{ position: 'absolute', left: 260, top: 222, transform: 'translateX(-50%)', fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>RM {g.budgetPlanTotalLabel}</div>
+            {/* Badge riding the exact boundary between the filled and
+                unfilled arc -- gaugeMidX/Y is the same point the arc paths
+                themselves are built from, so the badge can never drift out
+                of sync with the fill. Percentage shown is the true,
+                uncapped value (can exceed 100 on an overspent month) even
+                though the arc itself necessarily stops at a full circle. */}
+            <div
+              className="type-numeric"
+              style={{
+                position: 'absolute', left: g.gaugeMidX, top: g.gaugeMidY, transform: 'translate(-50%,-50%)',
+                width: 34, height: 34, borderRadius: '50%', background: 'var(--color-surface)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 800, color: g.gaugeOverspent ? 'var(--color-danger-700)' : 'var(--color-accent-700)',
+                boxShadow: '0 1px 5px rgba(0,0,0,0.22)', border: '1px solid var(--color-divider)',
+                transition: 'left .6s ease, top .6s ease',
+              }}
+            >
+              {g.gaugeSpentPct}%
+            </div>
           </div>
           {g.donutBranches.map((br) => (
             <button

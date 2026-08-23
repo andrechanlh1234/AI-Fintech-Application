@@ -121,7 +121,7 @@ export function TaxCenter() {
                     </span>
                   </div>
                   <div style={{ height: 7, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div className="bar-fill" style={{ height: '100%', width: `${g.pct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
+                    <div className="bar-fill" style={{ height: '100%', width: `${g.barPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
                   </div>
                 </button>
 
@@ -159,7 +159,7 @@ export function TaxCenter() {
                             <span style={{ color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(it.cap)}</span>
                           </div>
                           <div style={{ height: 5, background: 'var(--color-neutral-300)', borderRadius: 3, overflow: 'hidden' }}>
-                            <div className="bar-fill" style={{ height: '100%', width: `${it.pct}%`, background: 'var(--color-accent)', borderRadius: 3 }} />
+                            <div className="bar-fill" style={{ height: '100%', width: `${it.barPct}%`, background: 'var(--color-accent)', borderRadius: 3 }} />
                           </div>
                         </button>
                       );

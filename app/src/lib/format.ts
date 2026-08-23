@@ -55,6 +55,22 @@ export function parseDisplayDate(label: string): { day: number; month: string; y
   return { day: parseInt(m[1], 10), month: m[2], year: m[3] ? parseInt(m[3], 10) : null };
 }
 
+// Inverse of isoToDisplayDate: "3 Jul 2026" -> "2026-07-03", for seeding an
+// <input type="date"> from a stored dateLabel. A label with no year (an
+// older "D Mon" record) assumes the current year, same fallback dateGroupFor
+// already uses -- never a fabricated year. Falls back to today when the
+// label doesn't parse at all, so the date field is never left blank.
+export function displayDateToIso(label: string): string {
+  const parsed = parseDisplayDate(label);
+  if (!parsed) return todayIso();
+  const year = parsed.year ?? new Date().getFullYear();
+  const month = SHORT_MONTHS.indexOf(parsed.month);
+  if (month < 0) return todayIso();
+  const mm = String(month + 1).padStart(2, '0');
+  const dd = String(parsed.day).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
+}
+
 // Classifies a scan/manual date label against the real current date —
 // "Today"/"Yesterday" when it genuinely is, "This week" otherwise. Replaces
 // blindly hardcoding dateGroup: 'Today' on every save regardless of what

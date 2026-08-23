@@ -2,7 +2,7 @@
 // every pre-filled example value removed — a fresh user starts at RM0 with
 // no transactions/subscriptions/accounts until they enter their own.
 import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
-import { todayDisplayDate } from '../lib/format';
+import { todayDisplayDate, todayIso } from '../lib/format';
 import type { AppState } from './types';
 
 const emptySubDraft = {
@@ -58,6 +58,8 @@ export function buildInitialState(): AppState {
     taxYear: 'YA' + today.getFullYear(),
     mounted: false,
     transactions: [],
+    txDetailOpen: null,
+    txDraft: { merchant: '', cat: 'Food & Drink', amount: '', type: 'expense', date: todayIso(), tax: false, payment: 'Cash' },
 
     aiView: 'chat', aiMessages: [], aiInput: '', aiTyping: false,
     theme: 'light',

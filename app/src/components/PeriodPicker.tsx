@@ -1,5 +1,26 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { MONTH_ORDER } from '../lib/constants';
+
+/** Closes an open popover on any pointerdown outside its root, and on
+ * Escape -- the standard dismiss behavior for a floating menu (as opposed
+ * to an inline expand/collapse card, which stays open until tapped again). */
+export function useDismissOnOutside(open: boolean, onDismiss: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const handlePointer = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onDismiss();
+    };
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onDismiss(); };
+    document.addEventListener('pointerdown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [open, onDismiss]);
+  return ref;
+}
 
 const chevBtnStyle: CSSProperties = {
   all: 'unset', cursor: 'pointer', padding: 8, borderRadius: 999, color: 'var(--color-text-muted)', display: 'flex',
@@ -103,17 +124,18 @@ export function MonthPicker({
   );
 }
 
-/** Apple-style year picker: a horizontally-scrollable pill strip, no fixed
- * "2026/2025" toggle -- `years` is computed by the caller so future years
+/** Apple-style year dropdown: a compact "2026 v" trigger that opens a
+ * floating popover menu -- a frosted (.material-chrome), rounded, shadowed
+ * list that overlays the page and dismisses on an outside tap, the way an
+ * iOS pull-down menu behaves. Not an inline card that pushes layout, and
+ * not a native <select>. `years` is computed by the caller so future years
  * appear as they roll around without redesigning the component. */
-/** Apple-style year dropdown: a compact "2026 v" trigger that expands a
- * grid of years in place, closing on selection -- not a permanently laid
- * out row of pills. Same tap-to-reveal card language as MonthPicker. */
 export function YearPicker({ year, years, onChange }: { year: number; years: number[]; onChange: (year: number) => void }) {
   const [open, setOpen] = useState(false);
+  const rootRef = useDismissOnOutside(open, () => setOpen(false));
 
   return (
-    <div>
+    <div ref={rootRef} style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -130,26 +152,38 @@ export function YearPicker({ year, years, onChange }: { year: number; years: num
         </svg>
       </button>
       {open && (
-        <div className="pop-in card" style={{ marginTop: 10, padding: 12, width: 220 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
-            {years.map((y) => {
-              const selected = y === year;
-              return (
-                <button
-                  key={y}
-                  type="button"
-                  onClick={() => { onChange(y); setOpen(false); }}
-                  className="pressable type-numeric"
-                  style={{
-                    all: 'unset', cursor: 'pointer', textAlign: 'center', padding: '9px 0', borderRadius: 'var(--radius-md)', font: '700 14px var(--font-body)',
-                    background: selected ? 'var(--color-accent)' : 'transparent', color: selected ? '#fff' : 'var(--color-text)',
-                  }}
-                >
-                  {y}
-                </button>
-              );
-            })}
-          </div>
+        <div
+          className="material-chrome pop-in"
+          style={{
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 30, minWidth: 168,
+            borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
+            overflow: 'hidden', padding: 6,
+          }}
+        >
+          {years.map((y, i) => {
+            const selected = y === year;
+            return (
+              <button
+                key={y}
+                type="button"
+                onClick={() => { onChange(y); setOpen(false); }}
+                className="pressable type-numeric"
+                style={{
+                  all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                  width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
+                  font: '600 15px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
+                  borderBottom: i < years.length - 1 ? '1px solid var(--color-divider)' : 'none',
+                }}
+              >
+                {y}
+                {selected && (
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

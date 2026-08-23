@@ -228,7 +228,9 @@ export function selectNetWorthChart(state: AppState) {
 }
 
 export function selectBudgets(state: AppState) {
-  const nowMonth = SHORT_MONTHS[new Date().getMonth()];
+  const now = new Date();
+  const nowMonth = SHORT_MONTHS[now.getMonth()];
+  const nowYear = now.getFullYear();
   const buckets = state.finance.buckets.map((b) => {
     const categories = b.categories.map((c: BudgetCategory) => {
       const itemsSpent = c.items.reduce((s, it) => s + (parseFloat(String(it.amount)) || 0), 0);
@@ -238,9 +240,13 @@ export function selectBudgets(state: AppState) {
       // receipt or accepting a reviewed statement line moves the budget bar.
       // Custom categories (Housing, Emergency fund, ...) have no matching
       // transaction category and stay purely manual, same as before.
+      // Matching on t.month alone (a bare "Aug") would double-count every
+      // August from every year a transaction has ever been dated in as
+      // "this month" -- deriveTxDate's real year is what actually scopes
+      // this to the current month AND year, not just the current month name.
       const txSpent = CAT_ICON[c.name]
         ? state.transactions
-            .filter((t) => t.cat === c.name && t.month === nowMonth && t.amount < 0)
+            .filter((t) => t.cat === c.name && t.amount < 0 && deriveTxDate(t).month === nowMonth && deriveTxDate(t).year === nowYear)
             .reduce((s, t) => s + Math.abs(t.amount), 0)
         : 0;
       const spent = itemsSpent + txSpent;
@@ -248,16 +254,24 @@ export function selectBudgets(state: AppState) {
       const pct = state.mounted && total > 0 ? Math.round((spent / total) * 100) : 0;
       const over = spent > total;
       const met = b.key === 'goals' && total > 0 && spent >= total;
+      // "Over budget" and "X% used" are no longer separate notes here --
+      // BudgetUtilisationBar shows utilisation (including overspend) inline
+      // on every row now, so a second line repeating the same number was
+      // redundant. "Goal reached" stays: it's information the bar doesn't
+      // carry (a goals-bucket category met, not just spent-vs-cap).
       let note: string | null = null, noteColor = 'var(--color-text-muted)';
-      if (over) { note = 'Over budget by RM ' + moneyWhole(spent - total); noteColor = 'var(--color-danger-700)'; }
-      else if (met) { note = 'Goal reached'; noteColor = 'var(--color-accent-700)'; }
-      else if (pct >= 90) { note = pct + '% used'; }
-      return { id: c.id, name: c.name, spent, total, spentLabel: moneyWhole(spent), totalLabel: moneyWhole(total), pct: Math.min(pct, 100), barColor: over ? 'var(--color-danger)' : 'var(--color-accent)', note, noteColor, detailKey: b.key + ':' + c.id, items: c.items };
+      if (met) { note = 'Goal reached'; noteColor = 'var(--color-accent-700)'; }
+      // pct is the TRUE utilisation (can exceed 100 when over budget) -- the
+      // only clamped value is barPct, used solely for CSS width, so a bar
+      // can never render wider than its track. Never clamp the number shown
+      // to the user; that silently hides overspend (was RM1,200/RM1,000 ->
+      // "100%" instead of the real 120%).
+      return { id: c.id, name: c.name, spent, total, spentLabel: moneyWhole(spent), totalLabel: moneyWhole(total), pct, barPct: Math.min(pct, 100), over, note, noteColor, detailKey: b.key + ':' + c.id, items: c.items };
     });
     const spent = categories.reduce((s, c) => s + c.spent, 0);
     const total = categories.reduce((s, c) => s + c.total, 0);
     const pct = state.mounted && total > 0 ? Math.round((spent / total) * 100) : 0;
-    return { key: b.key, name: b.name, spent, total, spentLabel: moneyWhole(spent), totalLabel: moneyWhole(total), pct, expanded: state.expandedBucket === b.key, categories };
+    return { key: b.key, name: b.name, spent, total, spentLabel: moneyWhole(spent), totalLabel: moneyWhole(total), pct, barPct: Math.min(pct, 100), over: spent > total, expanded: state.expandedBucket === b.key, categories };
   });
   const totalSpent = buckets.reduce((s, b) => s + b.spent, 0);
   const totalPlan = buckets.reduce((s, b) => s + b.total, 0);
@@ -286,6 +300,13 @@ export function selectBudgetGauge(state: AppState) {
   const gaugeStart = gaugePoint(0), gaugeMid = gaugePoint(gaugePctSpent), gaugeEnd = gaugePoint(1);
   const gaugeArcPath = `M ${fmt(gaugeStart)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
   const availableArcPath = `M ${fmt(gaugeMid)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
+  // True, uncapped utilisation for the badge riding the arc boundary --
+  // gaugePctSpent above is clamped to 1 because the arc geometry itself
+  // cannot physically extend past a full circle, but the number shown in
+  // the badge must still read e.g. "112%" on an overspent month rather than
+  // silently reporting back "100%".
+  const gaugeSpentPct = state.mounted && budgetTotalPlan > 0 ? Math.round((budgetTotalSpent / budgetTotalPlan) * 100) : 0;
+  const gaugeOverspent = budgetTotalSpent > budgetTotalPlan;
 
   const budgetRemaining = Math.max(0, budgetTotalPlan - budgetTotalSpent);
   const now = new Date();
@@ -318,6 +339,7 @@ export function selectBudgetGauge(state: AppState) {
 
   return {
     gaugeArcPath, availableArcPath, donutBranches,
+    gaugeMidX: gaugeMid[0], gaugeMidY: gaugeMid[1], gaugeSpentPct, gaugeOverspent,
     donutHint: state.donutExpanded ? 'Tap to collapse' : 'Tap for a category breakdown',
     gaugeBoxHeight: state.donutExpanded ? 280 : 178,
     gaugeShiftY: state.donutExpanded ? 0 : -64,

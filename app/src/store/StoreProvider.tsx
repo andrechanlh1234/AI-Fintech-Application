@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, type Dispatch, type ReactNode } from 'react';
-import type { AppState, ManualData, BalanceDraft } from './types';
+import type { AppState, ManualData, BalanceDraft, TxDraft } from './types';
 import { reducer, type Action } from './reducer';
 import { buildInitialState, mergePersisted, persistState, clearPersisted, buildSyncPayload } from './initialState';
 import { aiCraftReply } from '../lib/seedData';
@@ -225,6 +225,11 @@ export function useActions() {
       setBalanceDraftField: (field: keyof BalanceDraft, value: string) => dispatch({ type: 'SET_BALANCE_DRAFT_FIELD', field, value }),
       submitBalanceEntry: (listKey: string, id: string) => dispatch({ type: 'SUBMIT_BALANCE_ENTRY', listKey, id }),
       removeBalanceEntry: (listKey: string, id: string, entryId: string) => dispatch({ type: 'REMOVE_BALANCE_ENTRY', listKey, id, entryId }),
+      openTxDetail: (id: string | number) => dispatch({ type: 'OPEN_TX_DETAIL', id }),
+      closeTxDetail: () => dispatch({ type: 'CLOSE_TX_DETAIL' }),
+      setTxDraftField: (field: keyof TxDraft, value: string | boolean) => dispatch({ type: 'SET_TX_DRAFT_FIELD', field, value }),
+      saveTxDetail: () => dispatch({ type: 'SAVE_TX_DETAIL' }),
+      deleteTxDetail: () => dispatch({ type: 'DELETE_TX_DETAIL' }),
       openHistory: (listKey: string, id: string) => dispatch({ type: 'OPEN_HISTORY', listKey, id }),
       closeHistory: () => dispatch({ type: 'CLOSE_HISTORY' }),
 

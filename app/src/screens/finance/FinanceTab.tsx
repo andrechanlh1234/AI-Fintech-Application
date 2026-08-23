@@ -7,8 +7,8 @@ import { BudgetsSection } from './BudgetsSection';
 
 const SECTIONS: { key: FinanceSection; label: string }[] = [
   { key: 'networth', label: 'Net worth' },
-  { key: 'record', label: 'Record' },
   { key: 'budgets', label: 'Budgets' },
+  { key: 'record', label: 'Record' },
   { key: 'stats', label: 'Stats' },
 ];
 

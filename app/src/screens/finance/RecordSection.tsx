@@ -4,6 +4,7 @@ import { selectRecordPage } from '../../store/selectors';
 import { money, signedMoney } from '../../lib/format';
 import { rowBadge } from '../../lib/constants';
 import { MonthPicker } from '../../components/PeriodPicker';
+import { FilterPicker } from '../../components/FilterPicker';
 
 // Ported from Cukai v7.dc.html lines 1180-1230 ("All transactions" / Record screen).
 // The day-strip calendar + selected-day summary is the source layout; the search
@@ -40,19 +41,29 @@ function TxIcon({ tx }: { tx: RecordTx }) {
   return null;
 }
 
-function TxRow({ tx }: { tx: RecordTx }) {
+function TxRow({ tx, onOpen }: { tx: RecordTx; onOpen: () => void }) {
+  // Budget-line-item rows ("bud-…") are a display overlay from
+  // state.finance.buckets, not real state.transactions entries -- editing
+  // those lives in the Budgets screen's own category editor, not here, so
+  // only a real transaction row opens the edit/delete sheet.
+  const editable = !String(tx.id).startsWith('bud-');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 10px', margin: '0 -10px', borderRadius: 'var(--radius-sm)', borderBottom: '1px solid var(--color-neutral-300)' }}>
+    <button
+      type="button"
+      onClick={editable ? onOpen : undefined}
+      className="pressable"
+      style={{ all: 'unset', cursor: editable ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 10px', margin: '0 -10px', width: 'calc(100% + 20px)', boxSizing: 'border-box', borderRadius: 'var(--radius-sm)', borderBottom: '1px solid var(--color-neutral-300)' }}
+    >
       <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: 11.5, background: tx.badgeBg, color: tx.badgeFg }}>
         <TxIcon tx={tx} />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
         <div style={{ fontSize: 13.5, fontWeight: 600 }}>{tx.merchant}</div>
         <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{tx.catLabel} · {tx.payment}</div>
       </div>
       {tx.tax && <span className="tag tag-tax" style={{ flexShrink: 0 }}>Tax</span>}
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 13.5, flexShrink: 0, color: tx.amountColor }}>{tx.amountLabel}</div>
-    </div>
+    </button>
   );
 }
 
@@ -156,32 +167,20 @@ export default function RecordSection() {
         </button>
       </div>
 
-      <input
-        type="text"
-        placeholder="Search transactions"
-        value={state.txSearch}
-        onChange={(e) => actions.setTxSearch(e.target.value)}
-        className="input"
-        style={{ width: '100%', marginBottom: 10 }}
-      />
-      <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 16, paddingBottom: 2 }}>
-        {rec.categoryChips.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => actions.setTxFilter(c)}
-            className="pressable"
-            style={{
-              padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
-              border: '1.5px solid', cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0,
-              background: state.txFilter === c ? 'var(--color-accent)' : 'var(--color-surface)',
-              color: state.txFilter === c ? '#fff' : 'var(--color-text)',
-              borderColor: state.txFilter === c ? 'var(--color-accent)' : 'var(--color-neutral-400)',
-            }}
-          >
-            {c}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="Search transactions"
+          value={state.txSearch}
+          onChange={(e) => actions.setTxSearch(e.target.value)}
+          className="input"
+          style={{ flex: 1, minWidth: 0 }}
+        />
+        <FilterPicker
+          value={state.txFilter}
+          options={rec.categoryChips.filter((c) => c !== 'All')}
+          onChange={actions.setTxFilter}
+        />
       </div>
 
       {!searchActive && (
@@ -192,7 +191,7 @@ export default function RecordSection() {
           </div>
           <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
           {rec.selectedDayTx.length > 0 ? (
-            rec.selectedDayTx.map((tx) => <TxRow key={tx.id} tx={tx} />)
+            rec.selectedDayTx.map((tx) => <TxRow key={tx.id} tx={tx} onOpen={() => actions.openTxDetail(tx.id)} />)
           ) : (
             <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions on this day.</div>
           )}
@@ -208,7 +207,7 @@ export default function RecordSection() {
           </div>
           <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
           {filteredTxDisplay.length > 0 ? (
-            filteredTxDisplay.map((tx) => <TxRow key={tx.id} tx={tx} />)
+            filteredTxDisplay.map((tx) => <TxRow key={tx.id} tx={tx} onOpen={() => actions.openTxDetail(tx.id)} />)
           ) : (
             <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions match your search.</div>
           )}
