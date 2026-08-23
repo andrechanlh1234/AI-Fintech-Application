@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
@@ -57,19 +57,50 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
   );
 }
 
-// Manual entries (the normal case — there's no real bank sync) are edited
-// right here: name + amount (or, for investments, qty/buy/cur), with a
-// remove button. This is what makes "+ Add account" actually visible and
-// usable immediately, instead of adding an invisible unnamed row.
+// Manual entries (the normal case — there's no real bank sync) show as a
+// plain row like a synced account (matches the design) until tapped, which
+// reveals the same name/amount fields in place -- editing right where the
+// row is, rather than a separate screen. A blank row (just added) opens
+// straight into edit mode since a nameless compact row has nothing to show.
 function NwManualRowView({ row }: { row: NwRow }) {
   const actions = useActions();
   const isInvest = row.listKey === 'investments';
   const badge = subBadge(row.name || '?');
+  const [editing, setEditing] = useState(!row.name.trim());
 
   const remove = () => {
     if (isInvest && row.idx != null) actions.removeInvestmentRow(row.idx);
     else if (row.id) actions.removeRecord(row.listKey as ManualListKey, row.id);
   };
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="pressable"
+        style={{
+          all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center',
+          gap: 12, width: '100%', boxSizing: 'border-box', padding: '11px 0', borderBottom: '1px solid var(--color-neutral-300)',
+        }}
+      >
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontWeight: 700, fontSize: 12.5, background: badge.bg, color: badge.fg,
+        }}>
+          {badge.letter}
+        </div>
+        <div style={{ flex: 1, textAlign: 'left' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600 }}>{row.name}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Manual · tap to edit</div>
+        </div>
+        <div className="type-numeric" style={{ fontSize: 14, fontWeight: 600 }}>RM {money(row.balanceValue)}</div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="m9 6 6 6-6 6" />
+        </svg>
+      </button>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
@@ -116,6 +147,14 @@ function NwManualRowView({ row }: { row: NwRow }) {
           </div>
         </div>
       )}
+      <button
+        type="button" onClick={() => setEditing(false)} aria-label="Done" className="pressable"
+        style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-accent-700)', flexShrink: 0 }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </button>
       <button
         type="button" onClick={remove} aria-label="Remove" className="pressable"
         style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}
