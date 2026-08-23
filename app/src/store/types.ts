@@ -143,6 +143,7 @@ export interface AppState {
   donutExpanded: boolean;
   balanceDetailOpen: string | null;
   balanceDraft: BalanceDraft;
+  historyOpen: string | null;
   investDetailOpen: string | null;
   expandedNwGroup: string | null;
   netWorthSeed: NetWorthSeed;

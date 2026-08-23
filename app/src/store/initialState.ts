@@ -69,6 +69,7 @@ export function buildInitialState(): AppState {
     budgetItemDetailOpen: null, addSubOpen: false, donutExpanded: false,
     authUser: null, authPanelOpen: false, scanError: null, legalOpen: null, resetToken: null,
     balanceDetailOpen: null, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' },
+    historyOpen: null,
     investDetailOpen: null, expandedNwGroup: null,
     netWorthSeed: defaultNetWorthSeed(),
     netWorthHistory: [],

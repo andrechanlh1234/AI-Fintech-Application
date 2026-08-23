@@ -36,29 +36,28 @@ export function InvestDetailModal() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 20px 24px', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+        <button
+          type="button"
+          onClick={actions.closeInvestDetail}
+          aria-label="Back"
+          className="pressable"
+          style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer', color: 'var(--color-text)', flexShrink: 0 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
         {isManual ? (
           <input
             className="input" autoFocus={!rec.name} placeholder="Investment name"
-            style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17, border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
+            style={{ flex: 1, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, border: 'none', padding: 0, boxShadow: 'none', background: 'transparent' }}
             value={rec.name}
             onChange={(e) => actions.setInvestDetailField(listKey, id, 'name', e.target.value)}
           />
         ) : (
-          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17 }}>{rec.name}</span>
+          <span style={{ flex: 1, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>{rec.name}</span>
         )}
-        <button
-          type="button"
-          onClick={actions.closeInvestDetail}
-          aria-label="Close"
-          className="pressable"
-          style={{ background: 'none', border: 'none', padding: 8, marginRight: -8, cursor: 'pointer', color: 'var(--color-text)' }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
-          </svg>
-        </button>
       </div>
 
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 4 }}>RM {money(value)}</div>

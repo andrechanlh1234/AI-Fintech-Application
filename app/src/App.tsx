@@ -12,6 +12,7 @@ import { MorePanel } from './screens/modals/MorePanel';
 import { NotifPanel } from './screens/modals/NotifPanel';
 import { BalanceDetailModal } from './screens/modals/BalanceDetailModal';
 import { InvestDetailModal } from './screens/modals/InvestDetailModal';
+import { HistoryScreen } from './screens/modals/HistoryScreen';
 import { BudgetItemDetailModal } from './screens/modals/BudgetItemDetailModal';
 import { TaxItemDetailModal } from './screens/modals/TaxItemDetailModal';
 import { TaxPackModal } from './screens/modals/TaxPackModal';
@@ -76,11 +77,14 @@ function AppShell() {
       <BottomSheet open={state.notifPanelOpen} onClose={actions.closeNotifPanel}>
         <NotifPanel />
       </BottomSheet>
-      <BottomSheet open={!!state.balanceDetailOpen} onClose={actions.closeBalanceDetail} align="center">
+      <BottomSheet open={!!state.balanceDetailOpen} onClose={actions.closeBalanceDetail} align="full">
         <BalanceDetailModal />
       </BottomSheet>
-      <BottomSheet open={!!state.investDetailOpen} onClose={actions.closeInvestDetail} align="center">
+      <BottomSheet open={!!state.investDetailOpen} onClose={actions.closeInvestDetail} align="full">
         <InvestDetailModal />
+      </BottomSheet>
+      <BottomSheet open={!!state.historyOpen} onClose={actions.closeHistory} align="full">
+        <HistoryScreen />
       </BottomSheet>
       <BottomSheet open={state.donateOpen} onClose={actions.closeDonate}>
         <DonateModal />

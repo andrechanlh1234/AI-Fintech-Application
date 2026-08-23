@@ -223,6 +223,8 @@ export function useActions() {
       setBalanceDraftField: (field: keyof BalanceDraft, value: string) => dispatch({ type: 'SET_BALANCE_DRAFT_FIELD', field, value }),
       submitBalanceEntry: (listKey: string, id: string) => dispatch({ type: 'SUBMIT_BALANCE_ENTRY', listKey, id }),
       removeBalanceEntry: (listKey: string, id: string, entryId: string) => dispatch({ type: 'REMOVE_BALANCE_ENTRY', listKey, id, entryId }),
+      openHistory: (listKey: string, id: string) => dispatch({ type: 'OPEN_HISTORY', listKey, id }),
+      closeHistory: () => dispatch({ type: 'CLOSE_HISTORY' }),
 
       toggleNwGroup: (key: string) => dispatch({ type: 'TOGGLE_NW_GROUP', key }),
       openInvestDetail: (listKey: string, id: string) => dispatch({ type: 'OPEN_INVEST_DETAIL', listKey, id }),

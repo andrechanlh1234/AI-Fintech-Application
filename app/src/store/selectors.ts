@@ -107,9 +107,12 @@ export function selectNetWorth(state: AppState) {
 //    balance at date d is its current amount minus every entry dated after d.
 //  - Manual rows (bank accounts, cards, properties, other assets,
 //    liabilities) carry a single "as of" date (RecordRow.date, defaulting to
-//    today) alongside their current amount — the row contributes 0 before
-//    that date and its full amount from that date on, since there's no
-//    finer-grained history to reconstruct from.
+//    today) marking when the row started existing, plus the same dated
+//    delta history as synced rows once the Add/Deduct-money dialog has been
+//    used on them — the row contributes 0 before its "as of" date, and from
+//    then on its balance at date d is its current amount minus every entry
+//    dated after d (falling back to the flat current amount if it has no
+//    history yet).
 // Investments (seed and manual) have no per-date tracking — market value is
 // inherently a "right now" number — so they contribute their current total
 // at every point rather than being excluded from history entirely.
@@ -138,7 +141,13 @@ function seedValueAt(rows: ReturnType<typeof seededHistoryRows>, date: string): 
 function manualValueAt(rows: RecordRow[], date: string): number {
   return rows.reduce((sum, r) => {
     const effDate = r.date || todayIso();
-    return sum + (effDate <= date ? (parseFloat(r.amount) || 0) : 0);
+    if (date < effDate) return sum; // row didn't exist yet at this point
+    const current = parseFloat(r.amount) || 0;
+    const entries = (r.history || []) as BalanceEntry[];
+    const deltaSum = entries.reduce((s, e) => s + e.amount, 0);
+    const base = current - deltaSum;
+    const applied = entries.filter((e) => entryDate(e.date) <= date).reduce((s, e) => s + e.amount, 0);
+    return sum + base + applied;
   }, 0);
 }
 

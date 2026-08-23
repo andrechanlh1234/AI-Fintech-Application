@@ -6,7 +6,7 @@
 // user as if it were their own real data (unlike the fabricated REVIEW_ITEMS
 // this app used to ship with).
 import type { ManualData, Subscription } from '../store/types';
-import type { Transaction } from './seedData';
+import type { ReviewItem, Transaction } from './seedData';
 import { mkRecord, mkCategory, mkItem, defaultBuckets, type Bucket } from './seedData';
 import { isoToDisplayDate, dateGroupFor } from './format';
 
@@ -33,6 +33,7 @@ export interface TrialData {
   transactions: Transaction[];
   buckets: Bucket[];
   subs: Subscription[];
+  pendingReviewItems: ReviewItem[];
 }
 
 export function buildTrialData(): TrialData {
@@ -65,7 +66,13 @@ export function buildTrialData(): TrialData {
     { name: 'Netflix', amount: '54.90', frequency: 'Monthly', startDate: isoDaysAgo(40), nextPayment: isoIn(20), method: 'Maybank Visa', category: 'Entertainment' },
   ];
 
-  return { manual, transactions, buckets, subs };
+  const pendingReviewItems: ReviewItem[] = [
+    { id: 'trial-rv-1', merchant: 'Shopee', amount: -189.9, cat: 'Shopping', dateLabel: isoToDisplayDate(isoDaysAgo(1)), brand: 'shopee', payment: 'Maybank Visa' },
+    { id: 'trial-rv-2', merchant: 'Grab', amount: -24.5, cat: 'Transport', dateLabel: isoToDisplayDate(isoDaysAgo(2)), brand: 'grab', payment: 'GrabPay' },
+    { id: 'trial-rv-3', merchant: 'Tealive', amount: -9.9, cat: 'Food & Drink', dateLabel: isoToDisplayDate(isoDaysAgo(3)), brand: 'tealive', payment: "Touch 'n Go eWallet" },
+  ];
+
+  return { manual, transactions, buckets, subs, pendingReviewItems };
 }
 
 function isoIn(n: number): string {
@@ -75,5 +82,5 @@ function isoIn(n: number): string {
 }
 
 export function emptyTrialData(): TrialData {
-  return { manual: { bankAccounts: [], creditCards: [] }, transactions: [], buckets: defaultBuckets(), subs: [] };
+  return { manual: { bankAccounts: [], creditCards: [] }, transactions: [], buckets: defaultBuckets(), subs: [], pendingReviewItems: [] };
 }

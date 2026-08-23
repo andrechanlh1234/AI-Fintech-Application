@@ -111,6 +111,7 @@ export type Action =
   | { type: 'SET_BALANCE_DRAFT_FIELD'; field: keyof BalanceDraft; value: string }
   | { type: 'SUBMIT_BALANCE_ENTRY'; listKey: string; id: string }
   | { type: 'REMOVE_BALANCE_ENTRY'; listKey: string; id: string; entryId: string }
+  | { type: 'OPEN_HISTORY'; listKey: string; id: string } | { type: 'CLOSE_HISTORY' }
 
   | { type: 'TOGGLE_NW_GROUP'; key: string }
   | { type: 'OPEN_INVEST_DETAIL'; listKey: string; id: string } | { type: 'CLOSE_INVEST_DETAIL' }
@@ -228,6 +229,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: trial.manual.bankAccounts, creditCards: trial.manual.creditCards }, subs: trial.subs },
         transactions: trial.transactions,
         finance: { buckets: trial.buckets },
+        pendingReviewItems: trial.pendingReviewItems, reviewDecisions: {},
       };
     }
     case 'CLEAR_ALL_DATA': {
@@ -445,6 +447,10 @@ export function reducer(state: AppState, action: Action): AppState {
         ? { ...state, netWorthSeed: { ...state.netWorthSeed, [seedKeyName(action.listKey)]: removeBalanceEntryFrom(state.netWorthSeed[seedKeyName(action.listKey)] as any, action.id, action.entryId) } }
         : updateManual(state, (m) => ({ ...m, [action.listKey]: removeBalanceEntryFrom(m[action.listKey as ManualListKey] as any, action.id, action.entryId) }));
     }
+    case 'OPEN_HISTORY':
+      return { ...state, historyOpen: action.listKey + ':' + action.id };
+    case 'CLOSE_HISTORY':
+      return { ...state, historyOpen: null };
 
     case 'TOGGLE_NW_GROUP':
       return { ...state, expandedNwGroup: state.expandedNwGroup === action.key ? null : action.key };
