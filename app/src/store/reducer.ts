@@ -66,6 +66,7 @@ export type Action =
   | { type: 'OPEN_STATS_CATEGORY_DETAIL'; cat: string }
   | { type: 'CLOSE_STATS_CATEGORY_DETAIL' }
 
+  | { type: 'OPEN_TAX_PROFILE' } | { type: 'CLOSE_TAX_PROFILE' }
   | { type: 'OPEN_DONATE' } | { type: 'CLOSE_DONATE' }
   | { type: 'SET_DONATE_AMOUNT'; value: string } | { type: 'SUBMIT_DONATE' }
 
@@ -300,6 +301,12 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'CLOSE_STATS_CATEGORY_DETAIL':
       return { ...state, statsCategoryDetail: null };
 
+    // ---- tax profile (settings) ----
+    case 'OPEN_TAX_PROFILE':
+      return { ...state, taxProfileOpen: true, morePanelOpen: false };
+    case 'CLOSE_TAX_PROFILE':
+      return { ...state, taxProfileOpen: false };
+
     // ---- donate ----
     case 'OPEN_DONATE':
       return { ...state, donateOpen: true, donateDone: false, morePanelOpen: false, notifPanelOpen: false };
@@ -434,7 +441,7 @@ export function reducer(state: AppState, action: Action): AppState {
       if (!d.name || !d.amount) return state;
       return {
         ...state,
-        ob: { ...state.ob, subs: [...state.ob.subs, d], subDraft: { name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Maybank Visa', category: 'Entertainment' } },
+        ob: { ...state.ob, subs: [...state.ob.subs, d], subDraft: { name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment' } },
         addSubOpen: false,
       };
     }

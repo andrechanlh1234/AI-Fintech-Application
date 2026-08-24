@@ -1,7 +1,7 @@
 // Ported from Cukai v7.dc.html lines 432-476 (obIsSubscriptions).
 import type { AppState } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
-import { subBadge, PAYMENT_METHODS, SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS } from '../../../lib/constants';
+import { subBadge, paymentMethodOptions, SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS } from '../../../lib/constants';
 import { money, isoToDisplayDate } from '../../../lib/format';
 import { StepHeader, XIcon } from './shared';
 
@@ -61,7 +61,7 @@ export function SubscriptionsStep({
           <input className="input" type="date" value={draft.nextPayment} onChange={(e) => actions.setSubDraft('nextPayment', e.target.value)} style={{ flex: 1 }} />
         </div>
         <select className="input" value={draft.method} onChange={(e) => actions.setSubDraft('method', e.target.value)}>
-          {PAYMENT_METHODS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          {paymentMethodOptions(state.ob.manual, draft.method).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
         </select>
         <select className="input" value={draft.category} onChange={(e) => actions.setSubDraft('category', e.target.value)}>
           {SUB_CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}

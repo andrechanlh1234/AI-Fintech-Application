@@ -51,7 +51,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode]);
 
   // Recompute the real net-worth timeline whenever a dated balance row or
   // entry changes — this is what makes the Finance > Net worth chart plot
@@ -75,7 +75,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -157,6 +157,10 @@ export function useActions() {
       setStatsPeriod: (value: string) => dispatch({ type: 'SET_STATS_PERIOD', value }),
       openStatsCategoryDetail: (cat: string) => dispatch({ type: 'OPEN_STATS_CATEGORY_DETAIL', cat }),
       closeStatsCategoryDetail: () => dispatch({ type: 'CLOSE_STATS_CATEGORY_DETAIL' }),
+
+      // tax profile (settings)
+      openTaxProfile: () => dispatch({ type: 'OPEN_TAX_PROFILE' }),
+      closeTaxProfile: () => dispatch({ type: 'CLOSE_TAX_PROFILE' }),
 
       // donate
       openDonate: () => dispatch({ type: 'OPEN_DONATE' }),

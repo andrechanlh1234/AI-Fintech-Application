@@ -152,6 +152,7 @@ export interface AppState {
   donateAmount: string;
   budgetItemDetailOpen: string | null;
   addSubOpen: boolean;
+  taxProfileOpen: boolean;
   authUser: { id: string; email: string } | null;
   authPanelOpen: boolean;
   scanError: string | null;

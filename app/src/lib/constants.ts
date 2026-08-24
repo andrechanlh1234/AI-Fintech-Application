@@ -71,10 +71,21 @@ export const BRAND: Record<string, Brand> = {
   moomoo: { bg: '#1a1a2e', letter: 'M', fg: '#fff' },
 };
 
-export const PAYMENT_METHODS = [
-  'Maybank Visa', 'CIMB Credit Card', 'UOB Preferred Visa', "Touch 'n Go eWallet",
-  'GrabPay', 'Bank Transfer', 'DuitNow', 'Cash',
-];
+// Generic payment options that don't depend on any account the user has
+// actually entered.
+export const GENERIC_PAYMENT_METHODS = ['Cash', 'Bank Transfer', "Touch 'n Go eWallet", 'GrabPay', 'DuitNow', 'Other'];
+
+/** Payment-method choices for a select: the user's own linked bank
+ * accounts and credit cards (by name) first, then the generic fallbacks.
+ * `current` is appended too if it isn't already present, so an existing
+ * value (a statement-import row tagged "Bank statement", or an account
+ * since renamed/removed) never renders as a silently blank selection. */
+export function paymentMethodOptions(manual: { bankAccounts: { name: string }[]; creditCards: { name: string }[] }, current?: string): string[] {
+  const named = [...manual.bankAccounts, ...manual.creditCards].map((r) => r.name.trim()).filter(Boolean);
+  const options = [...new Set([...named, ...GENERIC_PAYMENT_METHODS])];
+  if (current && !options.includes(current)) options.unshift(current);
+  return options;
+}
 
 export const LINK_TARGETS = {
   banks: [

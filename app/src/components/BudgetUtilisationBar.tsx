@@ -1,37 +1,17 @@
-import { moneyWhole } from '../lib/format';
-
 /** Two-tone budget utilisation bar: darker green = spent, lighter green =
- * remaining, with a circular marker at the spent/remaining boundary
- * carrying an always-visible "{pct}% Utilised" label. `pct` is the TRUE,
- * uncapped utilisation (selectors.ts never clamps it) so this is the one
- * place overspend actually shows as >100% rather than silently reading
- * back as "100%". `barPct` is the same value clamped to [0,100] purely for
- * the bar's own CSS width -- the fill can never exceed its track.
- *
- * The label sits in a fixed reserved band above the bar and clamps its
- * horizontal position within the track, so it never collides with the
- * marker or clips off either edge -- the same lesson as the Net Worth
- * chart's tooltip. */
-export function BudgetUtilisationBar({ pct, barPct, spent, cap }: { pct: number; barPct: number; spent: number; cap: number }) {
+ * remaining, with a circular marker at the spent/remaining boundary.
+ * `pct` is the TRUE, uncapped utilisation (selectors.ts never clamps it) --
+ * callers that show it as text (e.g. the "{pct}% Utilised" figure next to
+ * this bar) can read e.g. "112%" on an overspent month rather than silently
+ * reporting back "100%". `barPct` is the same value clamped to [0,100]
+ * purely for the bar's own CSS width -- the fill can never exceed its
+ * track. */
+export function BudgetUtilisationBar({ pct, barPct }: { pct: number; barPct: number }) {
   const over = pct > 100;
-  const overAmount = Math.max(0, spent - cap);
   const fillColor = over ? 'var(--color-danger)' : 'var(--color-accent-700)';
-  // The label follows the marker but never gets closer than 18% to either
-  // edge of the track, so at 0% or 100% utilisation the text still reads
-  // fully inside the card instead of clipping.
-  const labelLeftPct = Math.min(82, Math.max(18, barPct));
 
   return (
-    <div style={{ position: 'relative', paddingTop: 22 }}>
-      <div
-        className="type-numeric"
-        style={{
-          position: 'absolute', top: 0, left: `${labelLeftPct}%`, transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap', fontSize: 11.5, fontWeight: 700, color: over ? 'var(--color-danger-700)' : 'var(--color-accent-700)',
-        }}
-      >
-        {pct}% Utilised{over && ` · RM ${moneyWhole(overAmount)} over`}
-      </div>
+    <div style={{ position: 'relative' }}>
       <div style={{ position: 'relative', height: 12, borderRadius: 999, overflow: 'hidden', background: 'var(--color-accent-100)' }}>
         <div
           style={{

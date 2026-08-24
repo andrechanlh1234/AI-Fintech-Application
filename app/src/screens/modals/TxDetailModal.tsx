@@ -1,5 +1,5 @@
 import { useStore, useActions } from '../../store/StoreProvider';
-import { CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
+import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
 
 // Tap a transaction row in Record to open this: edit every field a scan/
 // manual entry can set, or delete it outright. Saving/deleting writes
@@ -78,7 +78,7 @@ export function TxDetailModal() {
       <div className="field" style={{ marginBottom: 14 }}>
         <label>Payment method</label>
         <select className="input" value={draft.payment} onChange={(e) => actions.setTxDraftField('payment', e.target.value)}>
-          {PAYMENT_METHODS.map((opt) => (
+          {paymentMethodOptions(state.ob.manual, draft.payment).map((opt) => (
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>

@@ -20,6 +20,7 @@ import { TaxItemDetailModal } from './screens/modals/TaxItemDetailModal';
 import { TaxPackModal } from './screens/modals/TaxPackModal';
 import { DonateModal } from './screens/modals/DonateModal';
 import { AddSubModal } from './screens/modals/AddSubModal';
+import { TaxProfileModal } from './screens/modals/TaxProfileModal';
 import { AuthPanel } from './screens/modals/AuthPanel';
 import { LegalDoc } from './screens/legal/LegalDoc';
 import { ResetPasswordScreen } from './screens/auth/ResetPasswordScreen';
@@ -99,6 +100,9 @@ function AppShell() {
       </BottomSheet>
       <BottomSheet open={state.addSubOpen} onClose={actions.closeAddSub}>
         <AddSubModal />
+      </BottomSheet>
+      <BottomSheet open={state.taxProfileOpen} onClose={actions.closeTaxProfile} align="full">
+        <TaxProfileModal />
       </BottomSheet>
       <BottomSheet open={state.authPanelOpen} onClose={actions.closeAuthPanel}>
         <AuthPanel />

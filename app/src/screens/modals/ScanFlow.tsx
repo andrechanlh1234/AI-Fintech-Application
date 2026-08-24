@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReliefImpact } from '../../store/selectors';
-import { CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
+import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
 
 export function ScanFlow() {
   const { state } = useStore();
@@ -224,7 +224,7 @@ export function ScanFlow() {
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Payment method</label>
             <select className="input" value={state.scanPaymentMethod} onChange={(e) => actions.setScanPaymentMethod(e.target.value)}>
-              {PAYMENT_METHODS.map((opt) => (
+              {paymentMethodOptions(state.ob.manual, state.scanPaymentMethod).map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>

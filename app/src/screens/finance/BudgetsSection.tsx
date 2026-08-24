@@ -42,11 +42,16 @@ export function BudgetsSection() {
                 <path d="m9 18 6-6-6-6"></path>
               </svg>
             </div>
-            <div className="type-numeric" style={{ fontWeight: 700, fontSize: 17 }}>
-              RM {b.spentLabel}{' '}
-              <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {b.totalLabel}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+              <div className="type-numeric" style={{ fontWeight: 700, fontSize: 17 }}>
+                RM {b.spentLabel}{' '}
+                <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {b.totalLabel}</span>
+              </div>
+              <div className="type-numeric" style={{ fontSize: 17, fontWeight: 800, color: b.pct > 100 ? 'var(--color-danger-700)' : 'var(--color-accent-700)', flexShrink: 0 }}>
+                {b.pct}%
+              </div>
             </div>
-            <BudgetUtilisationBar pct={b.pct} barPct={b.barPct} spent={b.spent} cap={b.total} />
+            <BudgetUtilisationBar pct={b.pct} barPct={b.barPct} />
           </button>
 
           {b.expanded && (
@@ -68,7 +73,14 @@ export function BudgetsSection() {
                         </svg>
                       </span>
                     </div>
-                    <BudgetUtilisationBar pct={c.pct} barPct={c.barPct} spent={c.spent} cap={c.total} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <BudgetUtilisationBar pct={c.pct} barPct={c.barPct} />
+                      </div>
+                      <div className="type-numeric" style={{ fontSize: 13, fontWeight: 800, color: c.pct > 100 ? 'var(--color-danger-700)' : 'var(--color-accent-700)', flexShrink: 0 }}>
+                        {c.pct}%
+                      </div>
+                    </div>
                   </button>
                   {c.note && (
                     <div style={{ fontSize: 10.5, color: c.noteColor, marginTop: 4 }}>{c.note}</div>

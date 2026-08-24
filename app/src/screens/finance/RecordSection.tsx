@@ -115,6 +115,14 @@ export default function RecordSection() {
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, flex: 1 }}>All transactions</span>
         <button
           type="button"
+          onClick={() => { actions.openScan(); actions.chooseManual(); }}
+          className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', font: '700 12px var(--font-body)' }}
+        >
+          + Add transaction
+        </button>
+        <button
+          type="button"
           onClick={() => statementInputRef.current?.click()}
           disabled={state.statementUploading}
           className="pressable"

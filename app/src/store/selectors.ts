@@ -298,8 +298,12 @@ export function selectBudgetGauge(state: AppState) {
   };
   const fmt = (p: [number, number]) => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
   const gaugeStart = gaugePoint(0), gaugeMid = gaugePoint(gaugePctSpent), gaugeEnd = gaugePoint(1);
+  // Full track is always the light "available" green; spentArcPath overlays
+  // just the utilised portion (start -> mid) in the dark "spent" green (or
+  // danger red once overspent), so the two colours map directly onto their
+  // meaning instead of relying on an unlabelled grey backdrop.
   const gaugeArcPath = `M ${fmt(gaugeStart)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
-  const availableArcPath = `M ${fmt(gaugeMid)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeEnd)}`;
+  const spentArcPath = `M ${fmt(gaugeStart)} A ${gaugeR} ${gaugeR} 0 0 1 ${fmt(gaugeMid)}`;
   // True, uncapped utilisation for the badge riding the arc boundary --
   // gaugePctSpent above is clamped to 1 because the arc geometry itself
   // cannot physically extend past a full circle, but the number shown in
@@ -321,9 +325,18 @@ export function selectBudgetGauge(state: AppState) {
     allCats.sort((a, b) => b.spent - a.spent);
     const topCats = allCats.slice(0, 5);
     const N = topCats.length, lineStartR = gaugeR + 12, lineEndR = gaugeR + 32, calloutR = gaugeR + 40;
-    const angleStart = 200, angleEnd = 340;
+    // Anchor the callouts to the utilised (spent) span of the arc only --
+    // gaugePoint(f) uses theta = 180 - f*180, which is -angle in this
+    // branch formula's own cos/sin convention, so f=0..gaugePctSpent maps
+    // to angle = 180..180+gaugePctSpent*180. Padding keeps branches off the
+    // exact RM0 / spend-boundary edges; it shrinks with a thin spent span
+    // so branches never spill into the untouched "available" arc.
+    const spentSpanDeg = Math.max(0, gaugePctSpent * 180);
+    const pad = Math.min(20, spentSpanDeg * 0.15);
+    const angleStart = 180 + pad, angleEnd = 180 + spentSpanDeg - pad;
+    const singleAngle = 180 + spentSpanDeg / 2;
     donutBranches = topCats.map((c, i) => {
-      const angleDeg = N > 1 ? angleStart + ((angleEnd - angleStart) * i) / (N - 1) : 270;
+      const angleDeg = N > 1 && angleEnd > angleStart ? angleStart + ((angleEnd - angleStart) * i) / (N - 1) : singleAngle;
       const angle = (angleDeg * Math.PI) / 180;
       const ex = gaugeCX + calloutR * Math.cos(angle), ey = gaugeCY + calloutR * Math.sin(angle);
       const sx = gaugeCX + lineStartR * Math.cos(angle), sy = gaugeCY + lineStartR * Math.sin(angle);
@@ -338,7 +351,7 @@ export function selectBudgetGauge(state: AppState) {
   }
 
   return {
-    gaugeArcPath, availableArcPath, donutBranches,
+    gaugeArcPath, spentArcPath, donutBranches,
     gaugeMidX: gaugeMid[0], gaugeMidY: gaugeMid[1], gaugeSpentPct, gaugeOverspent,
     donutHint: state.donutExpanded ? 'Tap to collapse' : 'Tap for a category breakdown',
     gaugeBoxHeight: state.donutExpanded ? 280 : 178,

@@ -7,6 +7,18 @@ const AI_SUGGESTIONS = [
   "What's my net worth trend look like?",
 ];
 
+// Gemini replies routinely emphasise figures with **bold** markdown; this
+// bubble is plain text otherwise, so render just that one construct rather
+// than pulling in a full markdown renderer for a single formatting need.
+function renderChatText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
+  );
+}
+
 export function AiChat() {
   const { state } = useStore();
   const actions = useActions();
@@ -178,7 +190,7 @@ export function AiChat() {
                       color: isUser ? '#fff' : 'var(--color-text)',
                     }}
                   >
-                    {m.text}
+                    {renderChatText(m.text)}
                   </div>
                 </div>
               );

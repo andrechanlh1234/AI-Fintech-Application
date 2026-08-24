@@ -275,15 +275,9 @@ export function OnboardingFlow() {
             <ChipRow opts={singleOpts(EMPLOYMENT_OPTS, ob.employment, (label) => actions.setOb('employment', label))} chipStyleOverride={{ padding: '9px 14px' }} style={{ marginBottom: 16 }} />
             {ob.employment === 'Other' && <OtherInput value={ob.otherText.employment || ''} onChange={(v) => actions.setObOther('employment', v)} style={{ marginBottom: 16 }} />}
 
-            <div className="field" style={{ marginBottom: 14 }}>
+            <div className="field" style={{ marginBottom: 18 }}>
               <label>Employer / source of income (optional)</label>
               <input className="input" value={ob.employer} onChange={(e) => actions.setOb('employer', e.target.value)} placeholder="e.g. Petronas, or your business name" />
-            </div>
-            <div className="field" style={{ marginBottom: 18 }}>
-              <label>Approximate monthly income</label>
-              <select className="input" value={ob.approxIncome} onChange={(e) => actions.setOb('approxIncome', e.target.value)}>
-                {INCOME_RANGE_OPTS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
             </div>
 
             <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have income besides your salary?</div>

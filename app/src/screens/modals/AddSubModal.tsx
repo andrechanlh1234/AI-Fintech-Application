@@ -1,5 +1,5 @@
 import { useStore, useActions } from '../../store/StoreProvider';
-import { SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS, PAYMENT_METHODS } from '../../lib/constants';
+import { SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
 
 function CloseIcon() {
   return (
@@ -60,7 +60,7 @@ export function AddSubModal() {
       <div className="field" style={{ marginBottom: 12 }}>
         <label>Payment method</label>
         <select className="input" value={draft.method} onChange={(e) => actions.setSubDraft('method', e.target.value)}>
-          {PAYMENT_METHODS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          {paymentMethodOptions(state.ob.manual, draft.method).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       </div>
 

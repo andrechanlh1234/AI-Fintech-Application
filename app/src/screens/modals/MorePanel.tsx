@@ -99,14 +99,14 @@ export function MorePanel() {
 
       <div style={sectionLabelStyle}>Account</div>
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
-      <button type="button" className="pressable" style={rowButtonStyle}>
+      <button type="button" onClick={() => { actions.goFinance(); actions.goFinanceNetWorth(); }} className="pressable" style={rowButtonStyle}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Linked accounts</div>
           <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>6 accounts connected</div>
         </div>
         <ChevronIcon />
       </button>
-      <button type="button" className="pressable" style={rowButtonStyle}>
+      <button type="button" onClick={actions.openTaxProfile} className="pressable" style={rowButtonStyle}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Tax profile</div>
           <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>{obTaxProfileSummary}</div>

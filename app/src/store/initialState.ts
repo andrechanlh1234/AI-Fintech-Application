@@ -6,7 +6,7 @@ import { todayDisplayDate, todayIso } from '../lib/format';
 import type { AppState } from './types';
 
 const emptySubDraft = {
-  name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Maybank Visa', category: 'Entertainment',
+  name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment',
 };
 
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -42,7 +42,7 @@ export function buildInitialState(): AppState {
     nwSelectedIdx: null,
     historyMonth: SHORT_MONTHS[today.getMonth()],
     showWhyDeductible: false,
-    scanTaxAmount: '', scanTaxRate: '6', scanPaymentMethod: 'Maybank Visa', scanTag: '',
+    scanTaxAmount: '', scanTaxRate: '6', scanPaymentMethod: 'Cash', scanTag: '',
     expandedBucket: null,
     expandedTaxGroup: null, taxItemDetailOpen: null, taxReceiptsOpen: false,
     txSearch: '',
@@ -69,7 +69,7 @@ export function buildInitialState(): AppState {
     recordMonth: SHORT_MONTHS[today.getMonth()], recordYear: today.getFullYear(), historyYear: today.getFullYear(),
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
-    budgetItemDetailOpen: null, addSubOpen: false, donutExpanded: false,
+    budgetItemDetailOpen: null, addSubOpen: false, taxProfileOpen: false, donutExpanded: false,
     authUser: null, authPanelOpen: false, scanError: null, legalOpen: null, resetToken: null,
     balanceDetailOpen: null, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' },
     historyOpen: null,
@@ -86,9 +86,39 @@ const STORAGE_KEY = 'cukai_v7_data';
 // and to the backend's /state endpoint (only once signed in) — one payload
 // shape for both, so a signed-in user's data round-trips identically
 // whichever store it came from.
+// The onboarding answers that drive tax-relief eligibility (marital status,
+// dependants, disability, housing loan, self-reported relief categories,
+// income) and profile display (name, DOB, residency, employment) -- these
+// used to live only in in-memory ob state and were silently dropped on
+// every reload/re-login, which made the Tax Center under-report relief
+// categories the user actually qualifies for (see TAX_RELEVANCE_RULES in
+// lib/taxEngine.ts) and reset the Settings profile card back to the seed
+// "Aina Natasha" placeholder.
+export interface SyncProfile {
+  name: AppState['ob']['name'];
+  dob: AppState['ob']['dob'];
+  country: AppState['ob']['country'];
+  occupation: AppState['ob']['occupation'];
+  income: AppState['ob']['income'];
+  residency: AppState['ob']['residency'];
+  marital: AppState['ob']['marital'];
+  dependants: AppState['ob']['dependants'];
+  employment: AppState['ob']['employment'];
+  employer: AppState['ob']['employer'];
+  hasDisability: AppState['ob']['hasDisability'];
+  hasHousingLoan: AppState['ob']['hasHousingLoan'];
+  approxIncome: AppState['ob']['approxIncome'];
+  multipleIncome: AppState['ob']['multipleIncome'];
+  incomeTypes: AppState['ob']['incomeTypes'];
+  reliefs: AppState['ob']['reliefs'];
+  goals: AppState['ob']['goals'];
+  savingsTarget: AppState['ob']['savingsTarget'];
+}
+
 export interface SyncPayload {
   manual: AppState['ob']['manual'];
   subs: AppState['ob']['subs'];
+  profile: SyncProfile;
   buckets: AppState['finance']['buckets'];
   obDone: boolean;
   theme: AppState['theme'];
@@ -104,6 +134,13 @@ export function buildSyncPayload(state: AppState): SyncPayload {
   return {
     manual: state.ob.manual,
     subs: state.ob.subs,
+    profile: {
+      name: state.ob.name, dob: state.ob.dob, country: state.ob.country, occupation: state.ob.occupation,
+      income: state.ob.income, residency: state.ob.residency, marital: state.ob.marital, dependants: state.ob.dependants,
+      employment: state.ob.employment, employer: state.ob.employer, hasDisability: state.ob.hasDisability,
+      hasHousingLoan: state.ob.hasHousingLoan, approxIncome: state.ob.approxIncome, multipleIncome: state.ob.multipleIncome,
+      incomeTypes: state.ob.incomeTypes, reliefs: state.ob.reliefs, goals: state.ob.goals, savingsTarget: state.ob.savingsTarget,
+    },
     buckets: state.finance.buckets,
     obDone: state.appStage === 'app',
     theme: state.theme,
@@ -120,6 +157,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   const next = { ...base };
   if (p.manual) next.ob = { ...next.ob, manual: { ...next.ob.manual, ...p.manual } };
   if (p.subs) next.ob = { ...next.ob, subs: p.subs };
+  if (p.profile) next.ob = { ...next.ob, ...p.profile };
   if (p.buckets) next.finance = { ...next.finance, buckets: p.buckets };
   if (p.obDone) next.appStage = 'app';
   if (p.theme) next.theme = p.theme;
