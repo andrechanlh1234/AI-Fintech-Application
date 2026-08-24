@@ -22,6 +22,14 @@ export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ISO date N days before today, in the same UTC-sliced form as todayIso() —
+// the basis for every "Last N days" quick-filter preset.
+export function daysAgoIso(n: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 export function signedMoney(n: number): string {
   return (n >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(n));
 }
@@ -123,4 +131,13 @@ export function computeAge(dobIso: string): number | null {
     (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
   if (beforeBirthday) age--;
   return age >= 0 ? age : null;
+}
+
+// Day-group header label for a transaction list row: "Today"/"Yesterday"
+// when it genuinely is, otherwise "D Mon" (no year — the record screen
+// only ever shows a bounded recent range, so the year is redundant).
+export function isoToGroupLabel(iso: string): string {
+  if (iso === todayIso()) return 'Today';
+  if (iso === daysAgoIso(1)) return 'Yesterday';
+  return isoToDisplayDate(iso).replace(/ \d{4}$/, '');
 }

@@ -228,6 +228,16 @@ export function deriveTxDate(t: { dateLabel?: string; dateGroup?: string; month:
   return { day: 1, month: t.month, year: thisYear };
 }
 
+// deriveTxDate()'s {day, month, year} as a sortable/comparable ISO string
+// ('YYYY-MM-DD') — what the record screen's date-range filter and
+// day-grouping both key off.
+export function txDateIso(t: { dateLabel?: string; dateGroup?: string; month: string }): string {
+  const { day, month, year } = deriveTxDate(t);
+  const mm = String(MONTH_ORDER.indexOf(month) + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
+}
+
 // Shared by the onboarding budget step and the post-onboarding Budgets
 // screen's "Add category" guided form — one list of common names per bucket
 // so both surfaces offer the same suggestions instead of drifting apart.
