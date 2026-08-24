@@ -48,7 +48,14 @@ app.add_middleware(
     # testing without needing this list updated every time the network
     # changes. Covers the common private ranges (192.168.x, 172.16-31.x,
     # 10.x) — dev-only, never applies to a real deployment's public origin.
-    allow_origin_regex=r"http://(192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
+    # The trycloudflare.com clause covers the frontend's Cloudflare Quick
+    # Tunnel origin (see vite.config.ts's `preview.allowedHosts`) — a fresh
+    # random subdomain each time a tunnel opens, for testing the installed
+    # PWA over real HTTPS from a phone.
+    allow_origin_regex=(
+        r"http://(192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173"
+        r"|https://[a-z0-9-]+\.trycloudflare\.com"
+    ),
     allow_methods=["*"],
     allow_headers=["*"],
 )

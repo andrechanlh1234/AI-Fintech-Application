@@ -13,6 +13,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // The default injected registration script just calls .register()
+      // with no update handling at all -- a new SW would install and (per
+      // the workbox self.skipWaiting()/clientsClaim() this registerType
+      // bakes in) activate in the background, but nothing ever told the
+      // already-open page to reload onto it, so installed clients could be
+      // stuck on a stale build indefinitely. Registering manually from
+      // main.tsx via virtual:pwa-register instead gives us the real
+      // autoUpdate behaviour (silent update + reload).
+      injectRegister: false,
       manifest: {
         name: 'Cukai — Personal Finance & Tax',
         short_name: 'Cukai',

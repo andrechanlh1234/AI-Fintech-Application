@@ -136,9 +136,18 @@ export function ScanFlow() {
               onClick={handleCaptureClick}
               aria-label="Capture"
               className="pressable"
-              style={{ width: 74, height: 74, borderRadius: '50%', background: 'transparent', border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{
+                width: 66, height: 66, padding: 0, borderRadius: '50%', background: 'transparent',
+                border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxSizing: 'border-box', flexShrink: 0,
+              }}
             >
-              <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff' }} />
+              {/* Was a plain white fill -- the same button-padding quirk that
+                  squeezed this into a visible oval (a native <button> never had
+                  its default padding reset, so the flex-shrinking child dot lost
+                  width but not height) also motivated giving it the app's AI
+                  gradient instead of leaving it a bare white dot. */}
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#4d7cf7,#9868d9,#e26b95)', flexShrink: 0 }} />
             </button>
             <button
               type="button"
