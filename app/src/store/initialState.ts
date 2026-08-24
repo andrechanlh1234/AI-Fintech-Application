@@ -2,7 +2,7 @@
 // every pre-filled example value removed — a fresh user starts at RM0 with
 // no transactions/subscriptions/accounts until they enter their own.
 import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
-import { todayDisplayDate, todayIso } from '../lib/format';
+import { todayDisplayDate, todayIso, daysAgoIso } from '../lib/format';
 import type { AppState } from './types';
 
 const emptySubDraft = {
@@ -66,8 +66,8 @@ export function buildInitialState(): AppState {
     theme: 'light',
     morePanelOpen: false, notifPanelOpen: false, subscriptionTier: 'free',
     faceIdEnabled: true, taxPackOpen: false,
-    selectedDayMonth: SHORT_MONTHS[today.getMonth()], selectedDay: today.getDate(), statsPeriod: 'This month', statsCategoryDetail: null,
-    recordMonth: SHORT_MONTHS[today.getMonth()], recordYear: today.getFullYear(), historyYear: today.getFullYear(),
+    statsPeriod: 'This month', statsCategoryDetail: null,
+    recordDateFrom: daysAgoIso(29), recordDateTo: todayIso(), historyYear: today.getFullYear(),
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
     budgetItemDetailOpen: null, addSubOpen: false, taxProfileOpen: false, donutExpanded: false,

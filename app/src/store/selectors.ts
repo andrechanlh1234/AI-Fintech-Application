@@ -3,11 +3,11 @@
 // no bound handlers. Screens read data from these and bind interactions via
 // useActions() directly (e.g. onClick={() => actions.openBalanceDetail(...)}).
 import type { AppState } from './types';
-import { money, moneyWhole, clamp, todayIso } from '../lib/format';
+import { money, moneyWhole, clamp, todayIso, isoToGroupLabel } from '../lib/format';
 import {
   type Transaction, type BudgetCategory, type BalanceEntry, type RecordRow,
 } from '../lib/seedData';
-import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER } from '../lib/constants';
+import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER, txDateIso } from '../lib/constants';
 import {
   buildTaxModel, estimateAnnualIncome, marginalTaxRate, ASSUMED_TAX_RATE,
   TAX_ITEMS_META, RELIEF_INFO, categoryToReliefKey, type TaxProfile, type TaxItemData,
@@ -466,67 +466,43 @@ export function selectReliefImpact(state: AppState) {
   };
 }
 
-const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
 export function selectRecordPage(state: AppState) {
   const { combinedTx } = selectHomeDashboard(state);
-  const expenseDayKeys = new Set<string>();
-  const monthsWithData = new Set<string>();
-  combinedTx.forEach((t) => {
-    if (t.amount >= 0) return;
-    const d = deriveTxDate(t);
-    expenseDayKeys.add(d.year + '-' + d.month + '-' + d.day);
-    monthsWithData.add(d.year + '-' + d.month);
-  });
 
-  // The day strip renders whichever month/year the picker above it is set
-  // to (state.recordMonth/recordYear) -- "today" is only special-cased for
-  // the isToday dot, never for which month is shown.
-  const now = new Date();
-  const curYear = now.getFullYear(), curMonthIdx = now.getMonth(), curDay = now.getDate();
-  const viewMonthIdx = MONTH_ORDER.indexOf(state.recordMonth);
-  const viewYear = state.recordYear;
-  const daysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
-  const numDays = daysInMonth(viewYear, viewMonthIdx);
-
-  const calendarDays: { key: string; day: number; month: string; weekday: string; isToday: boolean; isSelected: boolean; hasExpense: boolean }[] = [];
-  for (let d = 1; d <= numDays; d++) {
-    const weekday = new Date(viewYear, viewMonthIdx, d).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 1);
-    const key = state.recordMonth + '-' + d;
-    calendarDays.push({
-      key, day: d, month: state.recordMonth, weekday,
-      isToday: state.recordMonth === SHORT_MONTHS[curMonthIdx] && viewYear === curYear && d === curDay,
-      isSelected: state.recordMonth === state.selectedDayMonth && d === state.selectedDay,
-      hasExpense: expenseDayKeys.has(viewYear + '-' + state.recordMonth + '-' + d),
-    });
-  }
-  const selectedDayTxRaw = combinedTx.filter((t) => {
-    const d = deriveTxDate(t);
-    return d.month === state.selectedDayMonth && d.day === state.selectedDay && d.year === viewYear;
-  });
-  const selectedDayTx = selectedDayTxRaw.map((t) => ({
-    ...t, ...rowBadge(t), catLabel: t.cat,
-    amountLabel: (t.amount >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(t.amount)),
-    amountColor: t.amount >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)',
-  }));
-  const selectedDayIncome = selectedDayTxRaw.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0);
-  const selectedDayExpense = selectedDayTxRaw.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-  const selectedDayNet = selectedDayIncome - selectedDayExpense;
-  const selectedDayLabel = new Date(viewYear, viewMonthIdx, state.selectedDay)
-    .toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  const categoryChips = ['All', ...Object.keys(CAT_ICON)];
-  const filteredTx = combinedTx.filter((t) => {
+  const rangeTxRaw = combinedTx.filter((t) => {
+    const iso = txDateIso(t);
+    if (iso < state.recordDateFrom || iso > state.recordDateTo) return false;
     if (state.txFilter !== 'All' && t.cat !== state.txFilter) return false;
     if (state.txSearch && !t.merchant.toLowerCase().includes(state.txSearch.toLowerCase())) return false;
     return true;
   });
 
-  return {
-    recordMonthLabel: `${FULL_MONTHS[viewMonthIdx]} ${viewYear}`, calendarDays, selectedDayTx, selectedDayIncome, selectedDayExpense,
-    selectedDayNet, selectedDayLabel, categoryChips, filteredTx,
-    hasDataInMonth: (month: string, year: number) => monthsWithData.has(year + '-' + month),
-  };
+  const rangeTx = rangeTxRaw.map((t) => ({
+    ...t, ...rowBadge(t), catLabel: t.cat,
+    amountLabel: (t.amount >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(t.amount)),
+    amountColor: t.amount >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)',
+  }));
+
+  const sorted = rangeTx.slice().sort((a, b) => {
+    const ai = txDateIso(a), bi = txDateIso(b);
+    return ai < bi ? 1 : ai > bi ? -1 : 0;
+  });
+
+  const groupedTx: { label: string; iso: string; items: typeof sorted }[] = [];
+  sorted.forEach((t) => {
+    const iso = txDateIso(t);
+    const lastGroup = groupedTx[groupedTx.length - 1];
+    if (lastGroup && lastGroup.iso === iso) { lastGroup.items.push(t); return; }
+    groupedTx.push({ label: isoToGroupLabel(iso), iso, items: [t] });
+  });
+
+  const rangeIncome = rangeTxRaw.filter((t) => t.amount >= 0).reduce((s, t) => s + t.amount, 0);
+  const rangeExpense = rangeTxRaw.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+  const rangeNet = rangeIncome - rangeExpense;
+
+  const categoryChips = ['All', ...Object.keys(CAT_ICON)];
+
+  return { groupedTx, rangeCount: rangeTxRaw.length, rangeNet, categoryChips };
 }
 
 export function selectStatsPage(state: AppState) {

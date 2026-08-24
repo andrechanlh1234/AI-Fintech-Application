@@ -148,8 +148,7 @@ export function useActions() {
       // record / history
       setHistoryMonth: (month: string) => dispatch({ type: 'SET_HISTORY_MONTH', month }),
       setHistoryYear: (year: number) => dispatch({ type: 'SET_HISTORY_YEAR', year }),
-      selectRecordDay: (month: string, day: number) => dispatch({ type: 'SELECT_RECORD_DAY', month, day }),
-      setRecordMonth: (month: string, year: number) => dispatch({ type: 'SET_RECORD_MONTH', month, year }),
+      setRecordRange: (from: string, to: string) => dispatch({ type: 'SET_RECORD_RANGE', from, to }),
       setTxSearch: (value: string) => dispatch({ type: 'SET_TX_SEARCH', value }),
       setTxFilter: (value: string) => dispatch({ type: 'SET_TX_FILTER', value }),
 

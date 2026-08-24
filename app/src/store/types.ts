@@ -141,10 +141,8 @@ export interface AppState {
   subscriptionTier: 'free' | 'premium';
   faceIdEnabled: boolean;
   taxPackOpen: boolean;
-  selectedDayMonth: string;
-  selectedDay: number;
-  recordMonth: string;
-  recordYear: number;
+  recordDateFrom: string;
+  recordDateTo: string;
   statsPeriod: string;
   statsCategoryDetail: string | null;
   historyYear: number;

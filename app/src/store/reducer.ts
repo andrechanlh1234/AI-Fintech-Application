@@ -61,8 +61,7 @@ export type Action =
 
   | { type: 'SET_HISTORY_MONTH'; month: string }
   | { type: 'SET_HISTORY_YEAR'; year: number }
-  | { type: 'SELECT_RECORD_DAY'; month: string; day: number }
-  | { type: 'SET_RECORD_MONTH'; month: string; year: number }
+  | { type: 'SET_RECORD_RANGE'; from: string; to: string }
   | { type: 'SET_TX_SEARCH'; value: string }
   | { type: 'SET_TX_FILTER'; value: string }
 
@@ -281,19 +280,8 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, historyMonth: action.month };
     case 'SET_HISTORY_YEAR':
       return { ...state, historyYear: action.year };
-    case 'SELECT_RECORD_DAY':
-      return { ...state, selectedDayMonth: action.month, selectedDay: action.day };
-    case 'SET_RECORD_MONTH': {
-      // Land on today's day when paging back to the real current month,
-      // otherwise the 1st -- never a day number left over from whatever
-      // month was viewed before.
-      const now = new Date();
-      const isCurrent = action.month === SHORT_MONTHS[now.getMonth()] && action.year === now.getFullYear();
-      return {
-        ...state, recordMonth: action.month, recordYear: action.year,
-        selectedDayMonth: action.month, selectedDay: isCurrent ? now.getDate() : 1,
-      };
-    }
+    case 'SET_RECORD_RANGE':
+      return { ...state, recordDateFrom: action.from, recordDateTo: action.to };
     case 'SET_TX_SEARCH':
       return { ...state, txSearch: action.value };
     case 'SET_TX_FILTER':
