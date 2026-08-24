@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectRecordPage } from '../../store/selectors';
-import { money, signedMoney } from '../../lib/format';
-import { rowBadge } from '../../lib/constants';
-import { MonthPicker } from '../../components/PeriodPicker';
+import { signedMoney, isoToDisplayDate, todayIso, daysAgoIso } from '../../lib/format';
 import { FilterPicker } from '../../components/FilterPicker';
+import { DateRangeSheet } from '../../components/DateRangeSheet';
 
 // Ported from Cukai v7.dc.html lines 1180-1230 ("All transactions" / Record screen).
 // The day-strip calendar + selected-day summary is the source layout; the search
@@ -12,7 +11,7 @@ import { FilterPicker } from '../../components/FilterPicker';
 // layered on top per the task spec — when a search term or a non-"All" filter is
 // active, the filtered list replaces the day list.
 
-type RecordTx = ReturnType<typeof selectRecordPage>['selectedDayTx'][number];
+type RecordTx = ReturnType<typeof selectRecordPage>['groupedTx'][number]['items'][number];
 
 function TxIcon({ tx }: { tx: RecordTx }) {
   const common = { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -67,11 +66,13 @@ function TxRow({ tx, onOpen }: { tx: RecordTx; onOpen: () => void }) {
   );
 }
 
+const DEFAULT_RECORD_FROM = daysAgoIso(29);
+
 export default function RecordSection() {
   const { state } = useStore();
   const actions = useActions();
-  const railRef = useRef<HTMLDivElement>(null);
   const statementInputRef = useRef<HTMLInputElement>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const rec = selectRecordPage(state);
 
   const handleStatementFile = (e: ChangeEvent<HTMLInputElement>) => {
@@ -80,31 +81,7 @@ export default function RecordSection() {
     if (file) actions.uploadStatementFile(file);
   };
 
-  const scrollCalendar = (dir: 1 | -1) => {
-    railRef.current?.scrollBy({ left: dir * 160, behavior: 'smooth' });
-  };
-
-  // Center the selected day in the rail on mount / when the selected day changes
-  // from outside the rail (e.g. after saving a scan) rather than leaving the
-  // strip scrolled to day 1.
-  useEffect(() => {
-    const el = railRef.current;
-    if (!el) return;
-    const idx = rec.calendarDays.findIndex((d) => d.isSelected);
-    const child = el.children[idx] as HTMLElement | undefined;
-    if (!child) return;
-    el.scrollTo({ left: child.offsetLeft - el.clientWidth / 2 + child.offsetWidth / 2, behavior: 'auto' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.selectedDayMonth, state.selectedDay, state.recordYear]);
-
-  const searchActive = !!state.txSearch || state.txFilter !== 'All';
-  const netColor = rec.selectedDayNet >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)';
-
-  const filteredTxDisplay = useMemo(() => rec.filteredTx.map((t) => ({
-    ...t, ...rowBadge(t), catLabel: t.cat,
-    amountLabel: (t.amount >= 0 ? '+' : '−') + 'RM ' + money(Math.abs(t.amount)),
-    amountColor: t.amount >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)',
-  })), [rec.filteredTx]);
+  const rangeLabel = `${isoToDisplayDate(state.recordDateFrom).replace(/ \d{4}$/, '')} – ${isoToDisplayDate(state.recordDateTo).replace(/ \d{4}$/, '')}`;
 
   return (
     <div>
@@ -140,38 +117,34 @@ export default function RecordSection() {
         <div style={{ fontSize: 12.5, color: 'var(--color-danger-700)', marginBottom: 10 }}>{state.statementUploadError}</div>
       )}
 
-      <div style={{ marginBottom: 14 }}>
-        <MonthPicker month={state.recordMonth} year={state.recordYear} onChange={actions.setRecordMonth} hasDataInMonth={rec.hasDataInMonth} />
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 18 }}>
-        <button type="button" onClick={() => scrollCalendar(-1)} aria-label="Scroll earlier" className="pressable" style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="pressable"
+          style={{
+            all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '9px 14px', borderRadius: 999, font: '700 13px var(--font-body)', whiteSpace: 'nowrap',
+            border: '1.5px solid var(--color-accent)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
+          }}
+        >
+          {rangeLabel}
+          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </button>
-        <div ref={railRef} className="no-scrollbar" style={{ display: 'flex', gap: 8, overflow: 'auto', flex: 1, padding: '2px 2px 4px', scrollBehavior: 'smooth' }}>
-          {rec.calendarDays.map((d) => {
-            const borderColor = d.isSelected ? 'var(--color-accent)' : 'var(--color-neutral-300)';
-            const bg = d.isSelected ? 'var(--color-accent-100)' : 'var(--color-surface)';
-            const weekdayColor = d.isSelected ? 'var(--color-accent-700)' : 'var(--color-text-muted)';
-            const dayColor = d.isToday ? 'var(--color-accent-700)' : 'var(--color-text)';
-            const dotColor = d.hasExpense ? 'var(--color-accent)' : 'transparent';
-            return (
-              <button
-                key={d.key}
-                type="button"
-                onClick={() => actions.selectRecordDay(d.month, d.day)}
-                className="pressable"
-                style={{ flexShrink: 0, width: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, padding: '8px 0 7px', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: `1.5px solid ${borderColor}`, background: bg }}
-              >
-                <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', color: weekdayColor }}>{d.weekday}</span>
-                <span style={{ fontSize: 14, fontWeight: 800, color: dayColor }}>{d.day}</span>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: dotColor }} />
-              </button>
-            );
-          })}
-        </div>
-        <button type="button" onClick={() => scrollCalendar(1)} aria-label="Scroll later" className="pressable" style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          aria-label="Filter by date"
+          className="pressable"
+          style={{ all: 'unset', cursor: 'pointer', padding: 8, borderRadius: 999, color: 'var(--color-text-muted)', display: 'flex' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
+            <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
+            <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
+          </svg>
         </button>
       </div>
 
@@ -191,36 +164,37 @@ export default function RecordSection() {
         />
       </div>
 
-      {!searchActive && (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 17 }}>{rec.selectedDayLabel}</span>
-            <span className="type-numeric" style={{ fontSize: 12.5, fontWeight: 700, color: netColor }}>{signedMoney(rec.selectedDayNet)}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 17 }}>
+          {rec.rangeCount} result{rec.rangeCount === 1 ? '' : 's'}
+        </span>
+        <span className="type-numeric" style={{ fontSize: 12.5, fontWeight: 700, color: rec.rangeNet >= 0 ? 'var(--color-accent-700)' : 'var(--color-text)' }}>
+          {signedMoney(rec.rangeNet)}
+        </span>
+      </div>
+      <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
+      {rec.groupedTx.length > 0 ? (
+        rec.groupedTx.map((group) => (
+          <div key={group.iso}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '14px 0 4px' }}>
+              {group.label}
+            </div>
+            {group.items.map((tx) => <TxRow key={tx.id} tx={tx} onOpen={() => actions.openTxDetail(tx.id)} />)}
           </div>
-          <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
-          {rec.selectedDayTx.length > 0 ? (
-            rec.selectedDayTx.map((tx) => <TxRow key={tx.id} tx={tx} onOpen={() => actions.openTxDetail(tx.id)} />)
-          ) : (
-            <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions on this day.</div>
-          )}
-        </>
+        ))
+      ) : (
+        <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions in this range.</div>
       )}
 
-      {searchActive && (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 17 }}>
-              {filteredTxDisplay.length} result{filteredTxDisplay.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
-          {filteredTxDisplay.length > 0 ? (
-            filteredTxDisplay.map((tx) => <TxRow key={tx.id} tx={tx} onOpen={() => actions.openTxDetail(tx.id)} />)
-          ) : (
-            <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions match your search.</div>
-          )}
-        </>
-      )}
+      <DateRangeSheet
+        open={sheetOpen}
+        from={state.recordDateFrom}
+        to={state.recordDateTo}
+        defaultFrom={DEFAULT_RECORD_FROM}
+        defaultTo={todayIso()}
+        onChange={actions.setRecordRange}
+        onClose={() => setSheetOpen(false)}
+      />
     </div>
   );
 }
