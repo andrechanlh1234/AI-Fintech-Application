@@ -92,6 +92,8 @@ export interface AppState {
   showWhyDeductible: boolean;
   scanTaxAmount: string;
   scanTaxRate: string;
+  scanServiceChargeAmount: string;
+  scanServiceChargeRate: string;
   scanPaymentMethod: string;
   scanTag: string;
   expandedBucket: string | null;

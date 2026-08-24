@@ -19,6 +19,10 @@ class Record:
     extra: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
+        def money_or_none(key: str) -> float | None:
+            value = self.extra.get(key)
+            return round(value, 2) if value is not None else None
+
         return {
             "source": self.source,
             "vendor": self.vendor,
@@ -27,4 +31,8 @@ class Record:
             "category": self.category,
             "relief_tag": self.relief_tag,
             "confidence": round(self.confidence, 2),
+            "tax_amount": money_or_none("tax_amount"),
+            "tax_rate": money_or_none("tax_rate"),
+            "service_charge_amount": money_or_none("service_charge_amount"),
+            "service_charge_rate": money_or_none("service_charge_rate"),
         }

@@ -38,7 +38,17 @@ RECEIPT_PROMPT = (
     '"category" (string, exactly one of: "Medical", "Education", "EPF / Insurance", '
     '"Transport", "Groceries", "Dining", "Lifestyle", "Other"), '
     '"taxDeductible" (boolean, whether this purchase plausibly qualifies for a '
-    "Malaysian LHDN personal tax relief). "
+    "Malaysian LHDN personal tax relief), "
+    '"taxAmount" (number, the SST/GST/sales-tax amount printed on its own line '
+    "— e.g. a line reading \"SST 6%: RM3.99\" or \"GST: RM2.50\" — or null if no "
+    "such line is legible), "
+    '"taxRate" (number, the tax percentage from that same line, e.g. 6 for '
+    '"SST 6%" — or null if a rate isn\'t printed even when an amount is), '
+    '"serviceChargeAmount" (number, a separate service-charge line — e.g. '
+    "\"Service Charge 10%: RM5.00\", common on restaurant/hotel receipts — or "
+    "null if none is printed), "
+    '"serviceChargeRate" (number, the service-charge percentage from that '
+    "line, e.g. 10 for a 10% service charge — or null if not printed). "
     "\n\nCategory reasoning matters most for \"Lifestyle\" and \"taxDeductible\": "
     "LHDN's Lifestyle relief specifically covers — reason from the actual line "
     "items printed on the receipt, not just the store's general business — "

@@ -22,6 +22,12 @@ TOTAL_LINE_RE = re.compile(r"(total|jumlah|amount due|grand total)", re.IGNORECA
 # Tesseract commonly inserts a stray space right after the decimal point on
 # thermal-receipt fonts ("RM10. 20") — tolerate it and strip on capture.
 MONEY_RE = re.compile(r"(?:rm|myr)?\s?(\d{1,3}(?:,\d{3})*\.\s?\d{2})", re.IGNORECASE)
+# Malaysian receipts print SST/GST as its own line, separate from the total
+# ("SST 6%: RM3.99" / "GST RM2.50"), and restaurant/hotel receipts often add
+# a separate service-charge line ("Service Charge 10%: RM5.00").
+TAX_LINE_RE = re.compile(r"\b(sst|gst|ppn|cukai)\b", re.IGNORECASE)
+SERVICE_CHARGE_LINE_RE = re.compile(r"service\s*(charge|chg)", re.IGNORECASE)
+PERCENT_RE = re.compile(r"(\d{1,2}(?:\.\d+)?)\s*%")
 
 DATE_PATTERNS = [
     (re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b"), "%d/%m/%Y"),
@@ -129,6 +135,36 @@ def _find_amount(text: str) -> float | None:
     return max(all_amounts) if all_amounts else None
 
 
+def _find_tax_and_service(text: str) -> dict:
+    """Scans for a tax (SST/GST) line and a separate service-charge line,
+    each independently — a receipt may print one, both, or neither, and
+    either may show just the amount, just the rate, or both. Never guesses
+    one from the other (a 6% figure elsewhere on the receipt isn't
+    necessarily this line's rate) — only what's actually printed on the
+    matched line itself."""
+
+    def first_match(pattern: re.Pattern) -> tuple[float | None, float | None]:
+        for line in text.splitlines():
+            if not pattern.search(line):
+                continue
+            amounts = MONEY_RE.findall(line)
+            pct = PERCENT_RE.search(line)
+            amount = _to_float(amounts[0]) if amounts else None
+            rate = float(pct.group(1)) if pct else None
+            if amount is not None or rate is not None:
+                return amount, rate
+        return None, None
+
+    tax_amount, tax_rate = first_match(TAX_LINE_RE)
+    service_amount, service_rate = first_match(SERVICE_CHARGE_LINE_RE)
+    return {
+        "tax_amount": tax_amount,
+        "tax_rate": tax_rate,
+        "service_charge_amount": service_amount,
+        "service_charge_rate": service_rate,
+    }
+
+
 def _find_vendor(text: str) -> str:
     for line in text.splitlines():
         cleaned = line.strip()
@@ -158,6 +194,7 @@ def parse_receipt_text(text: str, ocr_confidence: float = 1.0) -> Record:
         relief_tag=relief_tag_for(category),
         confidence=confidence,
         raw_text=text,
+        extra=_find_tax_and_service(text),
     )
 
 
@@ -193,6 +230,12 @@ def _record_from_vision_fields(fields: dict, raw_text: str = "") -> Record:
         source="receipt_photo", vendor=vendor, txn_date=txn_date, amount=amount,
         category=category, relief_tag=relief_tag_for(category) if relief_eligible else None,
         confidence=max(0.0, confidence), raw_text=raw_text,
+        extra={
+            "tax_amount": fields.get("taxAmount"),
+            "tax_rate": fields.get("taxRate"),
+            "service_charge_amount": fields.get("serviceChargeAmount"),
+            "service_charge_rate": fields.get("serviceChargeRate"),
+        },
     )
 
 

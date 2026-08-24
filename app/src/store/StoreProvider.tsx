@@ -173,6 +173,8 @@ export function useActions() {
       setScanPaymentMethod: (value: string) => dispatch({ type: 'SET_SCAN_PAYMENT_METHOD', value }),
       setScanTaxAmount: (value: string) => dispatch({ type: 'SET_SCAN_TAX_AMOUNT', value }),
       setScanTaxRate: (value: string) => dispatch({ type: 'SET_SCAN_TAX_RATE', value }),
+      setScanServiceChargeAmount: (value: string) => dispatch({ type: 'SET_SCAN_SERVICE_CHARGE_AMOUNT', value }),
+      setScanServiceChargeRate: (value: string) => dispatch({ type: 'SET_SCAN_SERVICE_CHARGE_RATE', value }),
       setScanTag: (value: string) => dispatch({ type: 'SET_SCAN_TAG', value }),
 
       // budgets

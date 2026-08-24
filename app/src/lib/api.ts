@@ -150,6 +150,10 @@ export interface ScannedReceipt {
   category: string;
   relief_tag: string | null;
   confidence: number;
+  tax_amount: number | null;
+  tax_rate: number | null;
+  service_charge_amount: number | null;
+  service_charge_rate: number | null;
 }
 
 export async function scanReceiptImage(file: File): Promise<ScannedReceipt> {

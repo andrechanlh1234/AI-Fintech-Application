@@ -7,6 +7,7 @@ export function ScanFlow() {
   const { state } = useStore();
   const actions = useActions();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [liveCameraReady, setLiveCameraReady] = useState(false);
@@ -193,6 +194,39 @@ export function ScanFlow() {
           <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
             {state.scanMethod === 'photo' ? "Read from your photo — check it's right" : 'Enter the receipt details'}
           </div>
+
+          {state.scanMethod === 'manual' && (
+            <>
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = '';
+                  if (file) actions.capturePhotoFile(file);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => importFileInputRef.current?.click()}
+                className="pressable"
+                style={{
+                  all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'var(--color-accent-100)', color: 'var(--color-accent-800)',
+                  borderRadius: 'var(--radius-md)', padding: '10px 14px', marginBottom: 18,
+                  font: '700 12.5px var(--font-body)', boxSizing: 'border-box', width: '100%',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" />
+                </svg>
+                Import a receipt photo instead
+              </button>
+            </>
+          )}
+
           {state.scanError && (
             <div style={{ fontSize: 12, color: 'var(--color-danger-700)', marginTop: -8, marginBottom: 16 }}>
               Couldn't read that photo automatically ({state.scanError}) — enter the details below instead.
@@ -237,6 +271,16 @@ export function ScanFlow() {
             <div className="field" style={{ flex: 1 }}>
               <label>Tax rate (%)</label>
               <input className="input" value={state.scanTaxRate} onChange={(e) => actions.setScanTaxRate(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+            <div className="field" style={{ flex: 1 }}>
+              <label>Service charge (RM)</label>
+              <input className="input" value={state.scanServiceChargeAmount} onChange={(e) => actions.setScanServiceChargeAmount(e.target.value)} />
+            </div>
+            <div className="field" style={{ flex: 1 }}>
+              <label>Service charge (%)</label>
+              <input className="input" value={state.scanServiceChargeRate} onChange={(e) => actions.setScanServiceChargeRate(e.target.value)} />
             </div>
           </div>
           <div className="field" style={{ marginBottom: 18 }}>

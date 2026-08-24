@@ -19,6 +19,10 @@ function blankScanFields() {
   return {
     scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
     scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '', scanMethod: 'manual' as const,
+    // Reset every time a scan (re)opens, not just on save -- otherwise a
+    // tax/service-charge figure read off one receipt would silently linger
+    // onto the next one until OCR happened to overwrite it again.
+    scanTaxAmount: '', scanTaxRate: '6', scanServiceChargeAmount: '', scanServiceChargeRate: '',
   };
 }
 
@@ -74,6 +78,8 @@ export type Action =
   | { type: 'SET_SCAN_PAYMENT_METHOD'; value: string }
   | { type: 'SET_SCAN_TAX_AMOUNT'; value: string }
   | { type: 'SET_SCAN_TAX_RATE'; value: string }
+  | { type: 'SET_SCAN_SERVICE_CHARGE_AMOUNT'; value: string }
+  | { type: 'SET_SCAN_SERVICE_CHARGE_RATE'; value: string }
   | { type: 'SET_SCAN_TAG'; value: string }
 
   | { type: 'TOGGLE_BUCKET'; key: string }
@@ -326,6 +332,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, scanTaxAmount: action.value };
     case 'SET_SCAN_TAX_RATE':
       return { ...state, scanTaxRate: action.value };
+    case 'SET_SCAN_SERVICE_CHARGE_AMOUNT':
+      return { ...state, scanServiceChargeAmount: action.value };
+    case 'SET_SCAN_SERVICE_CHARGE_RATE':
+      return { ...state, scanServiceChargeRate: action.value };
     case 'SET_SCAN_TAG':
       return { ...state, scanTag: action.value };
 
@@ -603,6 +613,14 @@ export function reducer(state: AppState, action: Action): AppState {
         scanDate: isoToDisplayDate(r.date) || state.scanDate,
         scanCategory: mapOcrCategory(r.category),
         scanDeductible: !!r.relief_tag,
+        // Only overwrite what the receipt actually printed -- a null tax/
+        // service-charge rate leaves the field at blankScanFields()'s
+        // default (blank, or '6' for tax rate) rather than being cleared,
+        // same "don't guess" rule the OCR pipeline itself follows.
+        scanTaxAmount: r.tax_amount != null ? r.tax_amount.toFixed(2) : state.scanTaxAmount,
+        scanTaxRate: r.tax_rate != null ? String(r.tax_rate) : state.scanTaxRate,
+        scanServiceChargeAmount: r.service_charge_amount != null ? r.service_charge_amount.toFixed(2) : state.scanServiceChargeAmount,
+        scanServiceChargeRate: r.service_charge_rate != null ? String(r.service_charge_rate) : state.scanServiceChargeRate,
       };
     }
     case 'CAPTURE_PHOTO_FAILED':
