@@ -1,12 +1,21 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 /** Full-screen overlay sheet — used for scan, review, balance/invest/history
  * detail, tax-item detail, add-subscription, donate, tax pack, more/notif
  * panels. Mirrors the dc.html's `position:absolute;inset:0;z-index:50`
- * overlay pattern. */
+ * overlay pattern.
+ *
+ * Portals to document.body: several call sites (e.g. FinanceTab's
+ * .tab-panel-in) sit inside an ancestor with an animation-fill-mode:both
+ * transform (screen-in's `transform: translateY(0)` end state, which
+ * lingers after the animation finishes) -- a non-none transform on any
+ * ancestor makes it the containing block for position:fixed descendants
+ * per the CSS spec, which would otherwise confine this "fixed to the
+ * viewport" sheet to that ancestor's own box instead of the real screen. */
 export function BottomSheet({ open, onClose, children, align = 'bottom' }: { open: boolean; onClose: () => void; children: ReactNode; align?: 'bottom' | 'full' }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div
       className="screen-in"
       style={{
@@ -27,6 +36,7 @@ export function BottomSheet({ open, onClose, children, align = 'bottom' }: { ope
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
