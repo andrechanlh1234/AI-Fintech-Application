@@ -4,7 +4,7 @@ export function Card({ children, style, onClick, className }: { children: ReactN
   return (
     <div
       className={['card', onClick ? 'pressable' : '', className || ''].join(' ').trim()}
-      style={{ padding: 16, borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', cursor: onClick ? 'pointer' : undefined, ...style }}
+      style={{ padding: 'var(--space-4)', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface)', cursor: onClick ? 'pointer' : undefined, ...style }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
     >
