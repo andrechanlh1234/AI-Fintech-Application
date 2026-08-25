@@ -16,6 +16,12 @@ export interface Transaction {
    * transaction counts toward, when tax=true. Set by the scan/review flows
    * via categoryToReliefKey(); undefined means "deductible but uncategorised". */
   reliefKey?: string;
+  /** Id of the Receipt (lib/receipts.ts) this transaction was generated
+   * from, when it came from a receipt scan or manual receipt entry --
+   * undefined for a transaction with no receipt behind it. The receipt
+   * itself is display-only; editing/deleting this transaction never
+   * touches the receipt record (see lib/receipts.ts's Receipt doc comment). */
+  receiptId?: string;
 }
 
 export interface BalanceEntry { id: string; amount: number; desc: string; date: string }
