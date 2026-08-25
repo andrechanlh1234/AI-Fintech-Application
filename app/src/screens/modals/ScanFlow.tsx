@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
-import { selectReliefImpact } from '../../store/selectors';
+import { selectReceiptReview } from '../../store/selectors';
 import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
+import { ReceiptLineItemsEditor } from '../../components/ReceiptLineItemsEditor';
 
 export function ScanFlow() {
   const { state } = useStore();
@@ -67,8 +68,7 @@ export function ScanFlow() {
 
   if (!state.scanOpen) return null;
 
-  const relief = selectReliefImpact(state);
-  const taxYearLabel = state.taxYear.replace('YA', '');
+  const review = selectReceiptReview(state);
 
   return (
     <div
@@ -186,7 +186,7 @@ export function ScanFlow() {
         </div>
       )}
 
-      {state.scanStep === 'confirm' && (
+      {state.scanStep === 'review' && (
         <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 24px', boxSizing: 'border-box', overflow: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
             <button
@@ -198,11 +198,11 @@ export function ScanFlow() {
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
             </button>
-            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Confirm details</span>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>{state.scanMethod === 'photo' ? 'Review receipt' : 'Add receipt'}</span>
           </div>
-          <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>
-            {state.scanMethod === 'photo' ? "Read from your photo — check it's right" : 'Enter the receipt details'}
-          </div>
+          {state.scanMethod === 'photo' && (
+            <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>Read from your photo — check it's right</div>
+          )}
 
           {state.scanMethod === 'manual' && (
             <>
@@ -244,25 +244,17 @@ export function ScanFlow() {
 
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Merchant</label>
-            <input className="input" value={state.scanMerchant} onChange={(e) => actions.setScanMerchant(e.target.value)} />
+            <input className="input" value={state.receiptDraft.merchant} onChange={(e) => actions.setReceiptDraftField('merchant', e.target.value)} />
           </div>
           <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
             <div className="field" style={{ flex: 1 }}>
-              <label>Amount (RM)</label>
-              <input className="input" value={state.scanAmount} onChange={(e) => actions.setScanAmount(e.target.value)} />
+              <label>Date</label>
+              <input className="input" type="date" value={state.receiptDraft.date} onChange={(e) => actions.setReceiptDraftField('date', e.target.value)} />
             </div>
             <div className="field" style={{ flex: 1 }}>
-              <label>Date</label>
-              <input className="input" value={state.scanDate} onChange={(e) => actions.setScanDate(e.target.value)} />
+              <label>Total (RM)</label>
+              <input className="input" value={state.receiptDraft.total} onChange={(e) => actions.setReceiptDraftField('total', e.target.value)} placeholder="0.00" />
             </div>
-          </div>
-          <div className="field" style={{ marginBottom: 14 }}>
-            <label>Category</label>
-            <select className="input" value={state.scanCategory} onChange={(e) => actions.setScanCategory(e.target.value)}>
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
           </div>
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Payment method</label>
@@ -275,139 +267,138 @@ export function ScanFlow() {
           <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
             <div className="field" style={{ flex: 1 }}>
               <label>Tax amount (RM)</label>
-              <input className="input" value={state.scanTaxAmount} onChange={(e) => actions.setScanTaxAmount(e.target.value)} />
+              <input className="input" value={state.receiptDraft.taxAmount} onChange={(e) => actions.setReceiptDraftField('taxAmount', e.target.value)} />
             </div>
             <div className="field" style={{ flex: 1 }}>
               <label>Tax rate (%)</label>
-              <input className="input" value={state.scanTaxRate} onChange={(e) => actions.setScanTaxRate(e.target.value)} />
+              <input className="input" value={state.receiptDraft.taxRate} onChange={(e) => actions.setReceiptDraftField('taxRate', e.target.value)} />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
             <div className="field" style={{ flex: 1 }}>
               <label>Service charge (RM)</label>
-              <input className="input" value={state.scanServiceChargeAmount} onChange={(e) => actions.setScanServiceChargeAmount(e.target.value)} />
+              <input className="input" value={state.receiptDraft.serviceChargeAmount} onChange={(e) => actions.setReceiptDraftField('serviceChargeAmount', e.target.value)} />
             </div>
             <div className="field" style={{ flex: 1 }}>
               <label>Service charge (%)</label>
-              <input className="input" value={state.scanServiceChargeRate} onChange={(e) => actions.setScanServiceChargeRate(e.target.value)} />
+              <input className="input" value={state.receiptDraft.serviceChargeRate} onChange={(e) => actions.setReceiptDraftField('serviceChargeRate', e.target.value)} />
             </div>
           </div>
-          <div className="field" style={{ marginBottom: 18 }}>
-            <label>Receipt tag (optional)</label>
-            <input className="input" value={state.scanTag} onChange={(e) => actions.setScanTag(e.target.value)} placeholder="e.g. Work trip, gift" />
-          </div>
 
-          <div
-            style={{
-              border: `1.5px solid ${state.scanDeductible ? 'var(--color-tax-300)' : 'var(--color-neutral-300)'}`,
-              background: state.scanDeductible ? 'var(--color-tax-100)' : 'var(--color-surface)',
-              borderRadius: 'var(--radius-md)', padding: 16, marginBottom: 20,
-            }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>Tax deductible?</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>Cukai thinks this qualifies for a relief this year</div>
-            <div className="seg">
-              <label className="seg-opt">
-                <input type="radio" name="deductible" checked={state.scanDeductible} onChange={actions.setScanDeductibleYes} />
-                Yes
+          {state.scanMethod === 'manual' && (
+            <div className="seg" style={{ marginBottom: 18 }}>
+              <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
+                <input type="radio" name="receiptMode" checked={state.receiptDraft.mode === 'quick'} onChange={() => actions.setReceiptMode('quick')} />
+                Quick
               </label>
-              <label className="seg-opt">
-                <input type="radio" name="deductible" checked={!state.scanDeductible} onChange={actions.setScanDeductibleNo} />
-                No
+              <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
+                <input type="radio" name="receiptMode" checked={state.receiptDraft.mode === 'detailed'} onChange={() => actions.setReceiptMode('detailed')} />
+                Add line items
               </label>
             </div>
+          )}
 
-            {state.scanDeductible && (
-              <>
-                <button
-                  type="button"
-                  onClick={actions.toggleWhyDeductible}
-                  className="pressable"
-                  style={{ background: 'none', border: 'none', padding: '12px 0 0', margin: 0, font: '600 12.5px var(--font-body)', color: 'var(--color-tax-700)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-                >
-                  Why does this qualify?
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: state.showWhyDeductible ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s ease' }}>
-                    <path d="m9 18 6-6-6-6"></path>
-                  </svg>
-                </button>
-
-                {state.showWhyDeductible && (
-                  <div className="pop-in" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-tax-300)' }}>
-                    <div style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--color-tax-900)', marginBottom: 12 }}>
-                      {relief.hasReliefInfo ? relief.why : 'This purchase may qualify for a relief this year.'}
-                    </div>
-                    {relief.hasReliefInfo && (
-                      <>
-                        <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 6 }}>{relief.name} · cap RM {relief.capLabel}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-tax-700)', marginBottom: 4 }}>
-                          <span>Before this purchase</span><span>RM {relief.beforeLabel}</span>
-                        </div>
-                        <div style={{ height: 6, background: 'var(--color-tax-200)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-                          <div className="bar-fill" style={{ height: '100%', width: `${relief.beforePct}%`, background: 'var(--color-tax-500)', borderRadius: 4 }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--color-tax-800)', marginBottom: 4, fontWeight: 600 }}>
-                          <span>After this purchase</span><span>RM {relief.afterLabel}</span>
-                        </div>
-                        <div style={{ height: 6, background: 'var(--color-tax-200)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-                          <div className="bar-fill" style={{ height: '100%', width: `${relief.afterPct}%`, background: 'var(--color-tax-700)', borderRadius: 4 }} />
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--color-tax-700)' }}>RM {relief.remainingLabel} of your cap will remain</div>
-                      </>
-                    )}
+          {state.receiptDraft.mode === 'quick' ? (
+            <div className="field" style={{ marginBottom: 20 }}>
+              <label>Category</label>
+              <select className="input" value={state.receiptDraft.quickCategory} onChange={(e) => actions.setReceiptDraftField('quickCategory', e.target.value)}>
+                {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>
+                Line items
+              </div>
+              <ReceiptLineItemsEditor items={state.lineItemDrafts} />
+              {review.hasMismatch && (
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 'var(--radius-md)', background: 'var(--color-danger-100)', border: '1px solid var(--color-danger-700)' }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--color-danger-700)', marginBottom: 4 }}>
+                    ⚠ Receipt total doesn't match line items
                   </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <div style={{ flex: 1 }} />
-          <button type="button" onClick={actions.saveScan} className="btn btn-primary btn-lg">Save receipt</button>
-        </div>
-      )}
-
-      {state.scanStep === 'saved' && (
-        <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px 24px', boxSizing: 'border-box', textAlign: 'center', minHeight: '100vh' }}>
-          <div className="pop-in" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-          </div>
-          <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Saved</div>
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 24, maxWidth: '26ch' }}>Linked to a new transaction in your Finance tab.</div>
-
-          <div className="card elev-sm" style={{ width: '100%', textAlign: 'left', marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{state.scanMerchant}</div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{state.scanCategory} · {state.scanDate}</div>
-              </div>
-              <div className="type-numeric" style={{ fontWeight: 700, fontSize: 15 }}>−RM {state.scanAmount}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--color-danger-700)', marginBottom: review.mismatchAmount > 0 ? 8 : 0 }}>
+                    Line items add up to RM {review.lineItemsTotal.toFixed(2)}, but the receipt total is RM {(parseFloat(state.receiptDraft.total) || 0).toFixed(2)}.
+                  </div>
+                  {review.mismatchAmount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => actions.addAdjustmentLineItem(review.mismatchAmount)}
+                      className="pressable"
+                      style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-danger-700)', font: '700 11.5px var(--font-body)', textDecoration: 'underline' }}
+                    >
+                      Add a RM {review.mismatchAmount.toFixed(2)} adjustment line to match
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            {state.scanDeductible && (
-              <div className="tag tag-tax" style={{ alignSelf: 'flex-start', marginTop: 6 }}>Tax deductible</div>
-            )}
-          </div>
-
-          {state.scanDeductible && (
-            <button
-              type="button"
-              onClick={actions.viewInTax}
-              className="pressable"
-              style={{ width: '100%', textAlign: 'left', background: 'var(--color-tax-100)', border: '1.5px solid var(--color-tax-300)', borderRadius: 'var(--radius-md)', padding: '14px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', boxSizing: 'border-box' }}
-            >
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-tax-800)' }}>Added to your {taxYearLabel} deductions</div>
-                <div style={{ fontSize: 11, color: 'var(--color-tax-700)', marginTop: 2 }}>Tap to see it in your Tax Center</div>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-tax-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-            </button>
           )}
 
           <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-            <button type="button" onClick={actions.scanAnother} className="btn btn-secondary" style={{ flex: 1 }}>Scan another</button>
-            <button type="button" onClick={actions.closeScan} className="btn btn-primary" style={{ flex: 1 }}>Done</button>
-          </div>
+          <button
+            type="button"
+            onClick={actions.saveReceipt}
+            disabled={state.receiptDraft.mode === 'detailed' && !review.canSaveDetailed}
+            className="btn btn-primary btn-lg"
+            style={{ opacity: state.receiptDraft.mode === 'detailed' && !review.canSaveDetailed ? 0.5 : 1 }}
+          >
+            {state.receiptDraft.mode === 'quick' ? 'Save receipt' : `Confirm ${state.lineItemDrafts.length || ''} transaction${state.lineItemDrafts.length === 1 ? '' : 's'}`}
+          </button>
         </div>
       )}
+
+      {state.scanStep === 'saved' && (() => {
+        const lastReceipt = state.receipts[state.receipts.length - 1];
+        const savedTx = lastReceipt ? state.transactions.filter((t) => t.receiptId === lastReceipt.id) : [];
+        const anyDeductible = savedTx.some((t) => t.tax);
+        return (
+          <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px 24px', boxSizing: 'border-box', textAlign: 'center', minHeight: '100vh' }}>
+            <div className="pop-in" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+            </div>
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Saved</div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 24, maxWidth: '26ch' }}>
+              {savedTx.length === 1 ? 'Linked to a new transaction in your Finance tab.' : `Split into ${savedTx.length} transactions in your Finance tab.`}
+            </div>
+
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {savedTx.map((tx) => (
+                <div key={tx.id} className="card elev-sm" style={{ width: '100%', boxSizing: 'border-box', textAlign: 'left' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{tx.merchant}</div>
+                      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>{tx.cat} · {tx.dateLabel}</div>
+                    </div>
+                    <div className="type-numeric" style={{ fontWeight: 700, fontSize: 15 }}>−RM {Math.abs(tx.amount).toFixed(2)}</div>
+                  </div>
+                  {tx.tax && <div className="tag tag-tax" style={{ alignSelf: 'flex-start', marginTop: 6 }}>Potentially deductible</div>}
+                </div>
+              ))}
+            </div>
+
+            {anyDeductible && (
+              <button
+                type="button"
+                onClick={actions.viewInTax}
+                className="pressable"
+                style={{ width: '100%', textAlign: 'left', background: 'var(--color-tax-100)', border: '1.5px solid var(--color-tax-300)', borderRadius: 'var(--radius-md)', padding: '14px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', boxSizing: 'border-box' }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-tax-800)' }}>Added to your potential deductions</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-tax-700)', marginTop: 2 }}>Tap to see it in your Tax Center</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-tax-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+              </button>
+            )}
+
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+              <button type="button" onClick={actions.scanAnother} className="btn btn-secondary" style={{ flex: 1 }}>Scan another</button>
+              <button type="button" onClick={actions.closeScan} className="btn btn-primary" style={{ flex: 1 }}>Done</button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
