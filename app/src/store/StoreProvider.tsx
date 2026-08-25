@@ -14,6 +14,7 @@ import { isoToDisplayDate } from '../lib/format';
 import { uid } from '../lib/ids';
 import { mapOcrCategory } from '../lib/constants';
 import type { ReviewItem } from '../lib/seedData';
+import type { ReceiptDraft } from '../lib/receipts';
 
 const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
@@ -51,7 +52,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode]);
 
   // Recompute the real net-worth timeline whenever a dated balance row or
   // entry changes — this is what makes the Finance > Net worth chart plot
@@ -75,7 +76,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.netWorthHistory, state.userMode, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -167,14 +168,8 @@ export function useActions() {
       setDonateAmount: (value: string) => dispatch({ type: 'SET_DONATE_AMOUNT', value }),
       submitDonate: () => dispatch({ type: 'SUBMIT_DONATE' }),
 
-      // relief impact preview
-      toggleWhyDeductible: () => dispatch({ type: 'TOGGLE_WHY_DEDUCTIBLE' }),
+      // scan payment method
       setScanPaymentMethod: (value: string) => dispatch({ type: 'SET_SCAN_PAYMENT_METHOD', value }),
-      setScanTaxAmount: (value: string) => dispatch({ type: 'SET_SCAN_TAX_AMOUNT', value }),
-      setScanTaxRate: (value: string) => dispatch({ type: 'SET_SCAN_TAX_RATE', value }),
-      setScanServiceChargeAmount: (value: string) => dispatch({ type: 'SET_SCAN_SERVICE_CHARGE_AMOUNT', value }),
-      setScanServiceChargeRate: (value: string) => dispatch({ type: 'SET_SCAN_SERVICE_CHARGE_RATE', value }),
-      setScanTag: (value: string) => dispatch({ type: 'SET_SCAN_TAG', value }),
 
       // budgets
       toggleBucket: (key: string) => dispatch({ type: 'TOGGLE_BUCKET', key }),
@@ -285,16 +280,16 @@ export function useActions() {
       capturePhotoFile: (file: File) => {
         dispatch({ type: 'CAPTURE_PHOTO_START' });
         scanReceiptImage(file)
-          .then((receipt) => dispatch({ type: 'CAPTURE_PHOTO_RESULT', receipt }))
+          .then((result) => dispatch({ type: 'CAPTURE_PHOTO_RESULT', result }))
           .catch((err: Error) => dispatch({ type: 'CAPTURE_PHOTO_FAILED', message: err.message }));
       },
-      setScanMerchant: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanMerchant', value }),
-      setScanAmount: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanAmount', value }),
-      setScanDate: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanDate', value }),
-      setScanCategory: (value: string) => dispatch({ type: 'SET_SCAN_FIELD', field: 'scanCategory', value }),
-      setScanDeductibleYes: () => dispatch({ type: 'SET_SCAN_DEDUCTIBLE', value: true }),
-      setScanDeductibleNo: () => dispatch({ type: 'SET_SCAN_DEDUCTIBLE', value: false }),
-      saveScan: () => dispatch({ type: 'SAVE_SCAN' }),
+      setReceiptDraftField: (field: keyof ReceiptDraft, value: string) => dispatch({ type: 'SET_RECEIPT_DRAFT_FIELD', field, value }),
+      setReceiptMode: (mode: 'quick' | 'detailed') => dispatch({ type: 'SET_RECEIPT_MODE', mode }),
+      addLineItemDraft: () => dispatch({ type: 'ADD_LINE_ITEM_DRAFT' }),
+      setLineItemDraftField: (id: string, field: 'description' | 'amount' | 'cat' | 'deductible', value: string | boolean) => dispatch({ type: 'SET_LINE_ITEM_DRAFT_FIELD', id, field, value }),
+      removeLineItemDraft: (id: string) => dispatch({ type: 'REMOVE_LINE_ITEM_DRAFT', id }),
+      addAdjustmentLineItem: (amount: number) => dispatch({ type: 'ADD_ADJUSTMENT_LINE_ITEM', amount }),
+      saveReceipt: () => dispatch({ type: 'SAVE_RECEIPT' }),
       scanAnother: () => dispatch({ type: 'SCAN_ANOTHER' }),
       viewInTax: () => dispatch({ type: 'VIEW_IN_TAX' }),
 

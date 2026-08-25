@@ -143,23 +143,30 @@ export async function pushRemoteState(payload: SyncPayload): Promise<void> {
   });
 }
 
-export interface ScannedReceipt {
-  vendor: string;
-  date: string | null;
+export interface ScannedLineItem {
+  description: string;
   amount: number;
   category: string;
-  relief_tag: string | null;
+  taxDeductible: boolean;
   confidence: number;
-  tax_amount: number | null;
-  tax_rate: number | null;
-  service_charge_amount: number | null;
-  service_charge_rate: number | null;
 }
 
-export async function scanReceiptImage(file: File): Promise<ScannedReceipt> {
+export interface ScannedReceiptResult {
+  vendor: string;
+  date: string | null;
+  total: number | null;
+  lineItems: ScannedLineItem[];
+  confidence: number;
+  taxAmount: number | null;
+  taxRate: number | null;
+  serviceChargeAmount: number | null;
+  serviceChargeRate: number | null;
+}
+
+export async function scanReceiptImage(file: File): Promise<ScannedReceiptResult> {
   const form = new FormData();
   form.append('file', file);
-  return request<ScannedReceipt>('/receipts/scan', { method: 'POST', body: form });
+  return request<ScannedReceiptResult>('/receipts/scan', { method: 'POST', body: form });
 }
 
 export interface ScannedStatementRecord {

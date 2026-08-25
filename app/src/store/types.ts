@@ -1,5 +1,6 @@
 // State shape ported from Cukai v7.dc.html (lines 1967-2021).
 import type { RecordRow, InvestRow, NetWorthSeed, Bucket, AiMessage, BalanceEntry, Transaction, ReviewItem } from '../lib/seedData';
+import type { Receipt, ReceiptDraft, ReceiptLineItemDraft } from '../lib/receipts';
 
 export interface Subscription {
   name: string;
@@ -73,7 +74,7 @@ export interface TxDraft {
 
 export type FinanceSection = 'networth' | 'record' | 'budgets' | 'stats' | 'history';
 export type Tab = 'home' | 'finance' | 'tax' | 'ai';
-export type ScanStep = 'capture' | 'processing' | 'confirm' | 'saved';
+export type ScanStep = 'capture' | 'processing' | 'review' | 'saved';
 
 export interface AppState {
   appStage: 'onboarding' | 'app';
@@ -89,13 +90,7 @@ export interface AppState {
   netWorthRange: '1M' | '3M' | '6M' | '1Y' | '3Y' | 'ALL';
   nwSelectedIdx: number | null;
   historyMonth: string;
-  showWhyDeductible: boolean;
-  scanTaxAmount: string;
-  scanTaxRate: string;
-  scanServiceChargeAmount: string;
-  scanServiceChargeRate: string;
   scanPaymentMethod: string;
-  scanTag: string;
   expandedBucket: string | null;
   expandedTaxGroup: string | null;
   taxItemDetailOpen: string | null;
@@ -120,11 +115,8 @@ export interface AppState {
    * (capturePhoto) or true manual entry (chooseManual) — drives whether the
    * "read from your photo" badge is honest to show. */
   scanMethod: 'photo' | 'manual';
-  scanMerchant: string;
-  scanAmount: string;
-  scanDate: string;
-  scanCategory: string;
-  scanDeductible: boolean;
+  receiptDraft: ReceiptDraft;
+  lineItemDrafts: ReceiptLineItemDraft[];
   /** "YA" + assessment year, e.g. "YA2026". A plain string, not a fixed
    * union, so future years become selectable without a type change --
    * see YearPicker in TaxCenter. */
@@ -177,6 +169,11 @@ export interface AppState {
    * there. Budget line items and REVIEW_ITEMS are derived/overlaid on top
    * of this in selectors, not stored here. */
   transactions: Transaction[];
+  /** Parent receipt records -- see lib/receipts.ts's Receipt doc comment.
+   * A receipt's own total/line-item-total never changes after save; the
+   * transactions it produced (state.transactions, matched by receiptId)
+   * are what the user actually edits/deletes afterward. */
+  receipts: Receipt[];
   /** Id of the transaction currently open in the edit/delete detail sheet
    * (Record page row tap), or null when closed. */
   txDetailOpen: string | number | null;

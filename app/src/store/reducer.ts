@@ -3,28 +3,19 @@
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
 import type { AppState, ManualData, BalanceDraft, TxDraft } from './types';
 import { mkCategory, mkItem, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
+import {
+  blankReceiptDraft, mkLineItemDraft, lineItemIsInvalid, lineItemNeedsReview,
+  type Receipt, type ReceiptDraft,
+} from '../lib/receipts';
 import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
 import { mapOcrCategory } from '../lib/constants';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
-import type { AuthUser, ScannedReceipt } from '../lib/api';
+import type { AuthUser, ScannedReceiptResult } from '../lib/api';
 
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-// A function, not a static object, so scanDate is always *today* — computed
-// fresh each time the scan flow opens/resets, not frozen at module load.
-function blankScanFields() {
-  return {
-    scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
-    scanCategory: 'Food & Drink', scanDeductible: false, scanTag: '', scanMethod: 'manual' as const,
-    // Reset every time a scan (re)opens, not just on save -- otherwise a
-    // tax/service-charge figure read off one receipt would silently linger
-    // onto the next one until OCR happened to overwrite it again.
-    scanTaxAmount: '', scanTaxRate: '6', scanServiceChargeAmount: '', scanServiceChargeRate: '',
-  };
-}
 
 // The month a scan/manual transaction actually happened in, derived from its
 // real entered date label ("3 Jul 2026") — falls back to the real current
@@ -73,13 +64,7 @@ export type Action =
   | { type: 'OPEN_DONATE' } | { type: 'CLOSE_DONATE' }
   | { type: 'SET_DONATE_AMOUNT'; value: string } | { type: 'SUBMIT_DONATE' }
 
-  | { type: 'TOGGLE_WHY_DEDUCTIBLE' }
   | { type: 'SET_SCAN_PAYMENT_METHOD'; value: string }
-  | { type: 'SET_SCAN_TAX_AMOUNT'; value: string }
-  | { type: 'SET_SCAN_TAX_RATE'; value: string }
-  | { type: 'SET_SCAN_SERVICE_CHARGE_AMOUNT'; value: string }
-  | { type: 'SET_SCAN_SERVICE_CHARGE_RATE'; value: string }
-  | { type: 'SET_SCAN_TAG'; value: string }
 
   | { type: 'TOGGLE_BUCKET'; key: string }
   | { type: 'ADD_BUCKET_CATEGORY'; bucketKey: string; name?: string; openDetail?: boolean; cap?: number }
@@ -142,11 +127,15 @@ export type Action =
   | { type: 'OPEN_SCAN' } | { type: 'CLOSE_SCAN' }
   | { type: 'CHOOSE_MANUAL' }
   | { type: 'CAPTURE_PHOTO_START' }
-  | { type: 'CAPTURE_PHOTO_RESULT'; receipt: ScannedReceipt }
+  | { type: 'CAPTURE_PHOTO_RESULT'; result: ScannedReceiptResult }
   | { type: 'CAPTURE_PHOTO_FAILED'; message: string }
-  | { type: 'SET_SCAN_FIELD'; field: 'scanMerchant' | 'scanAmount' | 'scanDate' | 'scanCategory'; value: string }
-  | { type: 'SET_SCAN_DEDUCTIBLE'; value: boolean }
-  | { type: 'SAVE_SCAN' } | { type: 'SCAN_ANOTHER' } | { type: 'VIEW_IN_TAX' }
+  | { type: 'SET_RECEIPT_DRAFT_FIELD'; field: keyof ReceiptDraft; value: string }
+  | { type: 'SET_RECEIPT_MODE'; mode: 'quick' | 'detailed' }
+  | { type: 'ADD_LINE_ITEM_DRAFT' }
+  | { type: 'SET_LINE_ITEM_DRAFT_FIELD'; id: string; field: 'description' | 'amount' | 'cat' | 'deductible'; value: string | boolean }
+  | { type: 'REMOVE_LINE_ITEM_DRAFT'; id: string }
+  | { type: 'ADD_ADJUSTMENT_LINE_ITEM'; amount: number }
+  | { type: 'SAVE_RECEIPT' } | { type: 'SCAN_ANOTHER' } | { type: 'VIEW_IN_TAX' }
 
   | { type: 'SET_AUTH_USER'; user: AuthUser | null }
   | { type: 'OAUTH_LOGIN_COMPLETE' }
@@ -311,21 +300,9 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SUBMIT_DONATE':
       return { ...state, donateDone: true };
 
-    // ---- scan-tax fields (relief impact preview) ----
-    case 'TOGGLE_WHY_DEDUCTIBLE':
-      return { ...state, showWhyDeductible: !state.showWhyDeductible };
+    // ---- scan payment method ----
     case 'SET_SCAN_PAYMENT_METHOD':
       return { ...state, scanPaymentMethod: action.value };
-    case 'SET_SCAN_TAX_AMOUNT':
-      return { ...state, scanTaxAmount: action.value };
-    case 'SET_SCAN_TAX_RATE':
-      return { ...state, scanTaxRate: action.value };
-    case 'SET_SCAN_SERVICE_CHARGE_AMOUNT':
-      return { ...state, scanServiceChargeAmount: action.value };
-    case 'SET_SCAN_SERVICE_CHARGE_RATE':
-      return { ...state, scanServiceChargeRate: action.value };
-    case 'SET_SCAN_TAG':
-      return { ...state, scanTag: action.value };
 
     // ---- budgets ----
     case 'TOGGLE_BUCKET':
@@ -585,54 +562,115 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan / capture receipt ----
     case 'OPEN_SCAN':
-      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, showWhyDeductible: false, scanError: null, ...blankScanFields() };
+      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, scanError: null, receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
     case 'CLOSE_SCAN':
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
-      // True manual entry — fields stay blank, no simulated OCR result.
-      return { ...state, scanStep: 'confirm', scanMethod: 'manual' };
+      // True manual entry -- fields stay blank, no simulated OCR result.
+      return { ...state, scanStep: 'review', scanMethod: 'manual', receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
     case 'CAPTURE_PHOTO_START':
       return { ...state, scanStep: 'processing', scanError: null };
     case 'CAPTURE_PHOTO_RESULT': {
-      const r = action.receipt;
+      const r = action.result;
+      const lineItemDrafts = r.lineItems.map((li) => mkLineItemDraft({
+        description: li.description, amount: li.amount ? li.amount.toFixed(2) : '',
+        cat: mapOcrCategory(li.category), deductible: li.taxDeductible,
+        confidence: li.confidence, touched: false,
+      }));
       return {
-        ...state, scanStep: 'confirm', scanMethod: 'photo', scanError: null,
-        scanMerchant: r.vendor, scanAmount: r.amount ? r.amount.toFixed(2) : '',
-        scanDate: isoToDisplayDate(r.date) || state.scanDate,
-        scanCategory: mapOcrCategory(r.category),
-        scanDeductible: !!r.relief_tag,
-        // Only overwrite what the receipt actually printed -- a null tax/
-        // service-charge rate leaves the field at blankScanFields()'s
-        // default (blank, or '6' for tax rate) rather than being cleared,
-        // same "don't guess" rule the OCR pipeline itself follows.
-        scanTaxAmount: r.tax_amount != null ? r.tax_amount.toFixed(2) : state.scanTaxAmount,
-        scanTaxRate: r.tax_rate != null ? String(r.tax_rate) : state.scanTaxRate,
-        scanServiceChargeAmount: r.service_charge_amount != null ? r.service_charge_amount.toFixed(2) : state.scanServiceChargeAmount,
-        scanServiceChargeRate: r.service_charge_rate != null ? String(r.service_charge_rate) : state.scanServiceChargeRate,
+        ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
+        receiptDraft: {
+          ...state.receiptDraft,
+          merchant: r.vendor, date: r.date || state.receiptDraft.date,
+          total: r.total != null ? r.total.toFixed(2) : '',
+          taxAmount: r.taxAmount != null ? r.taxAmount.toFixed(2) : state.receiptDraft.taxAmount,
+          taxRate: r.taxRate != null ? String(r.taxRate) : state.receiptDraft.taxRate,
+          serviceChargeAmount: r.serviceChargeAmount != null ? r.serviceChargeAmount.toFixed(2) : state.receiptDraft.serviceChargeAmount,
+          serviceChargeRate: r.serviceChargeRate != null ? String(r.serviceChargeRate) : state.receiptDraft.serviceChargeRate,
+          mode: 'detailed',
+        },
+        lineItemDrafts,
       };
     }
     case 'CAPTURE_PHOTO_FAILED':
       // The scanning service couldn't read this photo (or isn't reachable)
-      // — fall back to manual entry with blank fields rather than either
+      // -- fall back to manual entry with blank fields rather than either
       // faking a result or leaving the user stuck on the spinner.
-      return { ...state, scanStep: 'confirm', scanMethod: 'manual', scanError: action.message };
-    case 'SET_SCAN_FIELD':
-      return { ...state, [action.field]: action.value };
-    case 'SET_SCAN_DEDUCTIBLE':
-      return { ...state, scanDeductible: action.value };
-    case 'SAVE_SCAN': {
-      const amount = parseFloat(state.scanAmount) || 0;
-      if (!state.scanMerchant || !amount) return { ...state, scanStep: 'saved' };
-      const reliefKey = state.scanDeductible ? (categoryToReliefKey(state.scanCategory) ?? undefined) : undefined;
-      const tx: Transaction = {
-        id: 'scan-' + uid(), merchant: state.scanMerchant, cat: state.scanCategory,
-        dateLabel: state.scanDate, dateGroup: dateGroupFor(state.scanDate), month: monthFromDateLabel(state.scanDate),
-        amount: -amount, tax: state.scanDeductible, payment: state.scanPaymentMethod, reliefKey,
+      return { ...state, scanStep: 'review', scanMethod: 'manual', scanError: action.message };
+    case 'SET_RECEIPT_DRAFT_FIELD':
+      return { ...state, receiptDraft: { ...state.receiptDraft, [action.field]: action.value } };
+    case 'SET_RECEIPT_MODE': {
+      if (action.mode === state.receiptDraft.mode) return state;
+      // Switching to Detailed with nothing typed yet seeds one line item
+      // from the Quick fields, so a user who already typed a merchant/
+      // total/category doesn't lose it switching modes.
+      const lineItemDrafts = action.mode === 'detailed' && state.lineItemDrafts.length === 0 && state.receiptDraft.total
+        ? [mkLineItemDraft({ description: state.receiptDraft.merchant || 'Item', amount: state.receiptDraft.total, cat: state.receiptDraft.quickCategory })]
+        : state.lineItemDrafts;
+      return { ...state, receiptDraft: { ...state.receiptDraft, mode: action.mode }, lineItemDrafts };
+    }
+    case 'ADD_LINE_ITEM_DRAFT':
+      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft()] };
+    case 'SET_LINE_ITEM_DRAFT_FIELD':
+      return {
+        ...state,
+        lineItemDrafts: state.lineItemDrafts.map((it) => it.id !== action.id ? it : { ...it, [action.field]: action.value, touched: true }),
       };
-      return { ...state, scanStep: 'saved', transactions: [...state.transactions, tx] };
+    case 'REMOVE_LINE_ITEM_DRAFT':
+      return { ...state, lineItemDrafts: state.lineItemDrafts.filter((it) => it.id !== action.id) };
+    case 'ADD_ADJUSTMENT_LINE_ITEM':
+      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft({ description: 'Discount / adjustment', amount: action.amount.toFixed(2), cat: 'Other' })] };
+    case 'SAVE_RECEIPT': {
+      const draft = state.receiptDraft;
+      if (!draft.merchant) return state;
+      const dateLabel = isoToDisplayDate(draft.date) || todayDisplayDate();
+      const receiptId = 'rcpt-' + uid();
+      let newTransactions: Transaction[];
+      let lineItemsTotal: number;
+
+      if (draft.mode === 'quick') {
+        const amount = parseFloat(draft.total) || 0;
+        if (!amount) return state;
+        lineItemsTotal = amount;
+        newTransactions = [{
+          id: 'rcpt-tx-' + uid(), merchant: draft.merchant, cat: draft.quickCategory,
+          dateLabel, dateGroup: dateGroupFor(dateLabel), month: monthFromDateLabel(dateLabel),
+          amount: -amount, tax: false, payment: state.scanPaymentMethod, receiptId,
+        }];
+      } else {
+        const items = state.lineItemDrafts;
+        if (items.length === 0 || items.some((it) => lineItemIsInvalid(it) || lineItemNeedsReview(it))) return state;
+        lineItemsTotal = 0;
+        newTransactions = items.map((it) => {
+          const amount = parseFloat(it.amount) || 0;
+          lineItemsTotal += amount;
+          const reliefKey = it.deductible ? (categoryToReliefKey(it.cat) ?? undefined) : undefined;
+          return {
+            id: 'rcpt-tx-' + uid(), merchant: it.description, cat: it.cat,
+            dateLabel, dateGroup: dateGroupFor(dateLabel), month: monthFromDateLabel(dateLabel),
+            amount: -amount, tax: it.deductible, payment: state.scanPaymentMethod, reliefKey, receiptId,
+          } as Transaction;
+        });
+      }
+
+      const receipt: Receipt = {
+        id: receiptId, merchant: draft.merchant, dateLabel,
+        total: parseFloat(draft.total) || lineItemsTotal, lineItemsTotal,
+        source: state.scanMethod === 'photo' ? 'scan' : 'manual',
+        taxAmount: draft.taxAmount ? parseFloat(draft.taxAmount) : undefined,
+        taxRate: draft.taxRate ? parseFloat(draft.taxRate) : undefined,
+        serviceChargeAmount: draft.serviceChargeAmount ? parseFloat(draft.serviceChargeAmount) : undefined,
+        serviceChargeRate: draft.serviceChargeRate ? parseFloat(draft.serviceChargeRate) : undefined,
+      };
+
+      return {
+        ...state, scanStep: 'saved',
+        receipts: [...state.receipts, receipt],
+        transactions: [...state.transactions, ...newTransactions],
+      };
     }
     case 'SCAN_ANOTHER':
-      return { ...state, scanStep: 'capture', scanError: null, ...blankScanFields() };
+      return { ...state, scanStep: 'capture', scanError: null, receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
     case 'VIEW_IN_TAX':
       return { ...state, scanOpen: false, tab: 'tax' };
 

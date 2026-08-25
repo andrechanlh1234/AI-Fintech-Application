@@ -10,8 +10,9 @@ import {
 import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER, txDateIso } from '../lib/constants';
 import {
   buildTaxModel, estimateAnnualIncome, marginalTaxRate, ASSUMED_TAX_RATE,
-  TAX_ITEMS_META, RELIEF_INFO, categoryToReliefKey, type TaxProfile, type TaxItemData,
+  TAX_ITEMS_META, type TaxProfile, type TaxItemData,
 } from '../lib/taxEngine';
+import { lineItemIsInvalid, lineItemNeedsReview } from '../lib/receipts';
 
 /** Real deductible transactions (tax=true) for a given tax year, grouped by
  * LHDN relief item key, in the shape buildTaxModel() expects. No hardcoded
@@ -450,20 +451,14 @@ export function selectTaxCenter(state: AppState) {
   };
 }
 
-export function selectReliefImpact(state: AppState) {
-  const scanAmountNum = parseFloat(state.scanAmount) || 0;
-  const reliefInfo = RELIEF_INFO[state.scanCategory] || null;
-  if (!reliefInfo) return { hasReliefInfo: false as const };
-  const reliefKey = categoryToReliefKey(state.scanCategory);
-  const before = reliefKey ? (buildCapturedData(state.transactions, state.taxYear)[reliefKey]?.captured ?? 0) : 0;
-  const beforePct = state.mounted ? Math.min(100, Math.round((before / reliefInfo.cap) * 100)) : 0;
-  const after = Math.min(reliefInfo.cap, before + scanAmountNum);
-  const afterPct = state.mounted ? Math.min(100, Math.round((after / reliefInfo.cap) * 100)) : 0;
-  return {
-    hasReliefInfo: true as const, name: reliefInfo.name, why: reliefInfo.why,
-    beforePct, afterPct, remainingLabel: moneyWhole(Math.max(0, reliefInfo.cap - after)),
-    beforeLabel: moneyWhole(before), afterLabel: moneyWhole(after), capLabel: moneyWhole(reliefInfo.cap),
-  };
+export function selectReceiptReview(state: AppState) {
+  const lineItemsTotal = state.lineItemDrafts.reduce((s, it) => s + (parseFloat(it.amount) || 0), 0);
+  const printedTotal = parseFloat(state.receiptDraft.total) || 0;
+  const mismatchAmount = Math.round((printedTotal - lineItemsTotal) * 100) / 100;
+  const hasMismatch = printedTotal > 0 && Math.abs(mismatchAmount) > 0.01;
+  const hasFlaggedItems = state.lineItemDrafts.some((it) => lineItemIsInvalid(it) || lineItemNeedsReview(it));
+  const canSaveDetailed = state.lineItemDrafts.length > 0 && !hasFlaggedItems;
+  return { lineItemsTotal, mismatchAmount, hasMismatch, hasFlaggedItems, canSaveDetailed };
 }
 
 export function selectRecordPage(state: AppState) {

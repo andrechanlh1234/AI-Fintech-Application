@@ -2,7 +2,8 @@
 // every pre-filled example value removed — a fresh user starts at RM0 with
 // no transactions/subscriptions/accounts until they enter their own.
 import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
-import { todayDisplayDate, todayIso, daysAgoIso } from '../lib/format';
+import { blankReceiptDraft } from '../lib/receipts';
+import { todayIso, daysAgoIso } from '../lib/format';
 import type { AppState } from './types';
 
 const emptySubDraft = {
@@ -41,9 +42,7 @@ export function buildInitialState(): AppState {
     netWorthRange: '1Y',
     nwSelectedIdx: null,
     historyMonth: SHORT_MONTHS[today.getMonth()],
-    showWhyDeductible: false,
-    scanTaxAmount: '', scanTaxRate: '6', scanServiceChargeAmount: '', scanServiceChargeRate: '',
-    scanPaymentMethod: 'Cash', scanTag: '',
+    scanPaymentMethod: 'Cash',
     expandedBucket: null,
     expandedTaxGroup: null, taxItemDetailOpen: null, taxReceiptsOpen: false,
     txSearch: '',
@@ -52,13 +51,12 @@ export function buildInitialState(): AppState {
     reviewOpen: false, pendingReviewItems: [], reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
     statementUploading: false, statementUploadError: null,
     scanOpen: false, scanStep: 'capture', scanFrom: 'home', scanMethod: 'manual',
-    // Blank until the user fills them in (manual entry) or capturePhoto's
-    // simulated-OCR result fills them in (see CAPTURE_PHOTO_DONE in reducer.ts).
-    scanMerchant: '', scanAmount: '', scanDate: todayDisplayDate(),
-    scanCategory: 'Food & Drink', scanDeductible: false,
+    receiptDraft: blankReceiptDraft(todayIso()),
+    lineItemDrafts: [],
     taxYear: 'YA' + today.getFullYear(),
     mounted: false,
     transactions: [],
+    receipts: [],
     txDetailOpen: null,
     txDraft: { merchant: '', cat: 'Food & Drink', amount: '', type: 'expense', date: todayIso(), tax: false, payment: 'Cash' },
 
@@ -125,6 +123,7 @@ export interface SyncPayload {
   theme: AppState['theme'];
   netWorthSeed: AppState['netWorthSeed'];
   transactions: AppState['transactions'];
+  receipts: AppState['receipts'];
   netWorthHistory: AppState['netWorthHistory'];
   userMode: AppState['userMode'];
   pendingReviewItems: AppState['pendingReviewItems'];
@@ -147,6 +146,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     theme: state.theme,
     netWorthSeed: state.netWorthSeed,
     transactions: state.transactions,
+    receipts: state.receipts,
     netWorthHistory: state.netWorthHistory,
     userMode: state.userMode,
     pendingReviewItems: state.pendingReviewItems,
@@ -163,6 +163,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.obDone) next.appStage = 'app';
   if (p.theme) next.theme = p.theme;
   if (p.transactions) next.transactions = p.transactions;
+  if (p.receipts) next.receipts = p.receipts;
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
   if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
   if (p.userMode) next.userMode = p.userMode;
