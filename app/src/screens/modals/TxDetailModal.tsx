@@ -13,6 +13,8 @@ export function TxDetailModal() {
   if (!state.txDetailOpen) return null;
   const draft = state.txDraft;
   const isExpense = draft.type === 'expense';
+  const tx = state.transactions.find((t) => t.id === state.txDetailOpen);
+  const sourceReceipt = tx?.receiptId ? state.receipts.find((r) => r.id === tx.receiptId) : null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', padding: '20px 20px 24px', boxSizing: 'border-box' }}>
@@ -30,6 +32,11 @@ export function TxDetailModal() {
         </button>
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Edit transaction</span>
       </div>
+      {sourceReceipt && (
+        <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: 14 }}>
+          Part of a receipt from {sourceReceipt.merchant} · {sourceReceipt.dateLabel}
+        </div>
+      )}
 
       <div className="seg" style={{ marginBottom: 16, width: '100%' }}>
         <label
