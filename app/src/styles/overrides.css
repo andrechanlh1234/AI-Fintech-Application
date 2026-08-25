@@ -33,13 +33,15 @@
   --ai-card-bg: linear-gradient(120deg, #ffffff 0%, #f2eeff 40%, #eaf3ff 70%, #fff0f5 100%);
 }
 
+* { -webkit-tap-highlight-color: transparent; }
+
 body { margin: 0; background: var(--color-neutral-200); font-family: var(--font-body); }
 a { color: var(--color-accent-700); text-decoration: none; }
 a:hover { color: var(--color-accent-800); }
 input[type="radio"] { accent-color: var(--color-accent); }
 input[type="checkbox"] { accent-color: var(--color-accent); }
 
-.pressable { transition: transform .12s ease, opacity .12s ease; }
+.pressable { -webkit-tap-highlight-color: transparent; transition: transform .12s ease, opacity .12s ease; }
 .pressable:active { transform: scale(0.96); opacity: 0.75; }
 @media (hover: hover) { .pressable:hover { opacity: 0.85; } }
 
@@ -108,3 +110,28 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
 
 @keyframes scanSweep { 0%{top:8%;opacity:.95} 50%{opacity:.45} 100%{top:90%;opacity:.95} }
 @keyframes dotBlink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+
+/* Portrait-only app: the manifest's orientation lock only applies once
+   installed to the home screen and launched standalone — a Safari tab
+   can't be orientation-locked by a web page, so cover that case with a
+   static rotate-back overlay instead of letting the layout reflow. */
+@media (orientation: landscape) and (max-width: 900px) {
+  #root { display: none; }
+  body::before {
+    content: "Please rotate your device back to portrait to use Cukai.";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    box-sizing: border-box;
+    text-align: center;
+    background: var(--color-bg, #f7f8f7);
+    color: var(--color-text, #121212);
+    font-family: var(--font-body), sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}

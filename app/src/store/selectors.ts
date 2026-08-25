@@ -530,23 +530,17 @@ export function selectStatsPage(state: AppState) {
   const statsCatTotals: Record<string, number> = {};
   statsTx.forEach((t) => { statsCatTotals[t.cat] = (statsCatTotals[t.cat] || 0) + Math.abs(t.amount); });
   const statsCatSum = Object.values(statsCatTotals).reduce((s, v) => s + v, 0);
-  let acc = 0;
-  const pieStops: string[] = [];
   const statsCategoryBars = Object.entries(statsCatTotals).sort((a, b) => b[1] - a[1]).map(([cat, amt]) => {
     const pct = statsCatSum > 0 ? Math.round((amt / statsCatSum) * 100) : 0;
     const color = CAT_COLOR[cat] || 'var(--color-neutral-500)';
-    const start = acc, end = acc + (statsCatSum > 0 ? (amt / statsCatSum) * 360 : 0);
-    pieStops.push(color + ' ' + start.toFixed(1) + 'deg ' + end.toFixed(1) + 'deg');
-    acc = end;
     return { name: cat, amount: amt, amountLabel: moneyWhole(amt), pct, color };
   });
-  const statsPieGradient = statsCategoryBars.length ? 'conic-gradient(' + pieStops.join(', ') + ')' : 'var(--color-neutral-300)';
   const statsCategoryDetailTxRaw = state.statsCategoryDetail ? statsTx.filter((t) => t.cat === state.statsCategoryDetail) : [];
   const statsCategoryDetailTx = statsCategoryDetailTxRaw.map((t) => ({
     ...t, ...rowBadge(t), amountLabel: '−RM ' + money(Math.abs(t.amount)), amountColor: 'var(--color-text)',
   }));
   return {
-    statsPeriodOptions, statsCategoryBars, statsPieGradient, statsCategorySumLabel: moneyWhole(statsCatSum),
+    statsPeriodOptions, statsCategoryBars, statsCategorySumLabel: moneyWhole(statsCatSum),
     statsCategoryDetailTx, statsCategoryDetailTotal: moneyWhole(statsCategoryDetailTxRaw.reduce((s, t) => s + Math.abs(t.amount), 0)),
   };
 }

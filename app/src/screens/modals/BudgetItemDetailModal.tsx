@@ -22,7 +22,7 @@ export function BudgetItemDetailModal() {
       className="screen-in"
       style={{
         position: 'absolute', inset: 0, zIndex: 47, background: 'var(--color-bg)',
-        display: 'flex', flexDirection: 'column', padding: '58px 20px 24px', boxSizing: 'border-box', overflow: 'auto',
+        display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', overflow: 'auto',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
