@@ -1,6 +1,7 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectTaxCenter } from '../../store/selectors';
 import { moneyWhole, money } from '../../lib/format';
+import { ProgressBar } from '../../components/primitives';
 
 // Ported from Cukai v7.dc.html lines 737-763 (taxItemDetailOpen modal).
 // state.taxItemDetailOpen ("groupKey:itemKey") is the open/closed flag;
@@ -50,8 +51,8 @@ export function TaxItemDetailModal() {
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 22, marginBottom: 8 }}>
         RM {moneyWhole(item.captured)} <span style={{ fontSize: 13, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(item.cap)} cap</span>
       </div>
-      <div style={{ height: 8, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-        <div className="bar-fill" style={{ height: '100%', width: `${item.pct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
+      <div style={{ marginBottom: 8 }}>
+        <ProgressBar pct={item.pct} height={8} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: 20, gap: 8 }}>
         <span>RM {moneyWhole(item.remaining)} remaining</span>
@@ -64,7 +65,7 @@ export function TaxItemDetailModal() {
       </div>
       <div className="card" style={{ padding: '4px 14px' }}>
         {item.receipts.map((r, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < item.receipts.length - 1 ? '1px solid var(--color-neutral-300)' : 'none' }}>
             <div style={{ flex: 1, fontSize: 13, fontWeight: r.isOther ? 400 : 600, color: r.isOther ? 'var(--color-text-muted)' : 'var(--color-text)' }}>
               {r.merchant}
             </div>

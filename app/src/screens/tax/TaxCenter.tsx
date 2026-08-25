@@ -1,6 +1,6 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectTaxCenter } from '../../store/selectors';
-import { Card } from '../../components/primitives';
+import { Card, ProgressBar } from '../../components/primitives';
 import { moneyWhole, money } from '../../lib/format';
 import { YearPicker } from '../../components/PeriodPicker';
 
@@ -51,8 +51,8 @@ export function TaxCenter() {
           <span style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Tax Optimisation</span>
           <span className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 22, color: 'var(--color-text)' }}>{tax.taxOptPct}%</span>
         </div>
-        <div style={{ height: 8, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
-          <div className="bar-fill" style={{ height: '100%', width: `${tax.taxOptPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
+        <div style={{ marginBottom: 14 }}>
+          <ProgressBar pct={tax.taxOptPct} height={8} />
         </div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 4 }}>
@@ -120,9 +120,7 @@ export function TaxCenter() {
                       {g.pct}% Complete
                     </span>
                   </div>
-                  <div style={{ height: 7, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div className="bar-fill" style={{ height: '100%', width: `${g.barPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
-                  </div>
+                  <ProgressBar pct={g.barPct} height={7} />
                 </button>
 
                 {expanded && (
@@ -158,9 +156,7 @@ export function TaxCenter() {
                             <span style={{ fontWeight: 600 }}>RM {moneyWhole(it.captured)}</span>{' '}
                             <span style={{ color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(it.cap)}</span>
                           </div>
-                          <div style={{ height: 5, background: 'var(--color-neutral-300)', borderRadius: 3, overflow: 'hidden' }}>
-                            <div className="bar-fill" style={{ height: '100%', width: `${it.barPct}%`, background: 'var(--color-accent)', borderRadius: 3 }} />
-                          </div>
+                          <ProgressBar pct={it.barPct} height={5} />
                         </button>
                       );
                     })}
