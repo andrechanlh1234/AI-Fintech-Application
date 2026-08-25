@@ -48,6 +48,21 @@ budget item, or subscription updates every dependent number (net worth,
 budget totals, tax relief %) immediately, and persists to
 `localStorage` (`cukai_v7_data`) across reloads.
 
+## Tests
+
+Automated tests for the money-math logic (receipt → transaction splitting,
+budget/tax aggregation, and the "Net Worth must never move" rule) live next
+to the code they test, e.g. `src/store/reducer.test.ts`. Run them with:
+
+```bash
+npm test
+```
+
+These run automatically on every push/PR via GitHub Actions
+(`../.github/workflows/tests.yml`) — check the Actions tab on GitHub after
+pushing. No setup needed beyond the normal `npm install` above; nothing
+here costs money or needs an API key.
+
 ## Architecture
 
 - `src/lib/` — pure data/constants ported from the design file: the LHDN
