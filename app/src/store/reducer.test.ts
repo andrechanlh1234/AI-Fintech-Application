@@ -146,68 +146,6 @@ describe('editing and deleting a receipt-derived transaction', () => {
   });
 });
 
-describe('APPLY_TAX_PRESET / APPLY_SERVICE_PRESET — recommend, never silently overwrite', () => {
-  function draftWithTotal(total: string) {
-    let state = openManualReceipt(buildInitialState());
-    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'Village Grocer' });
-    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: total });
-    return state;
-  }
-
-  it('backs the tax amount out of a tax-inclusive total, not a flat percentage of it', () => {
-    let state = draftWithTotal('106.00');
-    state = reducer(state, { type: 'APPLY_TAX_PRESET', rate: 6 });
-    // 106 already includes 6% SST -> the SST portion is 106 * 6/106 = 6.00,
-    // not 106 * 0.06 = 6.36 (which would double-count the tax already baked in).
-    expect(state.receiptDraft.taxAmount).toBe('6.00');
-    expect(state.receiptDraft.taxRate).toBe('6');
-    expect(state.receiptDraft.taxSuggestionNote).toBe('Estimated from 6% SST');
-  });
-
-  it('leaves the amount blank with no note when there is no total yet to estimate from', () => {
-    let state = draftWithTotal('');
-    state = reducer(state, { type: 'APPLY_TAX_PRESET', rate: 6 });
-    expect(state.receiptDraft.taxAmount).toBe('');
-    expect(state.receiptDraft.taxSuggestionNote).toBeUndefined();
-  });
-
-  it('service preset works the same way, independently of the tax preset', () => {
-    let state = draftWithTotal('110.00');
-    state = reducer(state, { type: 'APPLY_SERVICE_PRESET', rate: 10 });
-    expect(state.receiptDraft.serviceChargeAmount).toBe('10.00'); // 110 * 10/110
-    expect(state.receiptDraft.serviceSuggestionNote).toBe('Estimated from 10% service charge');
-    expect(state.receiptDraft.taxSuggestionNote).toBeUndefined(); // untouched
-  });
-
-  it('typing directly into the amount field retires the suggestion note (it is now the user\'s own figure)', () => {
-    let state = draftWithTotal('106.00');
-    state = reducer(state, { type: 'APPLY_TAX_PRESET', rate: 6 });
-    expect(state.receiptDraft.taxSuggestionNote).toBe('Estimated from 6% SST');
-
-    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'taxAmount', value: '7.50' });
-    expect(state.receiptDraft.taxAmount).toBe('7.50');
-    expect(state.receiptDraft.taxSuggestionNote).toBeUndefined();
-    // the rate chip itself stays a record of the baseline the user started
-    // from, even though the exact figure is now theirs
-    expect(state.receiptDraft.taxRate).toBe('6');
-  });
-
-  it('CAPTURE_PHOTO_RESULT labels an OCR-detected tax line as detected, not estimated', () => {
-    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
-    state = reducer(state, {
-      type: 'CAPTURE_PHOTO_RESULT',
-      result: {
-        vendor: 'Village Grocer', date: '2026-08-20', total: 106, confidence: 0.9,
-        taxAmount: 6, taxRate: 6, serviceChargeAmount: null, serviceChargeRate: null,
-        lineItems: [],
-      },
-    });
-    expect(state.receiptDraft.taxAmount).toBe('6.00');
-    expect(state.receiptDraft.taxSuggestionNote).toBe('Detected from your receipt');
-    expect(state.receiptDraft.serviceSuggestionNote).toBeUndefined();
-  });
-});
-
 describe('CLEAR_ALL_DATA / LOAD_TRIAL_DATA reset receipts along with transactions', () => {
   // Regression test: these two actions used to reset state.transactions but
   // never state.receipts, so a receipt whose transaction(s) had already

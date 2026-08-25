@@ -8,8 +8,6 @@ import { HeroAmountInput } from '../../components/HeroAmountInput';
 import { TxIcon } from '../../components/TransactionRow';
 import type { ManualData } from '../../store/types';
 
-type Actions = ReturnType<typeof useActions>;
-
 // Quick-mode receipts always save as an expense (see SAVE_RECEIPT in
 // reducer.ts) -- 'Income' has no place here, unlike CATEGORY_OPTIONS'
 // full list, which also feeds pickers that do need it.
@@ -148,83 +146,6 @@ function PaymentChips({ manual, value, onChange }: { manual: ManualData; value: 
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
           </button>
         )
-      )}
-    </div>
-  );
-}
-
-const TAX_PRESETS = [6, 8];
-const SERVICE_PRESETS = [10];
-
-function RateField({
-  label, presets, rate, amount, note, onPreset, onAmountChange,
-}: {
-  label: string; presets: number[]; rate: string; amount: string; note?: string;
-  onPreset: (rate: number) => void; onAmountChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <div style={{ font: '600 11px var(--font-body)', color: 'var(--color-text-muted)', marginBottom: 8 }}>{label}</div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-        {presets.map((p) => (
-          <button key={p} type="button" onClick={() => onPreset(p)} className="pressable" style={chipStyle(parseFloat(rate || '0') === p)}>
-            {p}%
-          </button>
-        ))}
-      </div>
-      <div className="field">
-        <label>Amount (RM)</label>
-        <input className="input" value={amount} onChange={(e) => onAmountChange(e.target.value)} placeholder="0.00" />
-        {note && (
-          <div style={{ fontSize: 11, color: 'var(--color-accent-700)', marginTop: 5, fontWeight: 600 }}>
-            {note} — edit if it's off
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Collapsed by default -- most receipts have no separate tax/service line
-// worth recording. Auto-opens the moment either field actually has a value
-// (an OCR-detected line, or a preset tapped before this render), and stays
-// open if the user closes then re-opens it manually.
-function TaxServiceSection({
-  taxAmount, taxRate, taxNote, serviceAmount, serviceRate, serviceNote, actions,
-}: {
-  taxAmount: string; taxRate: string; taxNote?: string;
-  serviceAmount: string; serviceRate: string; serviceNote?: string; actions: Actions;
-}) {
-  const hasData = !!(taxAmount || serviceAmount);
-  const [open, setOpen] = useState(hasData);
-  useEffect(() => { if (hasData) setOpen(true); }, [hasData]);
-
-  return (
-    <div style={{ marginBottom: 18 }}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="pressable"
-        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12.5px var(--font-body)' }}
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}>
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-        {open ? 'Hide tax / service charge' : 'Add tax or service charge'}
-      </button>
-      {open && (
-        <div className="pop-in" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <RateField
-            label="Tax (SST)" presets={TAX_PRESETS} rate={taxRate} amount={taxAmount} note={taxNote}
-            onPreset={(r) => actions.applyTaxPreset(r)}
-            onAmountChange={(v) => actions.setReceiptDraftField('taxAmount', v)}
-          />
-          <RateField
-            label="Service charge" presets={SERVICE_PRESETS} rate={serviceRate} amount={serviceAmount} note={serviceNote}
-            onPreset={(r) => actions.applyServicePreset(r)}
-            onAmountChange={(v) => actions.setReceiptDraftField('serviceChargeAmount', v)}
-          />
-        </div>
       )}
     </div>
   );
@@ -488,11 +409,6 @@ export function ScanFlow() {
             <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Payment method</div>
             <PaymentChips manual={state.ob.manual} value={state.scanPaymentMethod} onChange={actions.setScanPaymentMethod} />
           </div>
-          <TaxServiceSection
-            taxAmount={state.receiptDraft.taxAmount} taxRate={state.receiptDraft.taxRate} taxNote={state.receiptDraft.taxSuggestionNote}
-            serviceAmount={state.receiptDraft.serviceChargeAmount} serviceRate={state.receiptDraft.serviceChargeRate} serviceNote={state.receiptDraft.serviceSuggestionNote}
-            actions={actions}
-          />
 
           {state.scanMethod === 'manual' && (
             <div className="seg" style={{ marginBottom: 18 }}>
