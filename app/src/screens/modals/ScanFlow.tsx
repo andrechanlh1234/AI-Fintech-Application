@@ -1,15 +1,29 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReceiptReview } from '../../store/selectors';
-import { CATEGORY_OPTIONS, paymentMethodOptions, iconFlags } from '../../lib/constants';
+import { CATEGORY_OPTIONS, paymentMethodOptions, iconFlags, subBadge } from '../../lib/constants';
+import { todayIso, isoToDisplayDate } from '../../lib/format';
 import { ReceiptLineItemsEditor } from '../../components/ReceiptLineItemsEditor';
 import { HeroAmountInput } from '../../components/HeroAmountInput';
 import { TxIcon } from '../../components/TransactionRow';
+import type { ManualData } from '../../store/types';
+
+type Actions = ReturnType<typeof useActions>;
 
 // Quick-mode receipts always save as an expense (see SAVE_RECEIPT in
 // reducer.ts) -- 'Income' has no place here, unlike CATEGORY_OPTIONS'
 // full list, which also feeds pickers that do need it.
 const RECEIPT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((c) => c !== 'Income');
+
+function chipStyle(active: boolean): CSSProperties {
+  return {
+    all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+    padding: '8px 12px', borderRadius: 999, font: '600 12px var(--font-body)',
+    border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+    background: active ? 'var(--color-accent)' : 'var(--color-surface)',
+    color: active ? '#fff' : 'var(--color-text-muted)', boxSizing: 'border-box',
+  };
+}
 
 function CategoryChips({ value, onChange }: { value: string; onChange: (cat: string) => void }) {
   return (
@@ -17,24 +31,180 @@ function CategoryChips({ value, onChange }: { value: string; onChange: (cat: str
       {RECEIPT_CATEGORY_OPTIONS.map((opt) => {
         const active = value === opt;
         return (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => onChange(opt)}
-            className="pressable"
-            style={{
-              all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 12px', borderRadius: 999, font: '600 12px var(--font-body)',
-              border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
-              background: active ? 'var(--color-accent)' : 'var(--color-surface)',
-              color: active ? '#fff' : 'var(--color-text-muted)',
-            }}
-          >
+          <button key={opt} type="button" onClick={() => onChange(opt)} className="pressable" style={chipStyle(active)}>
             <TxIcon tx={{ ...iconFlags(opt), hasBrand: false, badgeLetter: '' }} />
             {opt}
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// "Today" covers the overwhelming majority of entries with zero taps (it's
+// selected the instant the screen opens); "Pick a date" is a real
+// <input type="date"> sitting invisibly over the chip, so tapping it opens
+// the device's own date UI (Apple's wheel on iOS) instead of a custom
+// calendar -- same reasoning as HeroAmountInput using inputMode="decimal"
+// instead of a custom keypad.
+function DateChips({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  const today = todayIso();
+  const isToday = value === today;
+  const pickLabel = isToday ? 'Pick a date' : isoToDisplayDate(value).replace(/ \d{4}$/, '');
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <button type="button" onClick={() => onChange(today)} className="pressable" style={chipStyle(isToday)}>
+        Today
+      </button>
+      <div style={{ position: 'relative', display: 'inline-flex' }}>
+        <span className="pressable" style={chipStyle(!isToday)}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          {pickLabel}
+        </span>
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => e.target.value && onChange(e.target.value)}
+          aria-label="Pick a date"
+          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', border: 'none', width: '100%' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Real linked accounts (from onboarding) first, generic wallets after --
+// paymentMethodOptions() already builds exactly that list; this just draws
+// it as brand-colored chips (subBadge(), same as Net Worth and
+// subscriptions use) instead of a flat <select>. "+" lets someone add a
+// method that isn't linked and isn't one of the generic fallbacks --
+// picking it immediately makes it a chip on this and future receipts,
+// since paymentMethodOptions() always includes the current value.
+function PaymentChips({ manual, value, onChange }: { manual: ManualData; value: string; onChange: (v: string) => void }) {
+  const options = paymentMethodOptions(manual, value);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed) onChange(trimmed);
+    setAdding(false);
+    setDraft('');
+  };
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      {options.map((opt) => {
+        const active = value === opt;
+        const badge = subBadge(opt);
+        return (
+          <button key={opt} type="button" onClick={() => onChange(opt)} className="pressable" style={chipStyle(active)}>
+            <span style={{ width: 16, height: 16, borderRadius: '50%', background: badge.bg, color: badge.fg, display: 'flex', alignItems: 'center', justifyContent: 'center', font: '800 8.5px var(--font-body)', flexShrink: 0 }}>
+              {badge.letter}
+            </span>
+            {opt}
+          </button>
+        );
+      })}
+      {adding ? (
+        <input
+          autoFocus
+          className="input"
+          style={{ width: 150, padding: '7px 10px', font: '600 12px var(--font-body)' }}
+          placeholder="Payment method name"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit(); }}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          aria-label="Add payment method"
+          className="pressable"
+          style={{ ...chipStyle(false), width: 32, height: 32, padding: 0, justifyContent: 'center' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
+const TAX_PRESETS = [6, 8];
+const SERVICE_PRESETS = [10];
+
+function RateField({
+  label, presets, rate, amount, note, onPreset, onAmountChange,
+}: {
+  label: string; presets: number[]; rate: string; amount: string; note?: string;
+  onPreset: (rate: number) => void; onAmountChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <div style={{ font: '600 11px var(--font-body)', color: 'var(--color-text-muted)', marginBottom: 8 }}>{label}</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+        {presets.map((p) => (
+          <button key={p} type="button" onClick={() => onPreset(p)} className="pressable" style={chipStyle(parseFloat(rate || '0') === p)}>
+            {p}%
+          </button>
+        ))}
+      </div>
+      <div className="field">
+        <label>Amount (RM)</label>
+        <input className="input" value={amount} onChange={(e) => onAmountChange(e.target.value)} placeholder="0.00" />
+        {note && (
+          <div style={{ fontSize: 11, color: 'var(--color-accent-700)', marginTop: 5, fontWeight: 600 }}>
+            {note} — edit if it's off
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Collapsed by default -- most receipts have no separate tax/service line
+// worth recording. Auto-opens the moment either field actually has a value
+// (an OCR-detected line, or a preset tapped before this render), and stays
+// open if the user closes then re-opens it manually.
+function TaxServiceSection({
+  taxAmount, taxRate, taxNote, serviceAmount, serviceRate, serviceNote, actions,
+}: {
+  taxAmount: string; taxRate: string; taxNote?: string;
+  serviceAmount: string; serviceRate: string; serviceNote?: string; actions: Actions;
+}) {
+  const hasData = !!(taxAmount || serviceAmount);
+  const [open, setOpen] = useState(hasData);
+  useEffect(() => { if (hasData) setOpen(true); }, [hasData]);
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="pressable"
+        style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', font: '700 12.5px var(--font-body)' }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }}>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+        {open ? 'Hide tax / service charge' : 'Add tax or service charge'}
+      </button>
+      {open && (
+        <div className="pop-in" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <RateField
+            label="Tax (SST)" presets={TAX_PRESETS} rate={taxRate} amount={taxAmount} note={taxNote}
+            onPreset={(r) => actions.applyTaxPreset(r)}
+            onAmountChange={(v) => actions.setReceiptDraftField('taxAmount', v)}
+          />
+          <RateField
+            label="Service charge" presets={SERVICE_PRESETS} rate={serviceRate} amount={serviceAmount} note={serviceNote}
+            onPreset={(r) => actions.applyServicePreset(r)}
+            onAmountChange={(v) => actions.setReceiptDraftField('serviceChargeAmount', v)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -289,38 +459,19 @@ export function ScanFlow() {
             <HeroAmountInput value={state.receiptDraft.total} onChange={(v) => actions.setReceiptDraftField('total', v)} />
           </div>
 
-          <div className="field" style={{ marginBottom: 14 }}>
-            <label>Date</label>
-            <input className="input" type="date" value={state.receiptDraft.date} onChange={(e) => actions.setReceiptDraftField('date', e.target.value)} />
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Date</div>
+            <DateChips value={state.receiptDraft.date} onChange={(iso) => actions.setReceiptDraftField('date', iso)} />
           </div>
-          <div className="field" style={{ marginBottom: 14 }}>
-            <label>Payment method</label>
-            <select className="input" value={state.scanPaymentMethod} onChange={(e) => actions.setScanPaymentMethod(e.target.value)}>
-              {paymentMethodOptions(state.ob.manual, state.scanPaymentMethod).map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Payment method</div>
+            <PaymentChips manual={state.ob.manual} value={state.scanPaymentMethod} onChange={actions.setScanPaymentMethod} />
           </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Tax amount (RM)</label>
-              <input className="input" value={state.receiptDraft.taxAmount} onChange={(e) => actions.setReceiptDraftField('taxAmount', e.target.value)} />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Tax rate (%)</label>
-              <input className="input" value={state.receiptDraft.taxRate} onChange={(e) => actions.setReceiptDraftField('taxRate', e.target.value)} />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Service charge (RM)</label>
-              <input className="input" value={state.receiptDraft.serviceChargeAmount} onChange={(e) => actions.setReceiptDraftField('serviceChargeAmount', e.target.value)} />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Service charge (%)</label>
-              <input className="input" value={state.receiptDraft.serviceChargeRate} onChange={(e) => actions.setReceiptDraftField('serviceChargeRate', e.target.value)} />
-            </div>
-          </div>
+          <TaxServiceSection
+            taxAmount={state.receiptDraft.taxAmount} taxRate={state.receiptDraft.taxRate} taxNote={state.receiptDraft.taxSuggestionNote}
+            serviceAmount={state.receiptDraft.serviceChargeAmount} serviceRate={state.receiptDraft.serviceChargeRate} serviceNote={state.receiptDraft.serviceSuggestionNote}
+            actions={actions}
+          />
 
           {state.scanMethod === 'manual' && (
             <div className="seg" style={{ marginBottom: 18 }}>

@@ -130,6 +130,8 @@ export type Action =
   | { type: 'CAPTURE_PHOTO_RESULT'; result: ScannedReceiptResult }
   | { type: 'CAPTURE_PHOTO_FAILED'; message: string }
   | { type: 'SET_RECEIPT_DRAFT_FIELD'; field: keyof ReceiptDraft; value: string }
+  | { type: 'APPLY_TAX_PRESET'; rate: number }
+  | { type: 'APPLY_SERVICE_PRESET'; rate: number }
   | { type: 'SET_RECEIPT_MODE'; mode: 'quick' | 'detailed' }
   | { type: 'ADD_LINE_ITEM_DRAFT' }
   | { type: 'SET_LINE_ITEM_DRAFT_FIELD'; id: string; field: 'description' | 'amount' | 'cat' | 'deductible'; value: string | boolean }
@@ -587,8 +589,10 @@ export function reducer(state: AppState, action: Action): AppState {
           total: r.total != null ? r.total.toFixed(2) : '',
           taxAmount: r.taxAmount != null ? r.taxAmount.toFixed(2) : state.receiptDraft.taxAmount,
           taxRate: r.taxRate != null ? String(r.taxRate) : state.receiptDraft.taxRate,
+          taxSuggestionNote: r.taxAmount != null ? 'Detected from your receipt' : undefined,
           serviceChargeAmount: r.serviceChargeAmount != null ? r.serviceChargeAmount.toFixed(2) : state.receiptDraft.serviceChargeAmount,
           serviceChargeRate: r.serviceChargeRate != null ? String(r.serviceChargeRate) : state.receiptDraft.serviceChargeRate,
+          serviceSuggestionNote: r.serviceChargeAmount != null ? 'Detected from your receipt' : undefined,
           mode: 'detailed',
         },
         lineItemDrafts,
@@ -599,8 +603,46 @@ export function reducer(state: AppState, action: Action): AppState {
       // -- fall back to manual entry with blank fields rather than either
       // faking a result or leaving the user stuck on the spinner.
       return { ...state, scanStep: 'review', scanMethod: 'manual', scanError: action.message };
-    case 'SET_RECEIPT_DRAFT_FIELD':
-      return { ...state, receiptDraft: { ...state.receiptDraft, [action.field]: action.value } };
+    case 'SET_RECEIPT_DRAFT_FIELD': {
+      const draft = { ...state.receiptDraft, [action.field]: action.value };
+      // Typing directly into the amount retires whatever suggestion put a
+      // number there -- it's the user's own figure now, not a
+      // recommendation still waiting to be confirmed.
+      if (action.field === 'taxAmount') draft.taxSuggestionNote = undefined;
+      if (action.field === 'serviceChargeAmount') draft.serviceSuggestionNote = undefined;
+      return { ...state, receiptDraft: draft };
+    }
+    case 'APPLY_TAX_PRESET': {
+      const total = parseFloat(state.receiptDraft.total) || 0;
+      // Malaysian receipts print a tax-inclusive total, so a flat
+      // total * rate/100 would overstate the tax portion -- back it out of
+      // the total instead. This is a rough estimate (real receipts can tax
+      // only part of the subtotal, or apply service charge before SST), so
+      // it's labelled and stays fully editable rather than treated as fact.
+      const amount = total > 0 ? (total * action.rate) / (100 + action.rate) : 0;
+      return {
+        ...state,
+        receiptDraft: {
+          ...state.receiptDraft,
+          taxRate: String(action.rate),
+          taxAmount: total > 0 ? amount.toFixed(2) : '',
+          taxSuggestionNote: total > 0 ? `Estimated from ${action.rate}% SST` : undefined,
+        },
+      };
+    }
+    case 'APPLY_SERVICE_PRESET': {
+      const total = parseFloat(state.receiptDraft.total) || 0;
+      const amount = total > 0 ? (total * action.rate) / (100 + action.rate) : 0;
+      return {
+        ...state,
+        receiptDraft: {
+          ...state.receiptDraft,
+          serviceChargeRate: String(action.rate),
+          serviceChargeAmount: total > 0 ? amount.toFixed(2) : '',
+          serviceSuggestionNote: total > 0 ? `Estimated from ${action.rate}% service charge` : undefined,
+        },
+      };
+    }
     case 'SET_RECEIPT_MODE': {
       if (action.mode === state.receiptDraft.mode) return state;
       // Switching to Detailed with nothing typed yet seeds one line item

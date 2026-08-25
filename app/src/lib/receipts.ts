@@ -65,6 +65,14 @@ export interface ReceiptDraft {
   taxRate: string;
   serviceChargeAmount: string;
   serviceChargeRate: string;
+  /** Why taxAmount currently holds the value it does -- "Detected from your
+   * receipt" (OCR read a printed tax line) or "Estimated from N% SST" (the
+   * user tapped a rate chip and we back-calculated a share of the total).
+   * Never shown as fact, always as a recommendation the user can overwrite;
+   * cleared the moment they type into taxAmount directly (SET_RECEIPT_
+   * DRAFT_FIELD), because at that point it's just their own number. */
+  taxSuggestionNote?: string;
+  serviceSuggestionNote?: string;
   tag: string;
   mode: 'quick' | 'detailed';
 }
@@ -73,6 +81,7 @@ export function blankReceiptDraft(dateIso: string): ReceiptDraft {
   return {
     merchant: '', date: dateIso, total: '', quickCategory: 'Food & Drink',
     taxAmount: '', taxRate: '6', serviceChargeAmount: '', serviceChargeRate: '',
+    taxSuggestionNote: undefined, serviceSuggestionNote: undefined,
     tag: '', mode: 'quick',
   };
 }
