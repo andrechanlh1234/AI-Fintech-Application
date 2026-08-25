@@ -1,8 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReceiptReview } from '../../store/selectors';
-import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
+import { CATEGORY_OPTIONS, paymentMethodOptions, iconFlags } from '../../lib/constants';
 import { ReceiptLineItemsEditor } from '../../components/ReceiptLineItemsEditor';
+import { HeroAmountInput } from '../../components/HeroAmountInput';
+import { TxIcon } from '../../components/TransactionRow';
+
+// Quick-mode receipts always save as an expense (see SAVE_RECEIPT in
+// reducer.ts) -- 'Income' has no place here, unlike CATEGORY_OPTIONS'
+// full list, which also feeds pickers that do need it.
+const RECEIPT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((c) => c !== 'Income');
+
+function CategoryChips({ value, onChange }: { value: string; onChange: (cat: string) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {RECEIPT_CATEGORY_OPTIONS.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            className="pressable"
+            style={{
+              all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 12px', borderRadius: 999, font: '600 12px var(--font-body)',
+              border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+              background: active ? 'var(--color-accent)' : 'var(--color-surface)',
+              color: active ? '#fff' : 'var(--color-text-muted)',
+            }}
+          >
+            <TxIcon tx={{ ...iconFlags(opt), hasBrand: false, badgeLetter: '' }} />
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ScanFlow() {
   const { state } = useStore();
@@ -246,15 +281,17 @@ export function ScanFlow() {
             <label>Merchant</label>
             <input className="input" value={state.receiptDraft.merchant} onChange={(e) => actions.setReceiptDraftField('merchant', e.target.value)} />
           </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Date</label>
-              <input className="input" type="date" value={state.receiptDraft.date} onChange={(e) => actions.setReceiptDraftField('date', e.target.value)} />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Total (RM)</label>
-              <input className="input" value={state.receiptDraft.total} onChange={(e) => actions.setReceiptDraftField('total', e.target.value)} placeholder="0.00" />
-            </div>
+
+          {/* Tapping this brings up the device's own number keyboard --
+              it's a real input, not a custom keypad -- because the amount
+              is the one field on this whole screen a user looks at hardest. */}
+          <div style={{ marginBottom: 20, padding: '14px 0 18px' }}>
+            <HeroAmountInput value={state.receiptDraft.total} onChange={(v) => actions.setReceiptDraftField('total', v)} />
+          </div>
+
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label>Date</label>
+            <input className="input" type="date" value={state.receiptDraft.date} onChange={(e) => actions.setReceiptDraftField('date', e.target.value)} />
           </div>
           <div className="field" style={{ marginBottom: 14 }}>
             <label>Payment method</label>
@@ -299,11 +336,11 @@ export function ScanFlow() {
           )}
 
           {state.receiptDraft.mode === 'quick' ? (
-            <div className="field" style={{ marginBottom: 20 }}>
-              <label>Category</label>
-              <select className="input" value={state.receiptDraft.quickCategory} onChange={(e) => actions.setReceiptDraftField('quickCategory', e.target.value)}>
-                {CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 10, textAlign: 'center' }}>
+                Category
+              </div>
+              <CategoryChips value={state.receiptDraft.quickCategory} onChange={(cat) => actions.setReceiptDraftField('quickCategory', cat)} />
             </div>
           ) : (
             <div style={{ marginBottom: 20 }}>
