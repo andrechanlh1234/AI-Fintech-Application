@@ -28,17 +28,12 @@ OCR_PROVIDER = os.environ.get("OCR_PROVIDER", "gemini")
 
 RECEIPT_PROMPT = (
     "You are extracting structured data from a photo of a single retail receipt, "
-    "for a Malaysian personal finance app. Look carefully — including the line "
-    "items, not just the vendor name — and return ONLY a JSON object with these "
-    "exact keys: "
+    "for a Malaysian personal finance app. Look carefully at every line item "
+    "printed on the receipt and return ONLY a JSON object with these exact keys: "
     '"vendor" (string, the merchant/store name as printed), '
     '"date" (string, ISO YYYY-MM-DD, or null if no date is legible), '
-    '"amount" (number, the final total actually paid, or null if no total is legible), '
+    '"total" (number, the final grand total actually paid, or null if no total is legible), '
     '"currency" (string, e.g. "MYR", best guess from context), '
-    '"category" (string, exactly one of: "Medical", "Education", "EPF / Insurance", '
-    '"Transport", "Groceries", "Dining", "Lifestyle", "Other"), '
-    '"taxDeductible" (boolean, whether this purchase plausibly qualifies for a '
-    "Malaysian LHDN personal tax relief), "
     '"taxAmount" (number, the SST/GST/sales-tax amount printed on its own line '
     "— e.g. a line reading \"SST 6%: RM3.99\" or \"GST: RM2.50\" — or null if no "
     "such line is legible), "
@@ -48,27 +43,39 @@ RECEIPT_PROMPT = (
     "\"Service Charge 10%: RM5.00\", common on restaurant/hotel receipts — or "
     "null if none is printed), "
     '"serviceChargeRate" (number, the service-charge percentage from that '
-    "line, e.g. 10 for a 10% service charge — or null if not printed). "
-    "\n\nCategory reasoning matters most for \"Lifestyle\" and \"taxDeductible\": "
-    "LHDN's Lifestyle relief specifically covers — reason from the actual line "
-    "items printed on the receipt, not just the store's general business — "
-    "sports equipment (for any sport, e.g. shoes, apparel, a racket, a yoga mat, "
-    "a bicycle used for sport), gym/fitness membership fees, books/journals/"
-    "magazines, a personal computer/smartphone/tablet, internet subscriptions, "
-    "and skill-improvement course fees. A receipt from a sporting-goods or "
-    "general department store where the line items are sports gear should be "
-    "categorised \"Lifestyle\" with taxDeductible true — don't default to "
-    "\"Other\"/\"Shopping\" just because the store isn't a household name. "
+    "line, e.g. 10 for a 10% service charge — or null if not printed), "
+    '"lineItems" (array, one object per distinct item/line printed on the '
+    "receipt — NOT the tax/service-charge/total lines themselves — each with "
+    'exact keys: "description" (string, the item name as printed, or your best '
+    'short label if the printed text is unclear), "amount" (number, that '
+    "item's own price — for a quantity line like \"Milk x2  RM8.00\" use the "
+    'line\'s total, not the unit price), "category" (string, exactly one of: '
+    '"Medical", "Education", "EPF / Insurance", "Transport", "Groceries", '
+    '"Dining", "Lifestyle", "Other"), "taxDeductible" (boolean, whether this '
+    "SPECIFIC item plausibly qualifies for a Malaysian LHDN personal tax "
+    'relief), "confidence" (number 0-1, how sure you are of this item\'s '
+    "description and amount — use a low value like 0.3-0.5 for a line you "
+    "genuinely struggled to read, not just as a formality)). "
+    "\n\nCategory and taxDeductible reasoning matters most for \"Lifestyle\": "
+    "LHDN's Lifestyle relief specifically covers sports equipment (for any "
+    "sport, e.g. shoes, apparel, a racket, a yoga mat, a bicycle used for "
+    "sport), gym/fitness membership fees, books/journals/magazines, a personal "
+    "computer/smartphone/tablet, internet subscriptions, and skill-improvement "
+    "course fees — categorise a matching item \"Lifestyle\" with taxDeductible "
+    "true even if the store itself isn't a household sporting-goods name. "
     "Groceries, dining, transport fares, and generic shopping that isn't one of "
-    "the items above are NOT Lifestyle-relief-eligible — set taxDeductible false "
-    "for those even if the category itself is a real category. Medical relief "
-    "covers self/spouse/child medical expenses (pharmacy, clinic, hospital, "
-    "medical equipment) — set category \"Medical\" and taxDeductible true for "
-    "those. If you're genuinely unsure whether an item qualifies, set "
-    "taxDeductible false rather than guessing yes. "
-    "\n\nNever invent a figure or line item that isn't legible in the image — use "
-    "null for a field you can't actually read. Return raw JSON only, no markdown "
-    "fences, no commentary."
+    "those items are NOT Lifestyle-relief-eligible — set taxDeductible false "
+    "for those even though the category itself is real. Medical relief covers "
+    "self/spouse/child medical expenses (pharmacy, clinic, hospital, medical "
+    "equipment) — set category \"Medical\" and taxDeductible true for those. If "
+    "you're genuinely unsure whether an item qualifies, set taxDeductible false "
+    "rather than guessing yes. "
+    "\n\nNever invent a figure, item, or line that isn't legible in the image — "
+    "use null (or omit the item from lineItems) for something you can't "
+    "actually read. If the receipt is too unclear to make out any individual "
+    "items, return an empty lineItems array rather than fabricating one entry "
+    "for the whole total. Return raw JSON only, no markdown fences, no "
+    "commentary."
 )
 
 STATEMENT_PROMPT = (

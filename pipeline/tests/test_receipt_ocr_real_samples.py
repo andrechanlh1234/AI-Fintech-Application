@@ -4,9 +4,9 @@ Unlike test_receipt_ocr.py's synthetic-image test, these are real phone
 photos — several are low-resolution, angled, or partly occluded. OCR
 output on them isn't stable enough to assert exact vendor/amount values
 (a Tesseract version bump could shift a misread digit), so this only
-asserts the pipeline runs end-to-end and returns a well-formed Record for
-every sample. See the conversation / commit history for the actual
-accuracy numbers observed on this sample set.
+asserts the pipeline runs end-to-end and returns a well-formed
+ReceiptScanResult for every sample. See the conversation / commit history
+for the actual accuracy numbers observed on this sample set.
 """
 
 import glob
@@ -25,8 +25,12 @@ VALID_CATEGORIES = {name for name, _ in CATEGORY_KEYWORDS} | {"Other"}
 @pytest.mark.skipif(not RECEIPT_SAMPLES, reason="no real receipt photos present")
 @pytest.mark.parametrize("path", RECEIPT_SAMPLES)
 def test_process_real_receipt_returns_well_formed_record(path):
-    record = process_receipt_image(path)
-    assert record.vendor
-    assert record.amount >= 0
-    assert record.category in VALID_CATEGORIES
-    assert 0.0 <= record.confidence <= 1.0
+    result = process_receipt_image(path)
+    assert result.vendor
+    assert result.total is None or result.total >= 0
+    assert 0.0 <= result.confidence <= 1.0
+    for item in result.line_items:
+        assert item.description
+        assert item.amount >= 0
+        assert item.category in VALID_CATEGORIES
+        assert 0.0 <= item.confidence <= 1.0

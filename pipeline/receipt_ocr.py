@@ -16,7 +16,7 @@ from datetime import date, datetime
 from PIL import Image, ImageOps
 
 from pipeline.categorize import categorize, relief_tag_for
-from pipeline.models import Record
+from pipeline.models import Record, ReceiptLineItem, ReceiptScanResult
 
 TOTAL_LINE_RE = re.compile(r"(total|jumlah|amount due|grand total)", re.IGNORECASE)
 # Tesseract commonly inserts a stray space right after the decimal point on
@@ -200,36 +200,51 @@ def parse_receipt_text(text: str, ocr_confidence: float = 1.0) -> Record:
 
 _KNOWN_CATEGORIES = {"Medical", "Education", "EPF / Insurance", "Transport", "Groceries", "Dining", "Lifestyle", "Other"}
 
+LOW_CONFIDENCE_THRESHOLD = 0.55
 
-def _record_from_vision_fields(fields: dict, raw_text: str = "") -> Record:
+
+def _line_item_from_vision_entry(entry: dict, fallback_text: str) -> ReceiptLineItem | None:
+    description = (entry.get("description") or "").strip()
+    amount = entry.get("amount")
+    if not description or amount is None:
+        return None
+    category = entry.get("category")
+    if category not in _KNOWN_CATEGORIES:
+        category = categorize(description, fallback_text)
+    confidence = entry.get("confidence")
+    confidence = float(confidence) if isinstance(confidence, (int, float)) else 0.5
+    return ReceiptLineItem(
+        description=description,
+        amount=float(amount),
+        category=category,
+        tax_deductible=bool(entry.get("taxDeductible")),
+        confidence=max(0.0, min(1.0, confidence)),
+    )
+
+
+def _receipt_result_from_vision_fields(fields: dict, raw_text: str = "") -> ReceiptScanResult:
     vendor = (fields.get("vendor") or "").strip() or "Unknown vendor"
-    amount = fields.get("amount")
-    amount = float(amount) if amount is not None else 0.0
+    total = fields.get("total")
+    total = float(total) if total is not None else None
     txn_date = None
     if fields.get("date"):
         try:
             txn_date = datetime.strptime(fields["date"], "%Y-%m-%d").date()
         except ValueError:
             pass
-    # Trust the vision model's own category reasoning (it saw the actual line
-    # items, including things a vendor-name keyword table would never catch —
-    # e.g. sports equipment bought from a store with no "sports" in its name)
-    # over the keyword fallback, but only if it returned a category this app
-    # actually recognises; otherwise fall back to the keyword match.
-    vision_category = fields.get("category")
-    category = vision_category if vision_category in _KNOWN_CATEGORIES else categorize(vendor, raw_text)
-    # An explicit false from the model suppresses the relief tag even for a
-    # relief-eligible category (e.g. Lifestyle) — it was told to prefer false
-    # over guessing when genuinely unsure.
-    relief_eligible = fields.get("taxDeductible") is not False
-    # A vision model either read a field or it didn't (it's told to return
-    # null rather than guess) — same field_penalty logic as the Tesseract
-    # path, just without an OCR word-confidence score to start from.
-    confidence = 1.0 - (0.0 if txn_date else 0.15) - (0.0 if fields.get("amount") is not None else 0.25)
-    return Record(
-        source="receipt_photo", vendor=vendor, txn_date=txn_date, amount=amount,
-        category=category, relief_tag=relief_tag_for(category) if relief_eligible else None,
-        confidence=max(0.0, confidence), raw_text=raw_text,
+    raw_items = fields.get("lineItems") or []
+    line_items = [li for li in (_line_item_from_vision_entry(e, vendor) for e in raw_items) if li]
+    # Overall confidence is the weakest signal in the receipt, not an
+    # average -- one badly-read item (or a missing date/total) should make
+    # the whole scan read as "needs a careful look", not get diluted by
+    # several clean items sitting alongside it.
+    field_penalty = (0.0 if txn_date else 0.15) + (0.0 if total is not None else 0.25)
+    item_confidences = [li.confidence for li in line_items]
+    overall = min(item_confidences) if item_confidences else 1.0
+    confidence = max(0.0, overall - field_penalty)
+    return ReceiptScanResult(
+        vendor=vendor, txn_date=txn_date, total=total, line_items=line_items,
+        confidence=confidence, raw_text=raw_text,
         extra={
             "tax_amount": fields.get("taxAmount"),
             "tax_rate": fields.get("taxRate"),
@@ -239,7 +254,7 @@ def _record_from_vision_fields(fields: dict, raw_text: str = "") -> Record:
     )
 
 
-def process_receipt_image(image_path: str) -> Record:
+def process_receipt_image(image_path: str) -> ReceiptScanResult:
     from backend.ocr_provider import VisionOCRNotConfigured, extract_receipt_fields
 
     try:
@@ -247,7 +262,7 @@ def process_receipt_image(image_path: str) -> Record:
             file_bytes = f.read()
         mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
         fields = extract_receipt_fields(file_bytes, mime_type)
-        return _record_from_vision_fields(fields)
+        return _receipt_result_from_vision_fields(fields)
     except VisionOCRNotConfigured:
         pass
     except Exception:
@@ -255,4 +270,17 @@ def process_receipt_image(image_path: str) -> Record:
         logging.getLogger("cukai.ocr").exception("Vision OCR failed — falling back to Tesseract")
 
     text, ocr_confidence = extract_text(image_path)
-    return parse_receipt_text(text, ocr_confidence)
+    record = parse_receipt_text(text, ocr_confidence)
+    # Tesseract has no way to separate individual items -- it only ever
+    # recovers one total for the whole receipt -- so the fallback path
+    # surfaces that as a single line item rather than pretending it found
+    # several. A low-confidence item still gets flagged "needs review" by
+    # the frontend the same way a low-confidence vision-extracted item does.
+    line_item = ReceiptLineItem(
+        description=record.vendor, amount=record.amount, category=record.category,
+        tax_deductible=record.relief_tag is not None, confidence=record.confidence,
+    )
+    return ReceiptScanResult(
+        vendor=record.vendor, txn_date=record.txn_date, total=record.amount or None,
+        line_items=[line_item], confidence=record.confidence, raw_text=text, extra=record.extra,
+    )
