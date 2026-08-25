@@ -2,71 +2,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectStatsPage } from '../../store/selectors';
 import { Card } from '../../components/primitives';
 import { MonthPicker } from '../../components/PeriodPicker';
-
-// Natural height of MonthPicker's collapsed summary row + its wrapper's
-// bottom margin -- kept as a fixed constant (measured against the rendered
-// control) so the reveal/collapse can animate `height` the same way
-// BudgetGauge animates its half-donut box, rather than snapping open/shut.
-const MONTH_PICKER_HEIGHT = 48;
-
-function TxIcon({ tx }: { tx: ReturnType<typeof selectStatsPage>['statsCategoryDetailTx'][number] }) {
-  if (tx.hasBrand) return <>{tx.badgeLetter}</>;
-  if (tx.isCar)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2" />
-        <circle cx="6.5" cy="16.5" r="2.5" />
-        <circle cx="16.5" cy="16.5" r="2.5" />
-      </svg>
-    );
-  if (tx.isCoffee)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
-        <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-        <line x1="6" y1="2" x2="6" y2="4" />
-        <line x1="10" y1="2" x2="10" y2="4" />
-        <line x1="14" y1="2" x2="14" y2="4" />
-      </svg>
-    );
-  if (tx.isBag)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-        <path d="M3 6h18" />
-        <path d="M16 10a4 4 0 0 1-8 0" />
-      </svg>
-    );
-  if (tx.isZap)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
-      </svg>
-    );
-  if (tx.isMedical)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M12 8v8" />
-        <path d="M8 12h8" />
-      </svg>
-    );
-  if (tx.isBook)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 7v14" />
-        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
-      </svg>
-    );
-  if (tx.isArrowUp)
-    return (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M7 17 17 7" />
-        <path d="M7 7h10v10" />
-      </svg>
-    );
-  return null;
-}
+import { TransactionRow } from '../../components/TransactionRow';
 
 function StatsCategoryDetail() {
   const { state } = useStore();
@@ -100,28 +36,7 @@ function StatsCategoryDetail() {
         {state.statsPeriod} · RM {data.statsCategoryDetailTotal}
       </div>
       {data.statsCategoryDetailTx.map((tx, i) => (
-        <div
-          key={i}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--color-neutral-300)' }}
-        >
-          <div
-            style={{
-              width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0, fontWeight: 700, fontSize: 11.5, background: tx.badgeBg, color: tx.badgeFg,
-            }}
-          >
-            <TxIcon tx={tx} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{tx.merchant}</div>
-            <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>
-              {tx.dateLabel} · {tx.payment}
-            </div>
-          </div>
-          <div className="type-numeric" style={{ fontWeight: 700, fontSize: 13.5, flexShrink: 0, color: tx.amountColor }}>
-            {tx.amountLabel}
-          </div>
-        </div>
+        <TransactionRow key={i} tx={tx} subtitle={`${tx.dateLabel} · ${tx.payment}`} />
       ))}
       {data.statsCategoryDetailTx.length === 0 && (
         <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions in this period.</div>
@@ -201,17 +116,11 @@ export default function StatsSection() {
             );
           })}
         </div>
-        <div
-          style={{
-            height: state.statsPeriod === 'Choose month' ? MONTH_PICKER_HEIGHT : 0,
-            overflow: state.statsPeriod === 'Choose month' ? 'visible' : 'hidden',
-            transition: 'height .35s ease',
-          }}
-        >
-          <div style={{ marginBottom: 14 }}>
+        {state.statsPeriod === 'Choose month' && (
+          <div className="pop-in" style={{ marginBottom: 14 }}>
             <MonthPicker month={state.historyMonth} year={state.historyYear} onChange={(m, y) => { actions.setHistoryMonth(m); actions.setHistoryYear(y); }} />
           </div>
-        </div>
+        )}
         <StatsDoughnut bars={data.statsCategoryBars} sumLabel={data.statsCategorySumLabel} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {data.statsCategoryBars.map((c) => (
