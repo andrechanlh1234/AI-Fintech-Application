@@ -41,6 +41,52 @@ function ChevronRight({ size = 18 }: { size?: number }) {
   );
 }
 
+/** Shared floating year list -- the popover half of YearPicker, reusable
+ * anywhere a year needs picking from a short list. Used standalone by
+ * YearPicker and embedded inside MonthPicker's grid, so month and year
+ * selection share one interaction language app-wide. */
+function YearMenu({
+  year, years, onChange, align = 'right',
+}: { year: number; years: number[]; onChange: (year: number) => void; align?: 'left' | 'right' | 'center' }) {
+  const posStyle: CSSProperties =
+    align === 'right' ? { right: 0 } : align === 'left' ? { left: 0 } : { left: '50%', transform: 'translateX(-50%)' };
+  return (
+    <div
+      className="material-chrome pop-in"
+      style={{
+        position: 'absolute', top: 'calc(100% + 8px)', zIndex: 30, minWidth: 168,
+        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
+        overflow: 'hidden', padding: 6, ...posStyle,
+      }}
+    >
+      {years.map((y, i) => {
+        const selected = y === year;
+        return (
+          <button
+            key={y}
+            type="button"
+            onClick={() => onChange(y)}
+            className="pressable type-numeric"
+            style={{
+              all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
+              font: '500 15px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
+              borderBottom: i < years.length - 1 ? '1px solid var(--color-divider)' : 'none',
+            }}
+          >
+            {y}
+            {selected && (
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Apple-style month picker: a tappable "Month Year" pill with step chevrons
  * on either side, expanding into a 4x3 month grid for the tapped year. Shared
  * across Record (primary filter) and Stats (12-month view). */
@@ -54,6 +100,8 @@ export function MonthPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [viewYear, setViewYear] = useState(year);
+  const [yearMenuOpen, setYearMenuOpen] = useState(false);
+  const rootRef = useDismissOnOutside(open, () => { setOpen(false); setYearMenuOpen(false); });
 
   const stepMonth = (dir: 1 | -1) => {
     const idx = MONTH_ORDER.indexOf(month);
@@ -64,15 +112,17 @@ export function MonthPicker({
     onChange(MONTH_ORDER[nextIdx], nextYear);
   };
 
+  const yearOptions = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 4 + i);
+
   return (
-    <div>
+    <div ref={rootRef}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
         <button type="button" onClick={() => stepMonth(-1)} aria-label="Previous month" className="pressable" style={chevBtnStyle}>
           <ChevronLeft />
         </button>
         <button
           type="button"
-          onClick={() => { setViewYear(year); setOpen((o) => !o); }}
+          onClick={() => { setViewYear(year); setOpen((o) => !o); setYearMenuOpen(false); }}
           className="pressable"
           style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 999, font: '700 17px var(--font-heading)' }}
         >
@@ -87,14 +137,30 @@ export function MonthPicker({
       </div>
       {open && (
         <div className="pop-in card" style={{ marginTop: 14, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 14 }}>
-            <button type="button" onClick={() => setViewYear((y) => y - 1)} aria-label="Previous year" className="pressable" style={chevBtnStyle}>
-              <ChevronLeft size={16} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setYearMenuOpen((o) => !o)}
+              className="pressable type-numeric"
+              style={{
+                all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 12px', borderRadius: 999, font: '800 17px var(--font-heading)', letterSpacing: '-0.01em',
+                background: 'var(--color-neutral-200)', color: 'var(--color-text)',
+              }}
+            >
+              {viewYear}
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ transform: yearMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s ease' }}>
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </button>
-            <span className="type-numeric" style={{ font: '800 17px var(--font-heading)', letterSpacing: '-0.01em' }}>{viewYear}</span>
-            <button type="button" onClick={() => setViewYear((y) => y + 1)} aria-label="Next year" className="pressable" style={chevBtnStyle}>
-              <ChevronRight size={16} />
-            </button>
+            {yearMenuOpen && (
+              <YearMenu
+                year={viewYear}
+                years={yearOptions}
+                onChange={(y) => { setViewYear(y); setYearMenuOpen(false); }}
+                align="center"
+              />
+            )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
             {MONTH_ORDER.map((m) => {
@@ -151,41 +217,7 @@ export function YearPicker({ year, years, onChange }: { year: number; years: num
           <path d="m6 9 6 6 6-6" />
         </svg>
       </button>
-      {open && (
-        <div
-          className="material-chrome pop-in"
-          style={{
-            position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 30, minWidth: 168,
-            borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
-            overflow: 'hidden', padding: 6,
-          }}
-        >
-          {years.map((y, i) => {
-            const selected = y === year;
-            return (
-              <button
-                key={y}
-                type="button"
-                onClick={() => { onChange(y); setOpen(false); }}
-                className="pressable type-numeric"
-                style={{
-                  all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                  width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
-                  font: '500 15px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
-                  borderBottom: i < years.length - 1 ? '1px solid var(--color-divider)' : 'none',
-                }}
-              >
-                {y}
-                {selected && (
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
-                  </svg>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {open && <YearMenu year={year} years={years} onChange={(y) => { onChange(y); setOpen(false); }} />}
     </div>
   );
 }
