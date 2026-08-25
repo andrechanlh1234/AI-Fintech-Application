@@ -42,17 +42,28 @@ export function ReceiptLineItemsEditor({ items }: { items: ReceiptLineItemDraft[
                 <WarningIcon /> Needs review
               </div>
             )}
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <input
-                className="input" style={{ flex: 1.6 }} placeholder="Item description"
+                className="input" style={{ flex: 1.6, minWidth: 0 }} placeholder="Item description"
                 value={item.description}
                 onChange={(e) => actions.setLineItemDraftField(item.id, 'description', e.target.value)}
               />
               <input
-                className="input" style={{ flex: 1 }} placeholder="0.00" inputMode="decimal"
+                className="input" style={{ flex: 1, minWidth: 0 }} placeholder="0.00" inputMode="decimal"
                 value={item.amount}
                 onChange={(e) => actions.setLineItemDraftField(item.id, 'amount', e.target.value)}
               />
+              <button
+                type="button"
+                onClick={() => actions.removeLineItemDraft(item.id)}
+                aria-label="Remove item"
+                className="pressable"
+                style={{ all: 'unset', cursor: 'pointer', padding: 6, color: 'var(--color-text-muted)', flexShrink: 0 }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+                </svg>
+              </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <select
@@ -74,17 +85,6 @@ export function ReceiptLineItemsEditor({ items }: { items: ReceiptLineItemDraft[
                 }}
               >
                 {item.deductible ? 'Potentially deductible' : 'Not deductible'}
-              </button>
-              <button
-                type="button"
-                onClick={() => actions.removeLineItemDraft(item.id)}
-                aria-label="Remove item"
-                className="pressable"
-                style={{ all: 'unset', cursor: 'pointer', padding: 6, color: 'var(--color-text-muted)', marginLeft: 'auto' }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-                </svg>
               </button>
             </div>
             {invalid && !flagged && (
