@@ -142,7 +142,7 @@ export function YearPicker({ year, years, onChange }: { year: number; years: num
         className="pressable type-numeric"
         style={{
           all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '7px 12px', borderRadius: 999, font: '700 15px var(--font-heading)',
+          padding: '7px 12px', borderRadius: 999, font: '500 15px var(--font-heading)',
           background: 'var(--color-neutral-200)', color: 'var(--color-text)',
         }}
       >
@@ -171,7 +171,7 @@ export function YearPicker({ year, years, onChange }: { year: number; years: num
                 style={{
                   all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                   width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
-                  font: '600 15px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
+                  font: '500 15px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
                   borderBottom: i < years.length - 1 ? '1px solid var(--color-divider)' : 'none',
                 }}
               >

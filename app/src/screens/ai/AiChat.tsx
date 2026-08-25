@@ -30,7 +30,7 @@ export function AiChat() {
   const send = () => actions.submitAiText(state.aiInput);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }} className="screen-in">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }} className="screen-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19 }}>AI Assistant</div>
         <button

@@ -21,7 +21,7 @@ export function BudgetGauge() {
           >
             <svg width={300} height={280} viewBox="0 0 300 280" style={{ position: 'absolute', inset: 0 }}>
               <path d={g.gaugeArcPath} fill="none" stroke="var(--color-accent-200)" strokeWidth={16} strokeLinecap="round" />
-              <path d={g.spentArcPath} fill="none" stroke={g.gaugeOverspent ? 'var(--color-danger)' : 'var(--color-accent-700)'} strokeWidth={16} strokeLinecap="round" style={{ transition: 'd .6s ease, stroke .2s ease' }} />
+              <path d={g.spentArcPath} fill="none" stroke={g.gaugeOverspent ? 'var(--color-danger)' : 'var(--color-accent)'} strokeWidth={16} strokeLinecap="round" style={{ transition: 'd .6s ease, stroke .2s ease' }} />
               {g.donutBranches.map((br) => (
                 <g key={br.bucketKey + ':' + br.catId}>
                   <circle cx={br.x1} cy={br.y1} r={3} fill={br.color} />

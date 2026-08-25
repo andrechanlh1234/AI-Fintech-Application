@@ -8,7 +8,7 @@
  * track. */
 export function BudgetUtilisationBar({ pct, barPct }: { pct: number; barPct: number }) {
   const over = pct > 100;
-  const fillColor = over ? 'var(--color-danger)' : 'var(--color-accent-700)';
+  const fillColor = over ? 'var(--color-danger)' : 'var(--color-accent)';
 
   return (
     <div style={{ position: 'relative' }}>

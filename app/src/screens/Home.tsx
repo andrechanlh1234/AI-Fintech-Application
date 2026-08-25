@@ -39,11 +39,11 @@ export function Home() {
   const hasReviewItems = review.reviewCount > 0;
 
   return (
-    <div className="screen-in" style={{ padding: '58px 16px 24px' }}>
+    <div className="screen-in" style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)" /><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" /></svg>
-          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 17, letterSpacing: '0.01em' }}>Cukai</span>
+          <svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)" /><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" /></svg>
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 23, letterSpacing: '0.01em' }}>Cukai</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
@@ -98,32 +98,32 @@ export function Home() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7" /><path d="M7 7h10v10" /></svg>
             RM {moneyWhole(Math.abs(chart.delta))} ({chart.deltaPct}%)
           </div>
-        </button>
-        <div style={{ margin: '10px 0 2px' }}>
-          <NetWorthSparkline chart={chart} />
-        </div>
-        <div style={{ borderTop: '1px solid var(--color-divider)', margin: '16px 0 14px' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-          <span style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Monthly budget</span>
-          <button
-            type="button"
-            onClick={actions.goFinanceBudgets}
-            aria-label="View budget details"
-            className="pressable"
-            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
-          </button>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-          <div className="type-numeric" style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
-            RM {moneyWhole(dash.homeBudgetSpent)} <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(dash.homeBudgetTotal)}</span>
+          <div style={{ margin: '10px 0 2px' }}>
+            <NetWorthSparkline chart={chart} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-tax-700)', whiteSpace: 'nowrap' }}>RM {moneyWhole(dash.homeBudgetTotal - dash.homeBudgetSpent)} left</span>
-        </div>
-        <div style={{ height: 8, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
-          <div className="bar-fill" style={{ height: '100%', width: `${dash.homeBudgetPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
-        </div>
+        </button>
+        <div style={{ borderTop: '1px solid var(--color-divider)', margin: '16px 0 14px' }} />
+        <button
+          type="button"
+          onClick={actions.goFinanceBudgets}
+          aria-label="View budget details"
+          className="pressable"
+          style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer', boxSizing: 'border-box' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+            <span style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Monthly budget</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div className="type-numeric" style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+              RM {moneyWhole(dash.homeBudgetSpent)} <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(dash.homeBudgetTotal)}</span>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-tax-700)', whiteSpace: 'nowrap' }}>RM {moneyWhole(dash.homeBudgetTotal - dash.homeBudgetSpent)} left</span>
+          </div>
+          <div style={{ height: 8, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
+            <div className="bar-fill" style={{ height: '100%', width: `${dash.homeBudgetPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
+          </div>
+        </button>
       </div>
 
       {hasReviewItems && (

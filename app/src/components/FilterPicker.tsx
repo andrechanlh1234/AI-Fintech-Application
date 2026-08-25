@@ -28,7 +28,7 @@ export function FilterPicker({
         className="pressable"
         style={{
           all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '9px 14px', borderRadius: 999, font: '700 13px var(--font-body)', whiteSpace: 'nowrap',
+          padding: '9px 14px', borderRadius: 999, font: '500 12.5px var(--font-body)', whiteSpace: 'nowrap',
           border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
           background: active ? 'var(--color-accent-100)' : 'var(--color-surface)',
           color: active ? 'var(--color-accent-700)' : 'var(--color-text)',
@@ -59,7 +59,7 @@ export function FilterPicker({
                 style={{
                   all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                   width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 'var(--radius-sm)',
-                  font: '600 14px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
+                  font: '500 14px var(--font-body)', color: selected ? 'var(--color-accent-700)' : 'var(--color-text)',
                   borderBottom: i < arr.length - 1 ? '1px solid var(--color-divider)' : 'none',
                 }}
               >

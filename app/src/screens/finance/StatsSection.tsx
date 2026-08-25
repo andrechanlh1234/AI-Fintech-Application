@@ -3,6 +3,12 @@ import { selectStatsPage } from '../../store/selectors';
 import { Card } from '../../components/primitives';
 import { MonthPicker } from '../../components/PeriodPicker';
 
+// Natural height of MonthPicker's collapsed summary row + its wrapper's
+// bottom margin -- kept as a fixed constant (measured against the rendered
+// control) so the reveal/collapse can animate `height` the same way
+// BudgetGauge animates its half-donut box, rather than snapping open/shut.
+const MONTH_PICKER_HEIGHT = 48;
+
 function TxIcon({ tx }: { tx: ReturnType<typeof selectStatsPage>['statsCategoryDetailTx'][number] }) {
   if (tx.hasBrand) return <>{tx.badgeLetter}</>;
   if (tx.isCar)
@@ -73,7 +79,7 @@ function StatsCategoryDetail() {
       className="screen-in"
       style={{
         position: 'absolute', inset: 0, zIndex: 47, background: 'var(--color-bg)',
-        display: 'flex', flexDirection: 'column', padding: '58px 20px 24px', boxSizing: 'border-box', overflow: 'auto',
+        display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', overflow: 'auto',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -124,6 +130,46 @@ function StatsCategoryDetail() {
   );
 }
 
+// Full-circle doughnut of category spend, replacing the old stacked bar --
+// same stroke-dasharray-per-segment technique as BudgetGauge's half-donut,
+// just closed into a full ring since there's no spent/remaining split here.
+function StatsDoughnut({ bars, sumLabel }: { bars: ReturnType<typeof selectStatsPage>['statsCategoryBars']; sumLabel: string }) {
+  const R = 80;
+  const C = 2 * Math.PI * R;
+  let cumulative = 0;
+
+  return (
+    <div style={{ position: 'relative', width: 200, height: 200, margin: '0 auto 24px' }}>
+      <svg width={200} height={200} viewBox="0 0 200 200">
+        <circle cx={100} cy={100} r={R} fill="none" stroke="var(--color-neutral-200)" strokeWidth={28} />
+        {bars.map((c) => {
+          const dash = (c.pct / 100) * C;
+          const offset = -((cumulative / 100) * C);
+          cumulative += c.pct;
+          return (
+            <circle
+              key={c.name}
+              cx={100}
+              cy={100}
+              r={R}
+              fill="none"
+              stroke={c.color}
+              strokeWidth={28}
+              strokeDasharray={`${dash} ${C - dash}`}
+              strokeDashoffset={offset}
+              transform="rotate(-90 100 100)"
+            />
+          );
+        })}
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="type-numeric" style={{ fontWeight: 800, fontSize: 22 }}>RM {sumLabel}</div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 1 }}>Spent</div>
+      </div>
+    </div>
+  );
+}
+
 export default function StatsSection() {
   const { state } = useStore();
   const actions = useActions();
@@ -132,7 +178,8 @@ export default function StatsSection() {
   return (
     <>
       <div>
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, marginBottom: 12 }}>Spend by category</div>
+        <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
           {data.statsPeriodOptions.map((opt) => {
             const active = state.statsPeriod === opt;
             return (
@@ -142,8 +189,11 @@ export default function StatsSection() {
                 onClick={() => actions.setStatsPeriod(opt)}
                 className="pressable"
                 style={{
-                  padding: '6px 10px', borderRadius: 999, border: 'none', cursor: 'pointer', font: '700 11px var(--font-body)',
-                  background: active ? 'var(--color-accent)' : 'transparent', color: active ? '#fff' : 'var(--color-text-muted)',
+                  flexShrink: 0, whiteSpace: 'nowrap',
+                  padding: '6px 12px', borderRadius: 999, cursor: 'pointer', font: '600 12.5px var(--font-body)',
+                  border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+                  background: active ? 'var(--color-accent-100)' : 'var(--color-surface)',
+                  color: active ? 'var(--color-accent-700)' : 'var(--color-text-muted)',
                 }}
               >
                 {opt}
@@ -151,27 +201,18 @@ export default function StatsSection() {
             );
           })}
         </div>
-        {state.statsPeriod === 'Choose month' && (
+        <div
+          style={{
+            height: state.statsPeriod === 'Choose month' ? MONTH_PICKER_HEIGHT : 0,
+            overflow: state.statsPeriod === 'Choose month' ? 'visible' : 'hidden',
+            transition: 'height .35s ease',
+          }}
+        >
           <div style={{ marginBottom: 14 }}>
             <MonthPicker month={state.historyMonth} year={state.historyYear} onChange={(m, y) => { actions.setHistoryMonth(m); actions.setHistoryYear(y); }} />
           </div>
-        )}
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, marginBottom: 12 }}>Spend by category</div>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <div style={{ position: 'relative', width: 180, height: 180, borderRadius: '50%', background: data.statsPieGradient }}>
-            <div
-              style={{
-                position: 'absolute', inset: 22, borderRadius: '50%', background: 'var(--color-bg)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              }}
-            >
-              <span className="type-numeric" style={{ fontWeight: 400, fontSize: 20 }}>RM {data.statsCategorySumLabel}</span>
-              <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>
-                Spent
-              </span>
-            </div>
-          </div>
         </div>
+        <StatsDoughnut bars={data.statsCategoryBars} sumLabel={data.statsCategorySumLabel} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {data.statsCategoryBars.map((c) => (
             <Card key={c.name} style={{ padding: 16 }}>

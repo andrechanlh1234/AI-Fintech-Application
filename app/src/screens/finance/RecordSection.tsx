@@ -85,18 +85,28 @@ export default function RecordSection() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
         <button type="button" onClick={actions.goFinanceStats} aria-label="Back" className="pressable" style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer', color: 'var(--color-text)' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
         </button>
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, flex: 1 }}>All transactions</span>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         <button
           type="button"
           onClick={() => { actions.openScan(); actions.chooseManual(); }}
           className="pressable"
-          style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', font: '700 12px var(--font-body)' }}
+          style={{
+            all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 12px', borderRadius: 'var(--radius-md)', font: '600 12.5px var(--font-body)',
+            border: '1.5px solid var(--color-accent-300)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
+          }}
         >
-          + Add transaction
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14"></path><path d="M12 5v14"></path>
+          </svg>
+          Add transaction
         </button>
         <button
           type="button"
@@ -104,11 +114,16 @@ export default function RecordSection() {
           disabled={state.statementUploading}
           className="pressable"
           style={{
-            all: 'unset', cursor: state.statementUploading ? 'default' : 'pointer', color: 'var(--color-accent-700)',
-            font: '700 12px var(--font-body)', opacity: state.statementUploading ? 0.6 : 1,
+            all: 'unset', display: 'inline-flex', alignItems: 'center', gap: 6, cursor: state.statementUploading ? 'default' : 'pointer',
+            padding: '8px 12px', borderRadius: 'var(--radius-md)', font: '600 12.5px var(--font-body)',
+            border: '1.5px solid var(--color-neutral-400)', background: 'var(--color-surface)', color: 'var(--color-accent-700)',
+            opacity: state.statementUploading ? 0.6 : 1,
           }}
         >
-          {state.statementUploading ? 'Importing…' : '+ Import statement'}
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14"></path><path d="M12 5v14"></path>
+          </svg>
+          {state.statementUploading ? 'Importing…' : 'Import statement'}
         </button>
         <input ref={statementInputRef} type="file" accept=".csv,.pdf" onChange={handleStatementFile} style={{ display: 'none' }} />
       </div>
@@ -117,50 +132,51 @@ export default function RecordSection() {
         <div style={{ fontSize: 12.5, color: 'var(--color-danger-700)', marginBottom: 10 }}>{state.statementUploadError}</div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          className="pressable"
-          style={{
-            all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '9px 14px', borderRadius: 999, font: '700 13px var(--font-body)', whiteSpace: 'nowrap',
-            border: '1.5px solid var(--color-accent)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
-          }}
-        >
-          {rangeLabel}
-          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSheetOpen(true)}
-          aria-label="Filter by date"
-          className="pressable"
-          style={{ all: 'unset', cursor: 'pointer', padding: 8, borderRadius: 999, color: 'var(--color-text-muted)', display: 'flex' }}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
-            <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
-            <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
-          </svg>
-        </button>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="pressable"
+            style={{
+              all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '9px 14px', borderRadius: 999, font: '500 12.5px var(--font-body)', whiteSpace: 'nowrap',
+              border: '1.5px solid var(--color-accent)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
+            }}
+          >
+            {rangeLabel}
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            aria-label="Filter by date"
+            className="pressable"
+            style={{
+              all: 'unset', cursor: 'pointer', width: 34, height: 34, borderRadius: 999, color: 'var(--color-text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--color-neutral-400)', flexShrink: 0,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
+              <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
+              <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
+            </svg>
+          </button>
+          <FilterPicker
+            value={state.txFilter}
+            options={rec.categoryChips.filter((c) => c !== 'All')}
+            onChange={actions.setTxFilter}
+          />
+        </div>
         <input
           type="text"
           placeholder="Search transactions"
           value={state.txSearch}
           onChange={(e) => actions.setTxSearch(e.target.value)}
           className="input"
-          style={{ flex: 1, minWidth: 0 }}
-        />
-        <FilterPicker
-          value={state.txFilter}
-          options={rec.categoryChips.filter((c) => c !== 'All')}
-          onChange={actions.setTxFilter}
         />
       </div>
 
