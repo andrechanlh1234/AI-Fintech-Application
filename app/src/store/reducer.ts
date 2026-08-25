@@ -228,6 +228,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: trial.manual.bankAccounts, creditCards: trial.manual.creditCards, investments: trial.manual.investments }, subs: trial.subs },
         transactions: trial.transactions,
+        receipts: [],
         finance: { buckets: trial.buckets },
         pendingReviewItems: trial.pendingReviewItems, reviewDecisions: {},
       };
@@ -238,6 +239,7 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         ob: { ...state.ob, manual: { ...state.ob.manual, bankAccounts: empty.manual.bankAccounts, creditCards: empty.manual.creditCards, investments: empty.manual.investments }, subs: empty.subs },
         transactions: empty.transactions,
+        receipts: [],
         finance: { buckets: empty.buckets },
         pendingReviewItems: [], reviewDecisions: {},
         netWorthSeed: defaultNetWorthSeed(),
