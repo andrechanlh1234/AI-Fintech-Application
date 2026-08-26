@@ -9,6 +9,11 @@ import { uid } from './ids';
 export interface Receipt {
   id: string;
   merchant: string;
+  /** Optional business/vendor name, distinct from `merchant` (which is the
+   * user-facing expense label shown everywhere else — transaction rows,
+   * this receipt's own summary). Captured for the record only; nothing
+   * else in the app reads it yet. */
+  vendor?: string;
   dateLabel: string;
   total: number;
   lineItemsTotal: number;
@@ -50,7 +55,13 @@ export function mkLineItemDraft(partial?: Partial<ReceiptLineItemDraft>): Receip
 }
 
 export interface ReceiptDraft {
+  /** The expense's user-facing label ("Expense name" in the UI) -- drives
+   * every downstream display (transaction rows, the Saved screen, etc.),
+   * same role this field has always played under its old "Merchant" label. */
   merchant: string;
+  /** Optional business/vendor name ("Vendor/Merchant" in the UI) -- new,
+   * separate metadata alongside `merchant`. See Receipt.vendor. */
+  vendor: string;
   /** ISO (YYYY-MM-DD) -- what <input type="date"> reads/writes, same
    * convention as TxDraft.date. Converted to a display label only at save
    * time (isoToDisplayDate), same as SAVE_TX_DETAIL already does. */
@@ -63,7 +74,7 @@ export interface ReceiptDraft {
 
 export function blankReceiptDraft(dateIso: string): ReceiptDraft {
   return {
-    merchant: '', date: dateIso, total: '', quickCategory: 'Food & Drink',
+    merchant: '', vendor: '', date: dateIso, total: '', quickCategory: 'Food & Drink',
     tag: '', mode: 'quick',
   };
 }

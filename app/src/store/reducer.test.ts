@@ -173,3 +173,62 @@ describe('CLEAR_ALL_DATA / LOAD_TRIAL_DATA reset receipts along with transaction
     expect(state.receipts).toHaveLength(0);
   });
 });
+
+describe('scan step machine — capture / preview / unable', () => {
+  it('PREVIEW_CAPTURED_PHOTO advances capture to preview', () => {
+    const state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    expect(state.scanStep).toBe('capture');
+    const previewed = reducer(state, { type: 'PREVIEW_CAPTURED_PHOTO' });
+    expect(previewed.scanStep).toBe('preview');
+  });
+
+  it('RETAKE_PHOTO returns to capture and clears any prior scan error', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    state = reducer(state, { type: 'CAPTURE_PHOTO_FAILED', message: 'network error' });
+    expect(state.scanStep).toBe('unable');
+    expect(state.scanError).toBe('network error');
+
+    const retaken = reducer(state, { type: 'RETAKE_PHOTO' });
+    expect(retaken.scanStep).toBe('capture');
+    expect(retaken.scanError).toBeNull();
+  });
+
+  it('CAPTURE_PHOTO_FAILED lands on the unable-to-scan step, not straight into review', () => {
+    const state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    const failed = reducer(state, { type: 'CAPTURE_PHOTO_FAILED', message: 'could not read receipt' });
+    expect(failed.scanStep).toBe('unable');
+    expect(failed.scanError).toBe('could not read receipt');
+  });
+
+  it('"Add custom amount" from the unable-to-scan step reuses CHOOSE_MANUAL to land on a blank manual review', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    state = reducer(state, { type: 'CAPTURE_PHOTO_FAILED', message: 'could not read receipt' });
+    const manual = reducer(state, { type: 'CHOOSE_MANUAL' });
+    expect(manual.scanStep).toBe('review');
+    expect(manual.scanMethod).toBe('manual');
+    expect(manual.receiptDraft.merchant).toBe('');
+  });
+});
+
+describe('SAVE_RECEIPT persists the optional vendor field', () => {
+  it('carries ReceiptDraft.vendor onto the saved Receipt', () => {
+    let state = openManualReceipt(buildInitialState());
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'Team lunch' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'vendor', value: 'Nasi Kandar Pelita' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: '42.00' });
+
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+
+    expect(state.receipts[0].vendor).toBe('Nasi Kandar Pelita');
+  });
+
+  it('leaves vendor undefined rather than an empty string when left blank', () => {
+    let state = openManualReceipt(buildInitialState());
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'No Vendor Entered' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: '10.00' });
+
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+
+    expect(state.receipts[0].vendor).toBeUndefined();
+  });
+});

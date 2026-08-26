@@ -126,6 +126,8 @@ export type Action =
 
   | { type: 'OPEN_SCAN' } | { type: 'CLOSE_SCAN' }
   | { type: 'CHOOSE_MANUAL' }
+  | { type: 'PREVIEW_CAPTURED_PHOTO' }
+  | { type: 'RETAKE_PHOTO' }
   | { type: 'CAPTURE_PHOTO_START' }
   | { type: 'CAPTURE_PHOTO_RESULT'; result: ScannedReceiptResult }
   | { type: 'CAPTURE_PHOTO_FAILED'; message: string }
@@ -570,6 +572,16 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'CHOOSE_MANUAL':
       // True manual entry -- fields stay blank, no simulated OCR result.
       return { ...state, scanStep: 'review', scanMethod: 'manual', receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
+    // A photo has been captured (live camera or Photo/File picker) but not
+    // yet sent for OCR -- the file itself stays in local component state
+    // (see ScanFlow's pendingPhoto), this just advances the screen so the
+    // user can confirm or retake before any processing starts.
+    case 'PREVIEW_CAPTURED_PHOTO':
+      return { ...state, scanStep: 'preview' };
+    // "Snap again" from either the preview screen or the unable-to-scan
+    // screen -- back to a live capture, clearing any previous scan error.
+    case 'RETAKE_PHOTO':
+      return { ...state, scanStep: 'capture', scanError: null };
     case 'CAPTURE_PHOTO_START':
       return { ...state, scanStep: 'processing', scanError: null };
     case 'CAPTURE_PHOTO_RESULT': {
@@ -592,9 +604,13 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case 'CAPTURE_PHOTO_FAILED':
       // The scanning service couldn't read this photo (or isn't reachable)
-      // -- fall back to manual entry with blank fields rather than either
-      // faking a result or leaving the user stuck on the spinner.
-      return { ...state, scanStep: 'review', scanMethod: 'manual', scanError: action.message };
+      // -- show the dedicated unable-to-scan interstitial rather than
+      // silently dropping into the manual-entry form. scanMethod is left
+      // as-is; it only becomes 'manual' once "Add custom amount" fires the
+      // existing CHOOSE_MANUAL action. The raw message stays in state for
+      // potential future debug/analytics use, but the interstitial itself
+      // shows static copy, not this string.
+      return { ...state, scanStep: 'unable', scanError: action.message };
     case 'SET_RECEIPT_DRAFT_FIELD':
       return { ...state, receiptDraft: { ...state.receiptDraft, [action.field]: action.value } };
     case 'SET_RECEIPT_MODE': {
@@ -652,7 +668,7 @@ export function reducer(state: AppState, action: Action): AppState {
       }
 
       const receipt: Receipt = {
-        id: receiptId, merchant: draft.merchant, dateLabel,
+        id: receiptId, merchant: draft.merchant, vendor: draft.vendor || undefined, dateLabel,
         total: parseFloat(draft.total) || lineItemsTotal, lineItemsTotal,
         source: state.scanMethod === 'photo' ? 'scan' : 'manual',
       };

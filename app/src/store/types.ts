@@ -74,7 +74,7 @@ export interface TxDraft {
 
 export type FinanceSection = 'networth' | 'record' | 'budgets' | 'stats' | 'history';
 export type Tab = 'home' | 'finance' | 'tax' | 'ai';
-export type ScanStep = 'capture' | 'processing' | 'review' | 'saved';
+export type ScanStep = 'capture' | 'preview' | 'processing' | 'unable' | 'review' | 'saved';
 
 export interface AppState {
   appStage: 'onboarding' | 'app';

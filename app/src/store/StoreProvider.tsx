@@ -277,6 +277,8 @@ export function useActions() {
       openScan: () => dispatch({ type: 'OPEN_SCAN' }),
       closeScan: () => dispatch({ type: 'CLOSE_SCAN' }),
       chooseManual: () => dispatch({ type: 'CHOOSE_MANUAL' }),
+      previewCapturedPhoto: () => dispatch({ type: 'PREVIEW_CAPTURED_PHOTO' }),
+      retakePhoto: () => dispatch({ type: 'RETAKE_PHOTO' }),
       capturePhotoFile: (file: File) => {
         dispatch({ type: 'CAPTURE_PHOTO_START' });
         scanReceiptImage(file)
