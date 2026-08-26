@@ -4,6 +4,7 @@
 import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
 import { blankReceiptDraft } from '../lib/receipts';
 import { todayIso, daysAgoIso } from '../lib/format';
+import { seedUidFromPersisted, uid } from '../lib/ids';
 import type { AppState } from './types';
 
 const emptySubDraft = {
@@ -154,7 +155,34 @@ export function buildSyncPayload(state: AppState): SyncPayload {
   };
 }
 
+// A session from before seedUidFromPersisted existed could already have
+// saved two different records sharing one id (the exact bug it now
+// prevents going forward) -- that duplicate lives on in already-persisted
+// data even after the fix ships, since reloading with fixed code doesn't
+// rewrite what's already in localStorage/the backend. This renames every
+// id after its first occurrence within a collection, so a payload carrying
+// an old collision self-heals the moment it's loaded rather than tripping
+// a React key warning (and silently double-editing both records on any
+// future edit/delete by that id) forever. Must run after
+// seedUidFromPersisted, so the freshly minted replacement ids can't
+// themselves collide with anything else in this same payload.
+function dedupeIds<T extends { id: string | number }>(records: T[], mintId: () => string | number): T[] {
+  const seen = new Set<string | number>();
+  return records.map((r) => {
+    if (!seen.has(r.id)) { seen.add(r.id); return r; }
+    const id = mintId();
+    seen.add(id);
+    return { ...r, id };
+  });
+}
+
 export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppState {
+  // Both the localStorage boot path (mergePersisted) and the signed-in
+  // backend sync (APPLY_REMOTE_STATE) funnel through here -- seeding the
+  // uid() counter from whatever ids this payload already carries, before
+  // any of it lands in state, is what stops a fresh session's counter
+  // (which always restarts at 1000) from re-minting an id already in use.
+  seedUidFromPersisted(p);
   const next = { ...base };
   if (p.manual) next.ob = { ...next.ob, manual: { ...next.ob.manual, ...p.manual } };
   if (p.subs) next.ob = { ...next.ob, subs: p.subs };
@@ -162,8 +190,8 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.buckets) next.finance = { ...next.finance, buckets: p.buckets };
   if (p.obDone) next.appStage = 'app';
   if (p.theme) next.theme = p.theme;
-  if (p.transactions) next.transactions = p.transactions;
-  if (p.receipts) next.receipts = p.receipts;
+  if (p.transactions) next.transactions = dedupeIds(p.transactions, () => 'rcpt-tx-' + uid());
+  if (p.receipts) next.receipts = dedupeIds(p.receipts, () => 'rcpt-' + uid());
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
   if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
   if (p.userMode) next.userMode = p.userMode;
