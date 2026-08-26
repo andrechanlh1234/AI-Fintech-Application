@@ -42,7 +42,7 @@ app.include_router(google_oauth_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "capacitor://localhost"],
     # Also allow any private-LAN IP on the dev port, so a phone on the same
     # wifi/hotspot as this machine can reach the backend for real-device
     # testing without needing this list updated every time the network
