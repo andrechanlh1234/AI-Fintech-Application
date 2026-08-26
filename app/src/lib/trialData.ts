@@ -101,7 +101,13 @@ interface MonthPlan {
 // counts, and their base amounts live in CATEGORY_PROFILES below, so this
 // table only has to carry the "story", not every individual number.
 const MONTH_PLAN: MonthPlan[] = [
-  { year: 2025, month: 1, salary: 5500, bonus: 0, essentialLevel: 1.2, lifestyleLevel: 1.0, travel: false, festive: true, invest: 200, note: 'Post-New Year spending, festive season' },
+  { year: 2024, month: 7, salary: 5200, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 250, note: 'Early history -- steady month' },
+  { year: 2024, month: 8, salary: 5200, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.05, travel: false, festive: false, invest: 250, note: 'Steady month' },
+  { year: 2024, month: 9, salary: 5200, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 0.95, travel: false, festive: false, invest: 600, note: 'Extra investment contribution' },
+  { year: 2024, month: 10, salary: 5200, bonus: 0, essentialLevel: 1.05, lifestyleLevel: 1.1, travel: true, festive: false, invest: 300, note: 'Short getaway' },
+  { year: 2024, month: 11, salary: 5200, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 250, note: 'Steady month' },
+  { year: 2024, month: 12, salary: 5200, bonus: 1200, essentialLevel: 1.2, lifestyleLevel: 1.35, travel: false, festive: true, invest: 400, note: 'Year-end bonus, holidays, gifts' },
+  { year: 2025, month: 1, salary: 5500, bonus: 0, essentialLevel: 1.2, lifestyleLevel: 1.0, travel: false, festive: true, invest: 200, note: 'Salary raise kicks in, post-New Year spending' },
   { year: 2025, month: 2, salary: 5500, bonus: 0, essentialLevel: 0.85, lifestyleLevel: 0.7, travel: false, festive: true, invest: 200, note: 'Quiet month, festive season tapering off' },
   { year: 2025, month: 3, salary: 5500, bonus: 2000, essentialLevel: 1.0, lifestyleLevel: 0.9, travel: false, festive: false, invest: 2500, note: 'Bonus month -- most of it invested' },
   { year: 2025, month: 4, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 300, note: 'Back to a normal month' },
@@ -133,62 +139,62 @@ interface CategoryProfile {
 }
 
 const CATEGORY_PROFILES: Record<string, CategoryProfile> = {
-  'Food & Drink': { group: 'essential', base: 700, count: 4, frequency: 1, merchants: [
+  'Food & Drink': { group: 'essential', base: 700, count: 5, frequency: 1, merchants: [
     { name: 'Village Grocer' }, { name: 'Tealive', brand: 'tealive' }, { name: 'Old Town White Coffee' },
     { name: 'Mamak Corner' }, { name: "McDonald's" }, { name: 'Sushi King' }, { name: 'Starbucks' },
   ] },
-  Groceries: { group: 'essential', base: 350, count: 2, frequency: 1, merchants: [
+  Groceries: { group: 'essential', base: 350, count: 3, frequency: 1, merchants: [
     { name: 'Jaya Grocer' }, { name: 'AEON' }, { name: "Lotus's" }, { name: 'Mydin' }, { name: 'NSK Trade City' },
   ] },
-  Transport: { group: 'essential', base: 300, count: 3, frequency: 1, merchants: [
+  Transport: { group: 'essential', base: 300, count: 4, frequency: 1, merchants: [
     { name: 'Grab', brand: 'grab' }, { name: "Touch 'n Go Toll", brand: 'tng' }, { name: 'RapidKL' }, { name: 'KTM Komuter' },
   ] },
-  Petrol: { group: 'essential', base: 220, count: 2, frequency: 0.9, merchants: [
+  Petrol: { group: 'essential', base: 220, count: 2, frequency: 0.95, merchants: [
     { name: 'Petronas' }, { name: 'Shell' }, { name: 'Caltex' },
   ] },
-  Bills: { group: 'essential', base: 700, count: 3, frequency: 1, merchants: [
+  Bills: { group: 'essential', base: 700, count: 4, frequency: 1, merchants: [
     { name: 'TNB Electricity' }, { name: 'Unifi Internet' }, { name: 'Maxis Postpaid' }, { name: 'Indah Water' }, { name: 'Astro' },
   ] },
-  Insurance: { group: 'essential', base: 380, count: 1, frequency: 0.4, merchants: [
+  Insurance: { group: 'essential', base: 380, count: 1, frequency: 0.6, merchants: [
     { name: 'Great Eastern' }, { name: 'AIA' }, { name: 'Allianz' }, { name: 'Prudential' },
   ] },
-  Medical: { group: 'essential', base: 120, count: 1, frequency: 0.5, merchants: [
+  Medical: { group: 'essential', base: 120, count: 1, frequency: 0.7, merchants: [
     { name: 'Guardian Pharmacy', brand: 'guardian' }, { name: 'Caring Pharmacy' }, { name: 'KPJ Clinic' },
   ] },
-  Family: { group: 'essential', base: 250, count: 1, frequency: 0.35, merchants: [
+  Family: { group: 'essential', base: 250, count: 1, frequency: 0.5, merchants: [
     { name: 'Toys "R" Us' }, { name: 'KidZania' }, { name: "Poh Kong" },
   ] },
-  Education: { group: 'essential', base: 900, count: 1, frequency: 0.15, merchants: [
+  Education: { group: 'essential', base: 900, count: 1, frequency: 0.25, merchants: [
     { name: 'Kumon' }, { name: 'British Council' }, { name: 'Udemy' },
   ] },
-  Home: { group: 'essential', base: 300, count: 1, frequency: 0.3, merchants: [
+  Home: { group: 'essential', base: 300, count: 1, frequency: 0.45, merchants: [
     { name: 'IKEA' }, { name: 'Mr DIY' }, { name: 'Harvey Norman' }, { name: 'Courts' },
   ] },
-  Shopping: { group: 'lifestyle', base: 400, count: 2, frequency: 1, merchants: [
+  Shopping: { group: 'lifestyle', base: 400, count: 3, frequency: 1, merchants: [
     { name: 'Uniqlo' }, { name: 'H&M' }, { name: 'Shopee', brand: 'shopee' }, { name: 'Lazada' }, { name: 'Zalora' },
   ] },
-  Entertainment: { group: 'lifestyle', base: 150, count: 2, frequency: 0.8, merchants: [
+  Entertainment: { group: 'lifestyle', base: 150, count: 3, frequency: 0.9, merchants: [
     { name: 'GSC Cinemas' }, { name: 'TGV Cinemas' }, { name: 'Timezone' },
   ] },
-  Fitness: { group: 'lifestyle', base: 150, count: 1, frequency: 0.85, merchants: [
+  Fitness: { group: 'lifestyle', base: 150, count: 1, frequency: 0.9, merchants: [
     { name: 'Fitness First Gym' }, { name: 'Celebrity Fitness' }, { name: 'Anytime Fitness' },
   ] },
-  Wellness: { group: 'lifestyle', base: 120, count: 1, frequency: 0.4, merchants: [
+  Wellness: { group: 'lifestyle', base: 120, count: 1, frequency: 0.6, merchants: [
     { name: 'Yoga Movement' }, { name: 'Sunway Medical Spa' },
   ] },
-  Hobbies: { group: 'lifestyle', base: 180, count: 1, frequency: 0.45, merchants: [
+  Hobbies: { group: 'lifestyle', base: 180, count: 1, frequency: 0.6, merchants: [
     { name: 'Popular Bookstore' }, { name: 'Kinokuniya' }, { name: 'Steam' },
   ] },
   Travel: { group: 'lifestyle', base: 1200, count: 2, frequency: 0, merchants: [
     { name: 'AirAsia' }, { name: 'Malaysia Airlines' }, { name: 'Agoda' }, { name: 'Traveloka' },
   ] }, // frequency 0 -- only fires on plan.travel months, handled explicitly below
-  Transfers: { group: 'money', base: 300, count: 1, frequency: 0.25, merchants: [{ name: 'DuitNow Transfer' }] },
-  Fees: { group: 'money', base: 25, count: 1, frequency: 0.3, merchants: [{ name: 'Bank Service Charge' }] },
-  ATM: { group: 'money', base: 200, count: 1, frequency: 0.3, merchants: [{ name: 'Maybank ATM', brand: 'maybank' }, { name: 'CIMB ATM', brand: 'cimb' }] },
-  Services: { group: 'others', base: 180, count: 1, frequency: 0.2, merchants: [{ name: 'Aircond Servicing' }, { name: 'Car Workshop' }] },
-  General: { group: 'others', base: 100, count: 1, frequency: 0.25, merchants: [{ name: '7-Eleven' }, { name: 'KK Mart' }] },
-  Donations: { group: 'others', base: 100, count: 1, frequency: 0.15, festiveBoost: 2.5, merchants: [{ name: 'MERCY Malaysia' }, { name: 'MyKasih' }] },
-  Gifts: { group: 'others', base: 150, count: 1, frequency: 0.15, festiveBoost: 2.5, merchants: [{ name: "Poh Kong" }, { name: 'FaSoLa Gifts' }] },
+  Transfers: { group: 'money', base: 300, count: 1, frequency: 0.4, merchants: [{ name: 'DuitNow Transfer' }] },
+  Fees: { group: 'money', base: 25, count: 1, frequency: 0.45, merchants: [{ name: 'Bank Service Charge' }] },
+  ATM: { group: 'money', base: 200, count: 1, frequency: 0.45, merchants: [{ name: 'Maybank ATM', brand: 'maybank' }, { name: 'CIMB ATM', brand: 'cimb' }] },
+  Services: { group: 'others', base: 180, count: 1, frequency: 0.35, merchants: [{ name: 'Aircond Servicing' }, { name: 'Car Workshop' }] },
+  General: { group: 'others', base: 100, count: 1, frequency: 0.45, merchants: [{ name: '7-Eleven' }, { name: 'KK Mart' }] },
+  Donations: { group: 'others', base: 100, count: 1, frequency: 0.2, festiveBoost: 2.5, merchants: [{ name: 'MERCY Malaysia' }, { name: 'MyKasih' }] },
+  Gifts: { group: 'others', base: 150, count: 1, frequency: 0.2, festiveBoost: 2.5, merchants: [{ name: "Poh Kong" }, { name: 'FaSoLa Gifts' }] },
 };
 
 function catSlug(cat: string): string {
@@ -261,14 +267,24 @@ export function buildTrialData(): TrialData {
 
   // Cash-account history: each month's real net saved (real income minus
   // real expenses, both summed from the transactions just built above,
-  // minus that month's investment contribution) becomes one dated
-  // BalanceEntry delta. Nothing here is a second, independently-typed
-  // total -- income/expense are read back off `backfilled`, not restated.
-  const cashHistory = MONTH_PLAN.map((plan, mi) => {
+  // minus that month's investment contribution) becomes two dated
+  // BalanceEntry deltas -- split (not just repeated) across a mid-month and
+  // end-of-month date, since salary lands on the 25th and most spending
+  // trails through the rest of the month. Splitting instead of a single
+  // month-end entry doubles the net-worth chart's tappable points (one
+  // MONTH_PLAN entry's story becomes two distinct dated deltas) while the
+  // two amounts still sum to exactly that month's real net saved -- nothing
+  // here is a second, independently-typed total.
+  const cashHistory = MONTH_PLAN.flatMap((plan, mi) => {
     const yy = String(plan.year).slice(2);
     const mm = String(plan.month).padStart(2, '0');
     const netSaved = monthlyIncome[mi] - monthlyExpense[mi] - plan.invest;
-    return { id: `y${yy}-cash-${mm}`, amount: netSaved, desc: plan.note, date: `${plan.year}-${mm}-28` };
+    const rand = seededRandom(`${plan.year}-${plan.month}-cash-split`);
+    const midShare = Math.round(netSaved * (0.35 + rand() * 0.15)); // ~35-50% by mid-month
+    return [
+      { id: `y${yy}-cash-${mm}-mid`, amount: midShare, desc: plan.note, date: `${plan.year}-${mm}-13` },
+      { id: `y${yy}-cash-${mm}-end`, amount: netSaved - midShare, desc: plan.note, date: `${plan.year}-${mm}-28` },
+    ];
   });
   const cashBase = 8000;
   const cashEnding = cashBase + cashHistory.reduce((s, e) => s + e.amount, 0);
