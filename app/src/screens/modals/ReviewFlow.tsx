@@ -33,8 +33,8 @@ export function ReviewFlow() {
     <div
       className="screen-in"
       style={{
-        position: 'absolute', inset: 0, zIndex: 45, background: 'var(--color-bg)',
-        display: 'flex', flexDirection: 'column', padding: '20px 20px 24px', boxSizing: 'border-box',
+        position: 'fixed', inset: 0, zIndex: 45, background: 'var(--color-bg)',
+        display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>

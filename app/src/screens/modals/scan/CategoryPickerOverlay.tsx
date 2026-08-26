@@ -19,8 +19,8 @@ export function CategoryPickerOverlay({ value, onSelect, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <div className="screen-in" style={{ position: 'absolute', inset: 0, zIndex: 45, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px 8px' }}>
+    <div className="screen-in" style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(env(safe-area-inset-top) + 16px) 20px 8px' }}>
         <button
           type="button"
           onClick={onClose}

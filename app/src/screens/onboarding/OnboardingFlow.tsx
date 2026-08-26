@@ -68,7 +68,7 @@ export function OnboardingFlow() {
 
   return (
     <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 22px 32px', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 24px) 22px 32px', boxSizing: 'border-box' }}>
 
         {state.obStep === 'login' && state.userMode === null && (
           <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8 }}>

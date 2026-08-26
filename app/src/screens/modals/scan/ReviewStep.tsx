@@ -30,7 +30,7 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
   const draft = state.receiptDraft;
 
   return (
-    <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px 20px 24px', boxSizing: 'border-box', overflow: 'auto', position: 'relative' }}>
+    <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', overflow: 'auto', position: 'relative' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
         <button
           type="button"

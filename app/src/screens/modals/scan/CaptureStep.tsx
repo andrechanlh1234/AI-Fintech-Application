@@ -92,7 +92,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg,#2a2c2b,#0f100f)', position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px', position: 'relative', zIndex: 5 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'calc(env(safe-area-inset-top) + 16px) 18px 16px', position: 'relative', zIndex: 5 }}>
         <button
           type="button"
           onClick={onClose}
