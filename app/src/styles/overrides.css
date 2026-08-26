@@ -44,6 +44,12 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
 .pressable { -webkit-tap-highlight-color: transparent; transition: transform .12s ease, opacity .12s ease; }
 .pressable:active { transform: scale(0.96); opacity: 0.75; }
 @media (hover: hover) { .pressable:hover { opacity: 0.85; } }
+/* Overrides the global :focus-visible (tokens.css) solid accent outline --
+   WebKit commonly matches :focus-visible on a plain tap, not just keyboard
+   nav, so every tapped card/button was flashing a hard green box. A soft
+   glow ring (same treatment .input:focus-visible already uses) reads as
+   deliberate polish instead of an accessibility outline firing by accident. */
+.pressable:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--color-accent-100); }
 
 .card { border: 1px solid var(--color-neutral-300) !important; box-shadow: var(--shadow-sm); }
 

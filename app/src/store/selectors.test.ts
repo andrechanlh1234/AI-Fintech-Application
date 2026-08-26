@@ -58,9 +58,30 @@ function medicalReliefCaptured(taxCenter: ReturnType<typeof selectTaxCenter>): n
 }
 
 describe('selectTaxCenter — only deductible detailed-mode line items count toward relief', () => {
-  it('a quick-mode receipt (never deductible) contributes RM0 to captured reliefs', () => {
+  it('a quick-mode receipt in a relief-mapped category is captured by default (auto-suggested deductible)', () => {
     let state = buildInitialState();
     state = quickReceipt(state, 'Guardian Pharmacy', '65.00', 'Health', '2025-03-01');
+    const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
+    expect(medicalReliefCaptured(tax)).toBe(65);
+  });
+
+  it('a quick-mode receipt in a category with no relief mapping is not captured by default', () => {
+    let state = buildInitialState();
+    state = quickReceipt(state, 'Jaya Grocer', '65.00', 'Groceries', '2025-03-01');
+    const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
+    expect(medicalReliefCaptured(tax)).toBe(0);
+  });
+
+  it('the user can override the auto-suggested deductibility back off', () => {
+    let state = openManualReceipt(buildInitialState());
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'Guardian Pharmacy' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'date', value: '2025-03-01' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: '65.00' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'quickCategory', value: 'Health' });
+    expect(state.receiptDraft.tax).toBe(true); // auto-suggested on
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'tax', value: false }); // user turns it off
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+
     const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
     expect(medicalReliefCaptured(tax)).toBe(0);
   });

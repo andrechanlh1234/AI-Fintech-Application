@@ -85,11 +85,15 @@ export function BalanceDetailModal() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <div className="field" style={{ flex: 1 }}>
+        {/* Uneven split, not flex:1 each -- a native date input needs more
+            room than a short amount field (day/month/year plus the
+            browser's own calendar-picker icon), so an even 50/50 split left
+            it cramped right up against its own right edge. */}
+        <div className="field" style={{ flex: 4 }}>
           <label>Amount (RM)</label>
           <input className="input" value={draft.amount} onChange={(e) => actions.setBalanceDraftField('amount', e.target.value)} placeholder="0.00" />
         </div>
-        <div className="field" style={{ flex: 1 }}>
+        <div className="field" style={{ flex: 5 }}>
           <label>Date</label>
           <input className="input" type="date" value={draft.date} onChange={(e) => actions.setBalanceDraftField('date', e.target.value)} />
         </div>

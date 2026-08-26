@@ -30,8 +30,8 @@ export function FilterPicker({
         onClick={() => setOpen((o) => !o)}
         className="pressable"
         style={{
-          all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '9px 14px', borderRadius: 999, font: '500 12.5px var(--font-body)', whiteSpace: 'nowrap',
+          all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '6px 11px', borderRadius: 999, font: '500 11.5px var(--font-body)', whiteSpace: 'nowrap',
           border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
           background: active ? 'var(--color-accent-100)' : 'var(--color-surface)',
           color: active ? 'var(--color-accent-700)' : 'var(--color-text)',

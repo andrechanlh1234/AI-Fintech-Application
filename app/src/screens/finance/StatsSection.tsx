@@ -117,7 +117,14 @@ export default function StatsSection() {
           })}
         </div>
         {state.statsPeriod === 'Choose month' && (
-          <div className="pop-in" style={{ marginBottom: 14 }}>
+          // position + zIndex here (not just on YearMenu inside MonthPicker)
+          // -- .pop-in's animation-fill-mode:both leaves a transform behind
+          // once the entrance animation finishes, which makes this div a
+          // stacking context of its own (same pitfall BottomSheet.tsx's own
+          // comment documents for position:fixed). Without this, the year
+          // dropdown's z-index:30 only wins inside that trapped context; it
+          // still loses to StatsDoughnut below, which sits outside it.
+          <div className="pop-in" style={{ position: 'relative', zIndex: 5, marginBottom: 14 }}>
             <MonthPicker month={state.historyMonth} year={state.historyYear} onChange={(m, y) => { actions.setHistoryMonth(m); actions.setHistoryYear(y); }} />
           </div>
         )}

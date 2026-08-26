@@ -131,7 +131,7 @@ export type Action =
   | { type: 'CAPTURE_PHOTO_START' }
   | { type: 'CAPTURE_PHOTO_RESULT'; result: ScannedReceiptResult }
   | { type: 'CAPTURE_PHOTO_FAILED'; message: string }
-  | { type: 'SET_RECEIPT_DRAFT_FIELD'; field: keyof ReceiptDraft; value: string }
+  | { type: 'SET_RECEIPT_DRAFT_FIELD'; field: keyof ReceiptDraft; value: string | boolean }
   | { type: 'SET_RECEIPT_MODE'; mode: 'quick' | 'detailed' }
   | { type: 'ADD_LINE_ITEM_DRAFT' }
   | { type: 'SET_LINE_ITEM_DRAFT_FIELD'; id: string; field: 'description' | 'amount' | 'cat' | 'deductible'; value: string | boolean }
@@ -611,8 +611,15 @@ export function reducer(state: AppState, action: Action): AppState {
       // potential future debug/analytics use, but the interstitial itself
       // shows static copy, not this string.
       return { ...state, scanStep: 'unable', scanError: action.message };
-    case 'SET_RECEIPT_DRAFT_FIELD':
-      return { ...state, receiptDraft: { ...state.receiptDraft, [action.field]: action.value } };
+    case 'SET_RECEIPT_DRAFT_FIELD': {
+      const next = { ...state.receiptDraft, [action.field]: action.value };
+      // Re-suggest deductibility whenever the category changes -- the user
+      // can still flip it back with the Yes/No toggle right after; this
+      // only sets the starting point so switching categories doesn't leave
+      // a stale suggestion from the previous one.
+      if (action.field === 'quickCategory') next.tax = categoryToReliefKey(action.value as string) != null;
+      return { ...state, receiptDraft: next };
+    }
     case 'SET_RECEIPT_MODE': {
       if (action.mode === state.receiptDraft.mode) return state;
       // Switching to Detailed with nothing typed yet seeds one line item
@@ -646,10 +653,11 @@ export function reducer(state: AppState, action: Action): AppState {
         const amount = parseFloat(draft.total) || 0;
         if (!amount) return state;
         lineItemsTotal = amount;
+        const reliefKey = draft.tax ? categoryToReliefKey(draft.quickCategory) ?? undefined : undefined;
         newTransactions = [{
           id: 'rcpt-tx-' + uid(), merchant: draft.merchant, cat: draft.quickCategory,
           dateLabel, dateGroup: dateGroupFor(dateLabel), month: monthFromDateLabel(dateLabel),
-          amount: -amount, tax: false, payment: state.scanPaymentMethod, receiptId,
+          amount: -amount, tax: draft.tax, reliefKey, payment: state.scanPaymentMethod, receiptId,
         }];
       } else {
         const items = state.lineItemDrafts;

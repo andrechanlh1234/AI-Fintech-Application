@@ -285,7 +285,7 @@ export function useActions() {
           .then((result) => dispatch({ type: 'CAPTURE_PHOTO_RESULT', result }))
           .catch((err: Error) => dispatch({ type: 'CAPTURE_PHOTO_FAILED', message: err.message }));
       },
-      setReceiptDraftField: (field: keyof ReceiptDraft, value: string) => dispatch({ type: 'SET_RECEIPT_DRAFT_FIELD', field, value }),
+      setReceiptDraftField: (field: keyof ReceiptDraft, value: string | boolean) => dispatch({ type: 'SET_RECEIPT_DRAFT_FIELD', field, value }),
       setReceiptMode: (mode: 'quick' | 'detailed') => dispatch({ type: 'SET_RECEIPT_MODE', mode }),
       addLineItemDraft: () => dispatch({ type: 'ADD_LINE_ITEM_DRAFT' }),
       setLineItemDraftField: (id: string, field: 'description' | 'amount' | 'cat' | 'deductible', value: string | boolean) => dispatch({ type: 'SET_LINE_ITEM_DRAFT_FIELD', id, field, value }),

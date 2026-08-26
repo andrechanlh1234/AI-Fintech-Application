@@ -37,6 +37,7 @@ export function Home() {
   const review = selectReviewFlow(state);
   const hasUnreadNotifs = NOTIFICATIONS.length > 0;
   const hasReviewItems = review.reviewCount > 0;
+  const isOverBudget = dash.homeBudgetSpent > dash.homeBudgetTotal;
 
   return (
     <div className="screen-in" style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }}>
@@ -118,10 +119,14 @@ export function Home() {
             <div className="type-numeric" style={{ fontWeight: 800, fontSize: 24, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
               RM {moneyWhole(dash.homeBudgetSpent)} <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {moneyWhole(dash.homeBudgetTotal)}</span>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-tax-700)', whiteSpace: 'nowrap' }}>RM {moneyWhole(dash.homeBudgetTotal - dash.homeBudgetSpent)} left</span>
+            {isOverBudget ? (
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-danger-700)', whiteSpace: 'nowrap' }}>RM {moneyWhole(dash.homeBudgetSpent - dash.homeBudgetTotal)} over</span>
+            ) : (
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-tax-700)', whiteSpace: 'nowrap' }}>RM {moneyWhole(dash.homeBudgetTotal - dash.homeBudgetSpent)} left</span>
+            )}
           </div>
           <div style={{ height: 8, background: 'var(--color-neutral-300)', borderRadius: 4, overflow: 'hidden' }}>
-            <div className="bar-fill" style={{ height: '100%', width: `${dash.homeBudgetPct}%`, background: 'var(--color-accent)', borderRadius: 4 }} />
+            <div className="bar-fill" style={{ height: '100%', width: `${Math.min(100, dash.homeBudgetPct)}%`, background: isOverBudget ? 'var(--color-danger)' : 'var(--color-accent)', borderRadius: 4 }} />
           </div>
         </button>
       </div>

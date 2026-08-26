@@ -8,6 +8,7 @@ import { formatWithCommas } from '../../../lib/format';
 import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
 import { chipStyle, DateChips, PaymentChips } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
+import { RELIEF_INFO } from '../../../lib/taxEngine';
 
 const EXPENSE_NAME_SUGGESTIONS = ['Lunch', 'Groceries', 'Transport', 'Coffee'];
 
@@ -177,6 +178,42 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
         <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Payment method</div>
         <PaymentChips manual={state.ob.manual} value={state.scanPaymentMethod} onChange={actions.setScanPaymentMethod} />
       </div>
+
+      {/* Quick mode only -- "Add line items" mode has its own per-line
+          deductible toggle (ReceiptLineItemsEditor), which doesn't need a
+          reasoning note repeated on every row the way a single receipt-level
+          decision does here. */}
+      {draft.mode === 'quick' && (() => {
+        const relief = RELIEF_INFO[draft.quickCategory];
+        return (
+          <div
+            style={{
+              border: `1.5px solid ${draft.tax ? 'var(--color-tax-300)' : 'var(--color-neutral-300)'}`,
+              background: draft.tax ? 'var(--color-tax-100)' : 'var(--color-surface)',
+              borderRadius: 'var(--radius-md)', padding: 16, marginBottom: 18, boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+              {draft.tax ? 'Tax deductible' : 'Not tax deductible'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+              {relief
+                ? `${relief.why} Counts toward ${relief.name} (RM ${relief.cap.toLocaleString()} cap/year).`
+                : `${draft.quickCategory} doesn't have a matching LHDN relief category, so it isn't counted toward your tax reliefs by default.`}
+            </div>
+            <div className="seg">
+              <label className="seg-opt">
+                <input type="radio" name="receiptDeductible" checked={draft.tax} onChange={() => actions.setReceiptDraftField('tax', true)} />
+                Yes
+              </label>
+              <label className="seg-opt">
+                <input type="radio" name="receiptDeductible" checked={!draft.tax} onChange={() => actions.setReceiptDraftField('tax', false)} />
+                No
+              </label>
+            </div>
+          </div>
+        );
+      })()}
 
       {state.scanMethod === 'manual' && (
         <div className="seg" style={{ marginBottom: 18 }}>

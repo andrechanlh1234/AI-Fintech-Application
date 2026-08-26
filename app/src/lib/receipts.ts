@@ -70,11 +70,19 @@ export interface ReceiptDraft {
   quickCategory: string;
   tag: string;
   mode: 'quick' | 'detailed';
+  /** Quick-mode only ("Add line items" mode has its own per-item toggle,
+   * ReceiptLineItemsEditor's `deductible`). Auto-suggested from
+   * `quickCategory` via `categoryToReliefKey` whenever the category
+   * changes (see reducer's SET_RECEIPT_DRAFT_FIELD case) but stays a
+   * plain user-editable boolean -- the whole point of showing it is to
+   * let the user override the suggestion, e.g. a Shopping receipt that
+   * wasn't actually a deductible purchase. */
+  tax: boolean;
 }
 
 export function blankReceiptDraft(dateIso: string): ReceiptDraft {
   return {
     merchant: '', vendor: '', date: dateIso, total: '', quickCategory: 'Food & Drink',
-    tag: '', mode: 'quick',
+    tag: '', mode: 'quick', tax: false,
   };
 }
