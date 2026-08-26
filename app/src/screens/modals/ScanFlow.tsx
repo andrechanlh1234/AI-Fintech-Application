@@ -61,7 +61,7 @@ export function ScanFlow() {
     <div
       className="screen-in"
       style={{
-        position: 'absolute', inset: 0, zIndex: 40, background: 'var(--color-bg)',
+        position: 'fixed', inset: 0, zIndex: 40, background: 'var(--color-bg)',
         display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
       }}
     >

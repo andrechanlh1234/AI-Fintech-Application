@@ -181,6 +181,13 @@ figcaption {
    otherwise silently fall out of this rule -- exactly what happened to
    ReviewStep's "Expense name" label before this was widened to catch it
    regardless of nesting. */
+/* min-width:0 overrides the flex-item default of min-width:auto, which
+   caps shrinking at the content's intrinsic width. Every call site puts
+   .field in a `flex: 1` row next to a sibling field -- harmless outside a
+   flex row, but without this, WebKit's wide intrinsic rendering of
+   `<input type="date">` (Safari/WKWebView only; Chromium shrinks it fine)
+   refuses to shrink to fit and overlaps the sibling field instead. */
+.field { min-width: 0; }
 .field label {
   display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px;
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
