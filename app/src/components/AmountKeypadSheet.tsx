@@ -137,7 +137,7 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
         <div style={{ font: '600 13px var(--font-body)', color: 'var(--color-text-muted)', marginBottom: 24 }}>Enter amount</div>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
           {greyPrefix && (
-            <span className="type-numeric" style={{ font: '600 20px var(--font-heading)', color: 'var(--color-text-muted)' }}>{greyPrefix}</span>
+            <span className="type-numeric" style={{ font: '600 28px var(--font-heading)', color: 'var(--color-text-muted)' }}>{greyPrefix}</span>
           )}
           <span style={{ font: '700 20px var(--font-heading)', color: 'var(--color-text-muted)' }}>RM</span>
           <span className="type-numeric" style={{ font: '700 44px var(--font-heading)' }}>{bigDisplayText}</span>
