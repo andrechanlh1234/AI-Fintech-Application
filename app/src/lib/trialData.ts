@@ -26,9 +26,9 @@ function isoIn(n: number): string {
 }
 
 // Builds a Transaction from an ISO date directly, rather than "N days ago"
-// -- what every 2025 backfilled row below needs (a fixed historical date),
-// as opposed to the handful of "recent activity" rows further down that are
-// deliberately always relative to today.
+// -- what every backfilled row below needs (a fixed historical date), as
+// opposed to pendingReviewItems further down, which are deliberately always
+// relative to today (simulating a bank statement imported just now).
 function mkTxDated(id: string, merchant: string, cat: string, amount: number, iso: string, opts: { tax?: boolean; reliefKey?: string; payment?: string; brand?: string } = {}): Transaction {
   const dateLabel = isoToDisplayDate(iso);
   const [, m] = iso.split('-');
@@ -36,10 +36,6 @@ function mkTxDated(id: string, merchant: string, cat: string, amount: number, is
     id, merchant, cat, dateLabel, dateGroup: dateGroupFor(dateLabel), month: SHORT_MONTHS[Number(m) - 1],
     amount, tax: !!opts.tax, reliefKey: opts.reliefKey, payment: opts.payment ?? 'Maybank Visa', brand: opts.brand,
   };
-}
-
-function mkTx(id: string, merchant: string, cat: string, amount: number, daysAgo: number, opts: { tax?: boolean; reliefKey?: string; payment?: string; brand?: string } = {}): Transaction {
-  return mkTxDated(id, merchant, cat, amount, isoDaysAgo(daysAgo), opts);
 }
 
 export interface TrialData {
@@ -51,52 +47,36 @@ export interface TrialData {
 }
 
 // ---------------------------------------------------------------------
-// 2025 backfilled history: twelve months of varied, internally-consistent
-// transactions telling a real spending "story" (a slow January, a bonus in
-// March invested rather than spent, a July travel spike, a big December),
-// rather than the same numbers repeated twelve times. Every RM here is a
-// real Transaction the app's own selectors sum up -- nothing downstream
-// (budgets, stats, tax, net worth) is fed a separately hardcoded total.
+// 20-month backfilled history (Jan 2025 - Aug 2026, ending on today's real
+// month): a real spending "story" across the full Essential/Lifestyle/
+// Money/Others category taxonomy, not the same handful of categories
+// repeated. Every RM here is a real Transaction the app's own selectors
+// sum up -- nothing downstream (budgets, stats, tax, net worth) is fed a
+// separately hardcoded total.
 // ---------------------------------------------------------------------
 
-const MERCHANTS: Record<string, string[]> = {
-  'Food & Drink': ['Village Grocer', 'Tealive', 'Old Town White Coffee', 'Mamak Corner', 'Jaya Grocer', "McDonald's", 'Sushi King', 'Starbucks'],
-  Transport: ['Grab', 'Petronas', 'Shell', "Touch 'n Go Toll", 'MRT Feeder Bus'],
-  Shopping: ['Uniqlo', 'H&M', 'Shopee', 'Lazada', 'IKEA', 'Watsons'],
-  Bills: ['TNB Electricity', 'Unifi Internet', 'Maxis Postpaid', 'Indah Water'],
-  Lifestyle: ['Netflix', 'GSC Cinemas', 'Popular Bookstore', 'Fitness First Gym', 'Spotify'],
-  Health: ['Guardian Pharmacy', 'Caring Pharmacy', 'KPJ Clinic'],
-};
-
-const BRAND_FOR: Record<string, string> = { Grab: 'grab', Shopee: 'shopee', Watsons: 'guardian', Netflix: 'netflix' };
-
-interface MonthPlan {
-  salary: number; bonus: number;
-  food: number; transport: number; shopping: number; bills: number; lifestyle: number; health: number;
-  invest: number; note: string;
+// Deterministic per-(month,category) variation -- same seed always produces
+// the same "random-looking" jitter, so trial data is stable across repeated
+// "Load trial data" clicks instead of reshuffling every time (the same
+// determinism principle as splitAmounts below, just for a different job:
+// picking which occasional categories fire in a given month, and by how
+// much amounts wobble around their base).
+function seededRandom(seed: string): () => number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  let state = (h >>> 0) || 1;
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
 }
 
-const MONTH_2025_PLAN: MonthPlan[] = [
-  { salary: 5500, bonus: 0, food: 900, transport: 350, shopping: 750, bills: 700, lifestyle: 300, health: 80, invest: 200, note: 'Post-New Year spending spike' },
-  { salary: 5500, bonus: 0, food: 550, transport: 280, shopping: 200, bills: 700, lifestyle: 150, health: 0, invest: 200, note: 'Quiet month, spending pulled back' },
-  { salary: 5500, bonus: 2000, food: 700, transport: 300, shopping: 350, bills: 700, lifestyle: 200, health: 60, invest: 2500, note: 'Bonus month — most of it invested' },
-  { salary: 5500, bonus: 0, food: 680, transport: 320, shopping: 400, bills: 720, lifestyle: 220, health: 0, invest: 300, note: 'Back to a normal month' },
-  { salary: 5500, bonus: 0, food: 750, transport: 300, shopping: 600, bills: 700, lifestyle: 250, health: 50, invest: 300, note: 'Shopping-heavy month' },
-  { salary: 5500, bonus: 0, food: 600, transport: 280, shopping: 250, bills: 700, lifestyle: 180, health: 0, invest: 800, note: 'Mid-year top-up to investments' },
-  { salary: 5500, bonus: 0, food: 820, transport: 400, shopping: 500, bills: 700, lifestyle: 350, health: 40, invest: 300, note: 'School holidays — travel & dining up' },
-  { salary: 5500, bonus: 0, food: 600, transport: 300, shopping: 300, bills: 700, lifestyle: 200, health: 0, invest: 300, note: 'Steady month' },
-  { salary: 5500, bonus: 0, food: 650, transport: 310, shopping: 280, bills: 720, lifestyle: 200, health: 70, invest: 1000, note: 'Q3 catch-up investment contribution' },
-  { salary: 5500, bonus: 0, food: 700, transport: 300, shopping: 450, bills: 700, lifestyle: 220, health: 0, invest: 300, note: 'Normal month' },
-  { salary: 5500, bonus: 0, food: 620, transport: 290, shopping: 350, bills: 700, lifestyle: 180, health: 60, invest: 300, note: 'Normal month' },
-  { salary: 5500, bonus: 1500, food: 950, transport: 350, shopping: 1200, bills: 750, lifestyle: 400, health: 0, invest: 500, note: 'Year-end bonus & holiday spending' },
-];
-
-// Deterministic, front-loaded split of a monthly category total into n
-// individual transactions that sum to EXACTLY that total (no rounding
-// drift) -- varied-looking amounts instead of n identical line items.
-function splitAmounts(total: number, n: number): number[] {
+// Deterministic, front-loaded split of a category total into n individual
+// transactions that sum to EXACTLY that total (no rounding drift) --
+// varied-looking amounts instead of n identical line items.
+function splitAmounts(total: number, n: number, rand: () => number): number[] {
   if (n <= 0 || total <= 0) return [];
-  const raw = Array.from({ length: n }, (_, i) => 1 / (i + 1.4));
+  const raw = Array.from({ length: n }, () => 0.6 + rand() * 0.8);
   const rawSum = raw.reduce((a, b) => a + b, 0);
   const amounts = raw.map((w) => Math.round((total * w) / rawSum));
   const diff = total - amounts.reduce((a, b) => a + b, 0);
@@ -104,61 +84,166 @@ function splitAmounts(total: number, n: number): number[] {
   return amounts;
 }
 
-const DAY_SLOTS = [3, 8, 13, 18, 23, 27];
-
-// Category -> {tx count that month, which of those are tax-deductible}.
-// Only Lifestyle/Health/Shopping/Bills ever carry a relief key (see
-// categoryToReliefKey) -- Food & Drink and Transport are never deductible,
-// matching real LHDN relief categories, so this data doesn't pretend
-// otherwise. Not every eligible transaction is marked deductible either:
-// only the first (largest, post-split) one per month per category, the way
-// a real user would actually only keep/scan some of their receipts.
-function categoryTxCount(cat: string): number {
-  switch (cat) {
-    case 'Food & Drink': return 4;
-    case 'Transport': return 3;
-    case 'Shopping': return 3;
-    case 'Bills': return 3;
-    case 'Lifestyle': return 3;
-    case 'Health': return 1;
-    default: return 1;
-  }
+interface MonthPlan {
+  year: number; month: number; // month is 1-12
+  salary: number; bonus: number;
+  essentialLevel: number; // multiplier on each essential category's base amount
+  lifestyleLevel: number; // multiplier on each lifestyle category's base amount
+  travel: boolean; // this month gets a Travel line item
+  festive: boolean; // this month's Gifts/Donations frequency + amounts bump up
+  invest: number;
+  note: string;
 }
 
-function build2025Transactions(): { transactions: Transaction[]; monthlyIncome: number[]; monthlyExpense: number[] } {
+// A real income progression (a raise in Feb 2026), bonuses at the usual
+// March/December points, and a level (not a hardcoded amount) driving each
+// category's spend per month -- the categories themselves, their per-month
+// counts, and their base amounts live in CATEGORY_PROFILES below, so this
+// table only has to carry the "story", not every individual number.
+const MONTH_PLAN: MonthPlan[] = [
+  { year: 2025, month: 1, salary: 5500, bonus: 0, essentialLevel: 1.2, lifestyleLevel: 1.0, travel: false, festive: true, invest: 200, note: 'Post-New Year spending, festive season' },
+  { year: 2025, month: 2, salary: 5500, bonus: 0, essentialLevel: 0.85, lifestyleLevel: 0.7, travel: false, festive: true, invest: 200, note: 'Quiet month, festive season tapering off' },
+  { year: 2025, month: 3, salary: 5500, bonus: 2000, essentialLevel: 1.0, lifestyleLevel: 0.9, travel: false, festive: false, invest: 2500, note: 'Bonus month -- most of it invested' },
+  { year: 2025, month: 4, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 300, note: 'Back to a normal month' },
+  { year: 2025, month: 5, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.1, travel: false, festive: false, invest: 300, note: 'Slight lifestyle uptick' },
+  { year: 2025, month: 6, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.3, travel: true, festive: false, invest: 800, note: 'Mid-year school holidays -- short trip' },
+  { year: 2025, month: 7, salary: 5500, bonus: 0, essentialLevel: 1.1, lifestyleLevel: 1.2, travel: true, festive: false, invest: 300, note: 'School holidays continue, travel spike' },
+  { year: 2025, month: 8, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 300, note: 'Back to normal' },
+  { year: 2025, month: 9, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 0.9, travel: false, festive: false, invest: 1000, note: 'Q3 catch-up investment contribution' },
+  { year: 2025, month: 10, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 300, note: 'Steady month' },
+  { year: 2025, month: 11, salary: 5500, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 300, note: 'Steady month' },
+  { year: 2025, month: 12, salary: 5500, bonus: 1500, essentialLevel: 1.2, lifestyleLevel: 1.4, travel: false, festive: true, invest: 500, note: 'Year-end bonus, holidays, gifts' },
+  { year: 2026, month: 1, salary: 5500, bonus: 0, essentialLevel: 1.15, lifestyleLevel: 1.1, travel: false, festive: true, invest: 300, note: "New Year resolutions -- fitness push" },
+  { year: 2026, month: 2, salary: 5800, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 0.9, travel: false, festive: true, invest: 300, note: 'Salary raise kicks in, festive season' },
+  { year: 2026, month: 3, salary: 5800, bonus: 2200, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 2800, note: 'Bonus month' },
+  { year: 2026, month: 4, salary: 5800, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 350, note: 'Normal month' },
+  { year: 2026, month: 5, salary: 5800, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.1, travel: false, festive: false, invest: 350, note: 'Slight lifestyle uptick' },
+  { year: 2026, month: 6, salary: 5800, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.3, travel: true, festive: false, invest: 900, note: 'Mid-year travel' },
+  { year: 2026, month: 7, salary: 5800, bonus: 0, essentialLevel: 1.05, lifestyleLevel: 1.1, travel: false, festive: false, invest: 350, note: 'Back to normal' },
+  { year: 2026, month: 8, salary: 5800, bonus: 0, essentialLevel: 1.0, lifestyleLevel: 1.0, travel: false, festive: false, invest: 350, note: 'Steady month, brings us to today' },
+];
+
+interface CategoryProfile {
+  group: 'essential' | 'lifestyle' | 'money' | 'others';
+  merchants: { name: string; brand?: string }[];
+  base: number; // typical monthly total at level=1
+  count: number; // transactions per month when this category fires
+  frequency: number; // 0-1 chance this category fires in a given month
+  festiveBoost?: number; // frequency/amount multiplier applied in festive months
+}
+
+const CATEGORY_PROFILES: Record<string, CategoryProfile> = {
+  'Food & Drink': { group: 'essential', base: 700, count: 4, frequency: 1, merchants: [
+    { name: 'Village Grocer' }, { name: 'Tealive', brand: 'tealive' }, { name: 'Old Town White Coffee' },
+    { name: 'Mamak Corner' }, { name: "McDonald's" }, { name: 'Sushi King' }, { name: 'Starbucks' },
+  ] },
+  Groceries: { group: 'essential', base: 350, count: 2, frequency: 1, merchants: [
+    { name: 'Jaya Grocer' }, { name: 'AEON' }, { name: "Lotus's" }, { name: 'Mydin' }, { name: 'NSK Trade City' },
+  ] },
+  Transport: { group: 'essential', base: 300, count: 3, frequency: 1, merchants: [
+    { name: 'Grab', brand: 'grab' }, { name: "Touch 'n Go Toll", brand: 'tng' }, { name: 'RapidKL' }, { name: 'KTM Komuter' },
+  ] },
+  Petrol: { group: 'essential', base: 220, count: 2, frequency: 0.9, merchants: [
+    { name: 'Petronas' }, { name: 'Shell' }, { name: 'Caltex' },
+  ] },
+  Bills: { group: 'essential', base: 700, count: 3, frequency: 1, merchants: [
+    { name: 'TNB Electricity' }, { name: 'Unifi Internet' }, { name: 'Maxis Postpaid' }, { name: 'Indah Water' }, { name: 'Astro' },
+  ] },
+  Insurance: { group: 'essential', base: 380, count: 1, frequency: 0.4, merchants: [
+    { name: 'Great Eastern' }, { name: 'AIA' }, { name: 'Allianz' }, { name: 'Prudential' },
+  ] },
+  Medical: { group: 'essential', base: 120, count: 1, frequency: 0.5, merchants: [
+    { name: 'Guardian Pharmacy', brand: 'guardian' }, { name: 'Caring Pharmacy' }, { name: 'KPJ Clinic' },
+  ] },
+  Family: { group: 'essential', base: 250, count: 1, frequency: 0.35, merchants: [
+    { name: 'Toys "R" Us' }, { name: 'KidZania' }, { name: "Poh Kong" },
+  ] },
+  Education: { group: 'essential', base: 900, count: 1, frequency: 0.15, merchants: [
+    { name: 'Kumon' }, { name: 'British Council' }, { name: 'Udemy' },
+  ] },
+  Home: { group: 'essential', base: 300, count: 1, frequency: 0.3, merchants: [
+    { name: 'IKEA' }, { name: 'Mr DIY' }, { name: 'Harvey Norman' }, { name: 'Courts' },
+  ] },
+  Shopping: { group: 'lifestyle', base: 400, count: 2, frequency: 1, merchants: [
+    { name: 'Uniqlo' }, { name: 'H&M' }, { name: 'Shopee', brand: 'shopee' }, { name: 'Lazada' }, { name: 'Zalora' },
+  ] },
+  Entertainment: { group: 'lifestyle', base: 150, count: 2, frequency: 0.8, merchants: [
+    { name: 'GSC Cinemas' }, { name: 'TGV Cinemas' }, { name: 'Timezone' },
+  ] },
+  Fitness: { group: 'lifestyle', base: 150, count: 1, frequency: 0.85, merchants: [
+    { name: 'Fitness First Gym' }, { name: 'Celebrity Fitness' }, { name: 'Anytime Fitness' },
+  ] },
+  Wellness: { group: 'lifestyle', base: 120, count: 1, frequency: 0.4, merchants: [
+    { name: 'Yoga Movement' }, { name: 'Sunway Medical Spa' },
+  ] },
+  Hobbies: { group: 'lifestyle', base: 180, count: 1, frequency: 0.45, merchants: [
+    { name: 'Popular Bookstore' }, { name: 'Kinokuniya' }, { name: 'Steam' },
+  ] },
+  Travel: { group: 'lifestyle', base: 1200, count: 2, frequency: 0, merchants: [
+    { name: 'AirAsia' }, { name: 'Malaysia Airlines' }, { name: 'Agoda' }, { name: 'Traveloka' },
+  ] }, // frequency 0 -- only fires on plan.travel months, handled explicitly below
+  Transfers: { group: 'money', base: 300, count: 1, frequency: 0.25, merchants: [{ name: 'DuitNow Transfer' }] },
+  Fees: { group: 'money', base: 25, count: 1, frequency: 0.3, merchants: [{ name: 'Bank Service Charge' }] },
+  ATM: { group: 'money', base: 200, count: 1, frequency: 0.3, merchants: [{ name: 'Maybank ATM', brand: 'maybank' }, { name: 'CIMB ATM', brand: 'cimb' }] },
+  Services: { group: 'others', base: 180, count: 1, frequency: 0.2, merchants: [{ name: 'Aircond Servicing' }, { name: 'Car Workshop' }] },
+  General: { group: 'others', base: 100, count: 1, frequency: 0.25, merchants: [{ name: '7-Eleven' }, { name: 'KK Mart' }] },
+  Donations: { group: 'others', base: 100, count: 1, frequency: 0.15, festiveBoost: 2.5, merchants: [{ name: 'MERCY Malaysia' }, { name: 'MyKasih' }] },
+  Gifts: { group: 'others', base: 150, count: 1, frequency: 0.15, festiveBoost: 2.5, merchants: [{ name: "Poh Kong" }, { name: 'FaSoLa Gifts' }] },
+};
+
+function catSlug(cat: string): string {
+  return cat.replace(/[^a-z0-9]/gi, '').toLowerCase();
+}
+
+function build2025To2026Transactions(): { transactions: Transaction[]; monthlyIncome: number[]; monthlyExpense: number[] } {
   const transactions: Transaction[] = [];
   const monthlyIncome: number[] = [];
   const monthlyExpense: number[] = [];
 
-  MONTH_2025_PLAN.forEach((plan, mi) => {
-    const monthNum = String(mi + 1).padStart(2, '0');
+  MONTH_PLAN.forEach((plan) => {
+    const yy = String(plan.year).slice(2);
+    const mm = String(plan.month).padStart(2, '0');
+    const idPrefix = `y${yy}-${mm}`;
     let incomeThisMonth = 0;
     let expenseThisMonth = 0;
 
     // Income: salary always on the 25th, an occasional bonus alongside it.
-    const salaryIso = `2025-${monthNum}-25`;
-    transactions.push(mkTxDated(`y25-${monthNum}-salary`, 'Salary', 'Income', plan.salary, salaryIso, { payment: 'Bank Transfer' }));
+    const salaryIso = `${plan.year}-${mm}-25`;
+    transactions.push(mkTxDated(`${idPrefix}-salary`, 'Salary', 'Income', plan.salary, salaryIso, { payment: 'Bank Transfer' }));
     incomeThisMonth += plan.salary;
     if (plan.bonus > 0) {
-      transactions.push(mkTxDated(`y25-${monthNum}-bonus`, 'Annual Bonus', 'Income', plan.bonus, salaryIso, { payment: 'Bank Transfer' }));
+      transactions.push(mkTxDated(`${idPrefix}-bonus`, 'Annual Bonus', 'Income', plan.bonus, salaryIso, { payment: 'Bank Transfer' }));
       incomeThisMonth += plan.bonus;
     }
 
-    (['Food & Drink', 'Transport', 'Shopping', 'Bills', 'Lifestyle', 'Health'] as const).forEach((cat) => {
-      const total = plan[cat === 'Food & Drink' ? 'food' : cat === 'Transport' ? 'transport' : cat === 'Shopping' ? 'shopping' : cat === 'Bills' ? 'bills' : cat === 'Lifestyle' ? 'lifestyle' : 'health'];
+    Object.entries(CATEGORY_PROFILES).forEach(([cat, profile]) => {
+      const rand = seededRandom(`${plan.year}-${plan.month}-${cat}`);
+      const isTravelMonth = cat === 'Travel' && plan.travel;
+      let frequency = profile.frequency;
+      if (profile.festiveBoost && plan.festive) frequency = Math.min(1, frequency * profile.festiveBoost);
+      if (!isTravelMonth && rand() > frequency) return; // this category doesn't fire this month
+
+      const level = profile.group === 'essential' ? plan.essentialLevel : profile.group === 'lifestyle' ? plan.lifestyleLevel : 1;
+      const festiveAmountBoost = profile.festiveBoost && plan.festive ? profile.festiveBoost : 1;
+      const total = Math.round(profile.base * level * festiveAmountBoost * (0.85 + rand() * 0.3));
       if (total <= 0) return;
-      const n = Math.min(categoryTxCount(cat), DAY_SLOTS.length);
-      const amounts = splitAmounts(total, n);
-      const pool = MERCHANTS[cat];
-      const deductible = ['Lifestyle', 'Health', 'Shopping', 'Bills'].includes(cat);
+
+      const amounts = splitAmounts(total, profile.count, rand);
+      const deductible = categoryToReliefKey(cat) != null;
       const reliefKey = deductible ? categoryToReliefKey(cat) ?? undefined : undefined;
+
       amounts.forEach((amt, i) => {
-        const merchant = pool[(mi + i) % pool.length];
-        const iso = `2025-${monthNum}-${String(DAY_SLOTS[i]).padStart(2, '0')}`;
+        if (amt <= 0) return;
+        const merchant = profile.merchants[Math.floor(rand() * profile.merchants.length)];
+        const day = 2 + Math.floor(rand() * 26); // spread across the month, day 2-27
+        const iso = `${plan.year}-${mm}-${String(day).padStart(2, '0')}`;
         transactions.push(mkTxDated(
-          `y25-${monthNum}-${cat.replace(/[^a-z]/gi, '').toLowerCase()}-${i}`,
-          merchant, cat, -amt, iso,
-          { tax: deductible && i === 0, reliefKey: deductible && i === 0 ? reliefKey : undefined, brand: BRAND_FOR[merchant] },
+          `${idPrefix}-${catSlug(cat)}-${i}`,
+          merchant.name, cat, -amt, iso,
+          // Not every eligible transaction is marked deductible -- only the
+          // first (largest, post-split) one per month per category, the way
+          // a real user would actually only keep/scan some of their receipts.
+          { tax: deductible && i === 0, reliefKey: deductible && i === 0 ? reliefKey : undefined, brand: merchant.brand },
         ));
         expenseThisMonth += amt;
       });
@@ -172,30 +257,31 @@ function build2025Transactions(): { transactions: Transaction[]; monthlyIncome: 
 }
 
 export function buildTrialData(): TrialData {
-  const { transactions: tx2025, monthlyIncome, monthlyExpense } = build2025Transactions();
+  const { transactions: backfilled, monthlyIncome, monthlyExpense } = build2025To2026Transactions();
 
   // Cash-account history: each month's real net saved (real income minus
   // real expenses, both summed from the transactions just built above,
   // minus that month's investment contribution) becomes one dated
   // BalanceEntry delta. Nothing here is a second, independently-typed
-  // total -- income/expense are read back off tx2025, not restated.
-  const cashHistory = MONTH_2025_PLAN.map((plan, mi) => {
-    const monthNum = String(mi + 1).padStart(2, '0');
+  // total -- income/expense are read back off `backfilled`, not restated.
+  const cashHistory = MONTH_PLAN.map((plan, mi) => {
+    const yy = String(plan.year).slice(2);
+    const mm = String(plan.month).padStart(2, '0');
     const netSaved = monthlyIncome[mi] - monthlyExpense[mi] - plan.invest;
-    return { id: `y25-cash-${monthNum}`, amount: netSaved, desc: plan.note, date: `2025-${monthNum}-28` };
+    return { id: `y${yy}-cash-${mm}`, amount: netSaved, desc: plan.note, date: `${plan.year}-${mm}-28` };
   });
   const cashBase = 8000;
   const cashEnding = cashBase + cashHistory.reduce((s, e) => s + e.amount, 0);
 
-  // The total actually contributed across 2025, read back from the same
-  // plan the cash-account deltas above were derived from -- not a separate
-  // hardcoded figure. InvestRow has no `history` field (unlike RecordRow),
-  // so -- unlike the cash account above -- this total applies as a single
-  // flat current value rather than growing month-by-month on the net worth
-  // chart; that's an existing limitation of computeNetWorthTimeline
-  // (investTotal is summed once, not date-scoped), not something invented
-  // here, and is called out in the final report as a discovered gap.
-  const totalInvested = MONTH_2025_PLAN.reduce((s, p) => s + p.invest, 0);
+  // The total actually contributed across the whole 20-month backfill, read
+  // back from the same plan the cash-account deltas above were derived
+  // from -- not a separate hardcoded figure. InvestRow has no `history`
+  // field (unlike RecordRow), so -- unlike the cash account above -- this
+  // total applies as a single flat current value rather than growing
+  // month-by-month on the net worth chart; that's an existing limitation of
+  // computeNetWorthTimeline (investTotal is summed once, not date-scoped),
+  // not something invented here.
+  const totalInvested = MONTH_PLAN.reduce((s, p) => s + p.invest, 0);
 
   const manual: Pick<ManualData, 'bankAccounts' | 'creditCards' | 'investments'> = {
     bankAccounts: [
@@ -210,20 +296,6 @@ export function buildTrialData(): TrialData {
     ],
   };
 
-  // "Recent activity" — a handful of transactions dated relative to today
-  // (not part of the 2025 backfill) so Home/Record still show something in
-  // the current month the moment trial data loads.
-  const recentTransactions: Transaction[] = [
-    mkTx('trial-1', 'Grab', 'Transport', -18.5, 1, { payment: 'GrabPay', brand: 'grab' }),
-    mkTx('trial-2', 'Starbucks', 'Food & Drink', -15.9, 2),
-    mkTx('trial-3', 'Decathlon', 'Lifestyle', -238, 5, { tax: true, reliefKey: 'life_general' }),
-    mkTx('trial-4', 'Guardian Pharmacy', 'Health', -42.3, 6, { tax: true, reliefKey: 'med_self', brand: 'guardian' }),
-    mkTx('trial-5', 'Tesco', 'Shopping', -96.4, 8),
-    mkTx('trial-6', 'Salary', 'Income', 5500, 14, { payment: 'Bank Transfer' }),
-  ];
-
-  const transactions: Transaction[] = [...tx2025, ...recentTransactions];
-
   const buckets = defaultBuckets().map((b) => {
     if (b.key === 'fixed') return { ...b, categories: [mkCategory('Housing', 1500, [mkItem('Rent', 1500)])] };
     if (b.key === 'flexible') return { ...b, categories: [mkCategory('Food & Drink', 600, [mkItem('Groceries + dining', 340)])] };
@@ -234,13 +306,17 @@ export function buildTrialData(): TrialData {
     { name: 'Netflix', amount: '54.90', frequency: 'Monthly', startDate: isoDaysAgo(40), nextPayment: isoIn(20), method: 'Maybank Visa', category: 'Entertainment' },
   ];
 
+  // A fresh, not-yet-reviewed "bank statement import" -- deliberately
+  // relative to today (unlike the whole backfill above), so Home's "items
+  // to review" has something the moment trial data loads regardless of
+  // which real-world day it's loaded on.
   const pendingReviewItems: ReviewItem[] = [
     { id: 'trial-rv-1', merchant: 'Shopee', amount: -189.9, cat: 'Shopping', dateLabel: isoToDisplayDate(isoDaysAgo(1)), brand: 'shopee', payment: 'Maybank Visa' },
     { id: 'trial-rv-2', merchant: 'Grab', amount: -24.5, cat: 'Transport', dateLabel: isoToDisplayDate(isoDaysAgo(2)), brand: 'grab', payment: 'GrabPay' },
     { id: 'trial-rv-3', merchant: 'Tealive', amount: -9.9, cat: 'Food & Drink', dateLabel: isoToDisplayDate(isoDaysAgo(3)), brand: 'tealive', payment: "Touch 'n Go eWallet" },
   ];
 
-  return { manual, transactions, buckets, subs, pendingReviewItems };
+  return { manual, transactions: backfilled, buckets, subs, pendingReviewItems };
 }
 
 export function emptyTrialData(): TrialData {
