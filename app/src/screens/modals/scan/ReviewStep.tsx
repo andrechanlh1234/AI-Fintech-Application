@@ -4,20 +4,28 @@ import { selectReceiptReview } from '../../../store/selectors';
 import { iconFlags } from '../../../lib/constants';
 import { TxIcon } from '../../../components/TransactionRow';
 import { ReceiptLineItemsEditor } from '../../../components/ReceiptLineItemsEditor';
-import { HeroAmountInput } from '../../../components/HeroAmountInput';
+import { formatWithCommas } from '../../../lib/format';
+import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
 import { chipStyle, DateChips, PaymentChips } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
 
 const EXPENSE_NAME_SUGGESTIONS = ['Lunch', 'Groceries', 'Transport', 'Coffee'];
 
-export function ReviewStep({ onClose, onImportPhoto }: {
+export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
   onClose: () => void;
   onImportPhoto: (file: File) => void;
+  /** The actual photo this receipt was scanned from, if any -- kept
+   * visible at the top of the screen throughout review (see the receipt
+   * anchor below) instead of only shown once during capture, so filling in
+   * the fields below reads as confirming against a real object rather than
+   * filling in an abstract form. */
+  photoUrl: string | null;
 }) {
   const { state } = useStore();
   const actions = useActions();
   const importFileInputRef = useRef<HTMLInputElement>(null);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [amountSheetOpen, setAmountSheetOpen] = useState(false);
   const review = selectReceiptReview(state);
   const draft = state.receiptDraft;
 
@@ -37,6 +45,17 @@ export function ReviewStep({ onClose, onImportPhoto }: {
           {state.scanMethod === 'photo' ? 'Review receipt' : 'Enter expense details'}
         </span>
       </div>
+      {state.scanMethod === 'photo' && photoUrl && (
+        <div style={{ position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 12, height: 160, flexShrink: 0 }}>
+          <img src={photoUrl} alt="Your scanned receipt" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <span style={{
+            position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff',
+            font: '600 10.5px var(--font-body)', padding: '3px 9px', borderRadius: 999,
+          }}>
+            Your receipt
+          </span>
+        </div>
+      )}
       {state.scanMethod === 'photo' && (
         <div className="tag tag-accent" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>Read from your photo — check it's right</div>
       )}
@@ -74,7 +93,24 @@ export function ReviewStep({ onClose, onImportPhoto }: {
       )}
 
       <div className="card elev-sm" style={{ marginBottom: 20 }}>
-        <div className="field">
+        <button
+          type="button"
+          onClick={() => setAmountSheetOpen(true)}
+          className="pressable"
+          style={{
+            all: 'unset', cursor: 'pointer', width: '100%', boxSizing: 'border-box',
+            padding: '4px 0 14px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4 }}>
+            <span style={{ font: '700 20px var(--font-heading)', color: 'var(--color-text-muted)' }}>RM</span>
+            <span className="type-numeric" style={{ font: '700 44px var(--font-heading)', color: 'var(--color-text)' }}>
+              {draft.total ? formatWithCommas(draft.total) : '0.00'}
+            </span>
+          </div>
+        </button>
+
+        <div className="field" style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <label>Expense name</label>
             <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{draft.merchant.length}/40</span>
@@ -109,10 +145,6 @@ export function ReviewStep({ onClose, onImportPhoto }: {
             value={draft.vendor}
             onChange={(e) => actions.setReceiptDraftField('vendor', e.target.value)}
           />
-        </div>
-
-        <div style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)', padding: '14px 0 4px' }}>
-          <HeroAmountInput value={draft.total} onChange={(v) => actions.setReceiptDraftField('total', v)} />
         </div>
 
         {state.receiptDraft.mode === 'quick' && (
@@ -206,6 +238,13 @@ export function ReviewStep({ onClose, onImportPhoto }: {
           onClose={() => setCategoryPickerOpen(false)}
         />
       )}
+
+      <AmountKeypadSheet
+        open={amountSheetOpen}
+        value={draft.total}
+        onClose={() => setAmountSheetOpen(false)}
+        onSave={(v) => actions.setReceiptDraftField('total', v)}
+      />
     </div>
   );
 }

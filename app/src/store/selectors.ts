@@ -380,7 +380,7 @@ export function selectHomeDashboard(state: AppState) {
   const budgetDerivedTx: Transaction[] = [];
   state.finance.buckets.forEach((b) => b.categories.forEach((c) => c.items.forEach((it) => {
     if (!it.name) return;
-    const cat = CAT_ICON[c.name] ? c.name : b.key === 'insurance' ? 'Health' : b.key === 'goals' ? 'Lifestyle' : 'Bills';
+    const cat = CAT_ICON[c.name] ? c.name : b.key === 'insurance' ? 'Insurance' : b.key === 'goals' ? 'Lifestyle' : 'Bills';
     budgetDerivedTx.push({ id: 'bud-' + it.id, merchant: it.name, cat, dateLabel: 'Recurring', dateGroup: 'This week', month: SHORT_MONTHS[new Date().getMonth()], amount: -(parseFloat(String(it.amount)) || 0), tax: false, payment: b.name + ' budget' });
   })));
   const combinedTx = state.transactions.concat(budgetDerivedTx);
@@ -495,7 +495,14 @@ export function selectRecordPage(state: AppState) {
   const rangeExpense = rangeTxRaw.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
   const rangeNet = rangeIncome - rangeExpense;
 
-  const categoryChips = ['All', ...Object.keys(CAT_ICON)];
+  // Every category actually present in the data, not a fixed curated list
+  // (which used to be CAT_ICON's keys -- an incidental subset that only
+  // ever covered categories with a hand-drawn SVG icon, silently excluding
+  // 'Other' and, since the Essential/Lifestyle taxonomy expansion, most of
+  // the real category list). This is also naturally self-updating: any
+  // future category, or a legacy one from before this taxonomy change,
+  // shows up automatically as soon as a transaction actually uses it.
+  const categoryChips = ['All', ...Array.from(new Set(combinedTx.map((t) => t.cat))).sort()];
 
   return { groupedTx, rangeCount: rangeTxRaw.length, rangeNet, categoryChips };
 }

@@ -9,12 +9,15 @@ import { useDismissOnOutside } from './PeriodPicker';
  * outside tap or Escape. `allLabel` is the "no filter" option (shown first,
  * and what makes the trigger read as inactive again). */
 export function FilterPicker({
-  value, options, onChange, allLabel = 'All',
+  value, options, onChange, allLabel = 'All', align = 'left',
 }: {
   value: string;
   options: string[];
   onChange: (value: string) => void;
   allLabel?: string;
+  /** Which edge the popover hangs from -- 'right' keeps it from running off
+   * the viewport when the trigger itself sits at the screen's right edge. */
+  align?: 'left' | 'right';
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useDismissOnOutside(open, () => setOpen(false));
@@ -43,7 +46,7 @@ export function FilterPicker({
         <div
           className="material-chrome pop-in"
           style={{
-            position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 30, minWidth: 196, maxHeight: 320, overflowY: 'auto',
+            position: 'absolute', top: 'calc(100% + 8px)', [align]: 0, zIndex: 30, minWidth: 196, maxHeight: 320, overflowY: 'auto',
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
             padding: 6,
           }}

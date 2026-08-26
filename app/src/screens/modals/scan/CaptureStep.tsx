@@ -106,7 +106,14 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         {/* Balances the close button so the title stays centered. */}
         <div style={{ width: 36, height: 36 }} />
       </div>
-      <div style={{ flex: 1, position: 'relative', margin: '8px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 12 }}>
+      {/* Full-bleed viewfinder: the video fills the entire remaining screen
+          area edge-to-edge (no margin, no clipping radius), matching a real
+          camera app. The corner-bracket "frame" is a separate, purely
+          decorative overlay inset from the true edges -- it used to share
+          this same margined/clipped box as the video itself, which is what
+          was shrinking the live feed down to a rounded rectangle instead of
+          filling the screen. */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={videoRef}
@@ -118,17 +125,19 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             opacity: liveCameraReady ? 1 : 0, transition: 'opacity .2s ease',
           }}
         />
-        {/* Thinner, more rounded corner brackets than before -- a subtler
-            frame, matching the reference rather than a bold viewfinder. */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderTop: '2px solid rgba(255,255,255,0.75)', borderLeft: '2px solid rgba(255,255,255,0.75)', borderRadius: '10px 0 0 0' }} />
-        <div style={{ position: 'absolute', top: 0, right: 0, width: 30, height: 30, borderTop: '2px solid rgba(255,255,255,0.75)', borderRight: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 10px 0 0' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: 30, height: 30, borderBottom: '2px solid rgba(255,255,255,0.75)', borderLeft: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 0 0 10px' }} />
-        <div style={{ position: 'absolute', bottom: 0, right: 0, width: 30, height: 30, borderBottom: '2px solid rgba(255,255,255,0.75)', borderRight: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 0 10px 0' }} />
-        {!liveCameraReady && (
-          <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.55)', position: 'relative' }}>
-            Align the receipt within the frame
-          </span>
-        )}
+        <div style={{ position: 'absolute', inset: '8px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          {/* Thinner, more rounded corner brackets than before -- a subtler
+              frame, matching the reference rather than a bold viewfinder. */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 30, height: 30, borderTop: '2px solid rgba(255,255,255,0.75)', borderLeft: '2px solid rgba(255,255,255,0.75)', borderRadius: '10px 0 0 0' }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: 30, height: 30, borderTop: '2px solid rgba(255,255,255,0.75)', borderRight: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 10px 0 0' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 30, height: 30, borderBottom: '2px solid rgba(255,255,255,0.75)', borderLeft: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 0 0 10px' }} />
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 30, height: 30, borderBottom: '2px solid rgba(255,255,255,0.75)', borderRight: '2px solid rgba(255,255,255,0.75)', borderRadius: '0 0 10px 0' }} />
+          {!liveCameraReady && (
+            <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.55)', position: 'relative' }}>
+              Align the receipt within the frame
+            </span>
+          )}
+        </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '22px 0 34px' }}>
         <input
@@ -175,12 +184,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
               boxSizing: 'border-box', flexShrink: 0,
             }}
           >
-            {/* Was a plain white fill -- the same button-padding quirk that
-                squeezed this into a visible oval (a native <button> never had
-                its default padding reset, so the flex-shrinking child dot lost
-                width but not height) also motivated giving it the app's AI
-                gradient instead of leaving it a bare white dot. */}
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg,#4d7cf7,#9868d9,#e26b95)', flexShrink: 0 }} />
+            <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
           </button>
           {torchSupported ? (
             <button

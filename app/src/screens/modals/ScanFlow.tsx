@@ -78,7 +78,7 @@ export function ScanFlow() {
         <UnableToScanStep onSnapAgain={handleSnapAgain} onAddCustomAmount={actions.chooseManual} />
       )}
       {state.scanStep === 'review' && (
-        <ReviewStep onClose={handleClose} onImportPhoto={setCaptured} />
+        <ReviewStep onClose={handleClose} onImportPhoto={setCaptured} photoUrl={pendingPhoto?.url ?? null} />
       )}
       {state.scanStep === 'saved' && <SavedStep onScanAnother={handleScanAnother} />}
     </div>

@@ -80,42 +80,45 @@ export default function RecordSection() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="pressable"
-            style={{
-              all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '9px 14px', borderRadius: 999, font: '500 12.5px var(--font-body)', whiteSpace: 'nowrap',
-              border: '1.5px solid var(--color-accent)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
-            }}
-          >
-            {rangeLabel}
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            aria-label="Filter by date"
-            className="pressable"
-            style={{
-              all: 'unset', cursor: 'pointer', width: 34, height: 34, borderRadius: 999, color: 'var(--color-text-muted)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--color-neutral-400)', flexShrink: 0,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
-              <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
-              <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
-            </svg>
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="pressable"
+              style={{
+                all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '9px 14px', borderRadius: 999, font: '500 12.5px var(--font-body)', whiteSpace: 'nowrap',
+                border: '1.5px solid var(--color-accent)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
+              }}
+            >
+              {rangeLabel}
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              aria-label="Filter by date"
+              className="pressable"
+              style={{
+                all: 'unset', cursor: 'pointer', width: 34, height: 34, borderRadius: 999, color: 'var(--color-text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid var(--color-neutral-400)', flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6" /><circle cx="9" cy="6" r="2" />
+                <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2" />
+                <line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="18" r="2" />
+              </svg>
+            </button>
+          </div>
           <FilterPicker
             value={state.txFilter}
             options={rec.categoryChips.filter((c) => c !== 'All')}
             onChange={actions.setTxFilter}
+            align="right"
           />
         </div>
         <input

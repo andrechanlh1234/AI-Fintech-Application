@@ -11,6 +11,28 @@ export function moneyWhole(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+// A comma-formatted string for display (e.g. inside an amount input or
+// keypad) -- kept separate from money()/moneyWhole() above since those
+// always show a settled, sign-normalized amount, while this formats
+// whatever a user is actively mid-typing (no forced 2dp, no sign handling).
+export function formatWithCommas(raw: string): string {
+  if (!raw) return '';
+  const [intPart, ...rest] = raw.split('.');
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return rest.length ? withCommas + '.' + rest.join('') : withCommas;
+}
+
+// Digits and at most one dot, decimals capped to 2 places -- what actually
+// gets dispatched to state (parseFloat-safe, no commas), separate from the
+// comma-formatted string shown to the user.
+export function sanitizeRaw(input: string): string {
+  let s = input.replace(/[^\d.]/g, '');
+  const firstDot = s.indexOf('.');
+  if (firstDot !== -1) s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, '');
+  const [intPart, decPart] = s.split('.');
+  return decPart !== undefined ? intPart + '.' + decPart.slice(0, 2) : s;
+}
+
 export function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }

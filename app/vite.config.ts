@@ -9,6 +9,13 @@ export default defineConfig({
     // quick tunnel (for testing the installed PWA on a phone over HTTPS).
     allowedHosts: ['.trycloudflare.com'],
   },
+  server: {
+    // Same as above, for `vite dev` -- lets a trycloudflare.com quick
+    // tunnel reach the dev server too (e.g. testing live-camera behaviour
+    // on a phone, which needs HTTPS or localhost and a plain LAN IP over
+    // http:// doesn't qualify).
+    allowedHosts: ['.trycloudflare.com'],
+  },
   plugins: [
     react(),
     VitePWA({

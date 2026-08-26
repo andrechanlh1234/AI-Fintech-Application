@@ -3,25 +3,123 @@ import { parseDisplayDate } from './format';
 
 const SHORT_MONTHS_3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Only categories that already had a hand-drawn SVG glyph keep one here
+// (see TxIcon in components/TransactionRow.tsx) -- 'Education' reuses
+// 'isBook' since it's the same concept the old 'Lifestyle' category used
+// it for. 'Health' and 'Lifestyle' (the old bare category, now replaced by
+// the specific Essential/Lifestyle categories below) are kept as aliases
+// so transactions saved before this taxonomy change still render an icon
+// instead of nothing. Every category without an SVG entry here falls back
+// to its CAT_EMOJI glyph -- see iconFlags()/TxIcon.
 export const CAT_ICON: Record<string, string> = {
   Transport: 'isCar',
   'Food & Drink': 'isCoffee',
   Shopping: 'isBag',
   Bills: 'isZap',
-  Health: 'isMedical',
+  Medical: 'isMedical',
+  Education: 'isBook',
   Income: 'isArrowUp',
+  // legacy aliases
+  Health: 'isMedical',
   Lifestyle: 'isBook',
 };
 
 export const CAT_COLOR: Record<string, string> = {
-  Transport: '#f59e0b',
   'Food & Drink': '#ef4444',
-  Shopping: '#8b5cf6',
+  Groceries: '#84cc16',
+  Transport: '#f59e0b',
   Bills: '#3b82f6',
-  Health: '#10b981',
+  Insurance: '#0ea5e9',
+  Petrol: '#dc2626',
+  Family: '#6366f1',
+  Education: '#a855f7',
+  Home: '#f97316',
+  Medical: '#10b981',
+  Shopping: '#8b5cf6',
+  Fitness: '#06b6d4',
+  Entertainment: '#ec4899',
+  Travel: '#0d9488',
+  Wellness: '#059669',
+  Hobbies: '#eab308',
+  Transfers: '#0891b2',
+  Fees: '#ea580c',
+  Taxes: '#475569',
+  Investments: '#7c3aed',
+  ATM: '#2563eb',
+  Loan: '#b45309',
+  'E-wallet': '#0369a1',
+  Services: '#57534e',
+  General: '#71717a',
+  Donations: '#db2777',
+  Gifts: '#e11d48',
   Income: '#14b8a6',
+  Other: '#64748b',
+  // legacy aliases
+  Health: '#10b981',
   Lifestyle: '#ec4899',
 };
+
+// Apple-style emoji per category, for the full-page category picker
+// (CategoryPickerOverlay) and as TxIcon's fallback glyph for any category
+// without a hand-drawn SVG icon in CAT_ICON above.
+export const CAT_EMOJI: Record<string, string> = {
+  'Food & Drink': '🍔',
+  Groceries: '🍎',
+  Transport: '🚗',
+  Bills: '🧾',
+  Insurance: '🛡️',
+  Petrol: '⛽',
+  Family: '👨‍👩‍👧',
+  Education: '📚',
+  Home: '🏠',
+  Medical: '💊',
+  Shopping: '🛍️',
+  Fitness: '💪',
+  Entertainment: '📺',
+  Travel: '✈️',
+  Wellness: '🌿',
+  Hobbies: '⭐',
+  Transfers: '🔄',
+  Fees: '💸',
+  Taxes: '🗄️',
+  Investments: '📊',
+  ATM: '🏧',
+  Loan: '💰',
+  'E-wallet': '📱',
+  Services: '💼',
+  General: '🛒',
+  Donations: '💝',
+  Gifts: '🎁',
+  Income: '💰',
+  Other: '🗂️',
+  // legacy aliases
+  Health: '💊',
+  Lifestyle: '📺',
+};
+
+// The four groups the receipt-scan category picker (CategoryPickerOverlay)
+// shows as separate sections, each with its own circle background color --
+// matches the reference app exactly, and intentionally excludes 'Income'
+// (not a receipt category) as well as the legacy 'Health'/'Lifestyle'
+// aliases above (display-only, never offered as a new choice).
+export const ESSENTIAL_CATEGORIES = [
+  'Food & Drink', 'Groceries', 'Transport', 'Bills', 'Insurance', 'Petrol', 'Family', 'Education', 'Home', 'Medical',
+];
+export const LIFESTYLE_CATEGORIES = [
+  'Shopping', 'Fitness', 'Entertainment', 'Travel', 'Wellness', 'Hobbies',
+];
+export const MONEY_CATEGORIES = [
+  'Transfers', 'Fees', 'Taxes', 'Investments', 'ATM', 'Loan', 'E-wallet',
+];
+export const OTHERS_CATEGORIES = [
+  'Services', 'General', 'Donations', 'Gifts',
+];
+export const CATEGORY_GROUP_BG = {
+  essential: '#C9DDFB',
+  lifestyle: '#F6E3A8',
+  money: '#BCEDDD',
+  others: '#E3E3E3',
+} as const;
 
 export const NW_GROUP_ICON: Record<string, string> = {
   cash: '💵',
@@ -37,16 +135,22 @@ export const MONTH_FULL: Record<string, string> = {
 
 export const MONTH_ORDER = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export const CATEGORY_OPTIONS = ['Food & Drink', 'Transport', 'Shopping', 'Bills', 'Health', 'Lifestyle', 'Income', 'Other'];
+export const CATEGORY_OPTIONS = [
+  'Food & Drink', 'Groceries', 'Transport', 'Bills', 'Insurance', 'Petrol', 'Family', 'Education', 'Home', 'Medical',
+  'Shopping', 'Fitness', 'Entertainment', 'Travel', 'Wellness', 'Hobbies',
+  'Transfers', 'Fees', 'Taxes', 'Investments', 'ATM', 'Loan', 'E-wallet',
+  'Services', 'General', 'Donations', 'Gifts',
+  'Income', 'Other',
+];
 
 // The OCR pipeline (pipeline/categorize.py) classifies into its own,
 // finer-grained vocabulary — map it onto the app's categories rather than
 // falling back to "Other" for anything that isn't an exact string match.
 const OCR_CATEGORY_MAP: Record<string, string> = {
-  Medical: 'Health',
-  Groceries: 'Food & Drink',
+  Medical: 'Medical',
+  Groceries: 'Groceries',
   Dining: 'Food & Drink',
-  Lifestyle: 'Lifestyle',
+  Lifestyle: 'Shopping',
   Transport: 'Transport',
 };
 
@@ -195,12 +299,18 @@ export const OB_ORDER = [
 export interface IconFlags {
   isCar: boolean; isCoffee: boolean; isBag: boolean; isZap: boolean;
   isMedical: boolean; isBook: boolean; isArrowUp: boolean;
+  /** Fallback glyph TxIcon renders when none of the booleans above match --
+   * covers every category that doesn't have a hand-drawn SVG icon. */
+  emoji: string;
 }
 
 export function iconFlags(cat: string | null): IconFlags {
   const key = cat ? CAT_ICON[cat] : undefined;
-  const flags: IconFlags = { isCar: false, isCoffee: false, isBag: false, isZap: false, isMedical: false, isBook: false, isArrowUp: false };
-  if (key && key in flags) flags[key as keyof IconFlags] = true;
+  const flags: IconFlags = {
+    isCar: false, isCoffee: false, isBag: false, isZap: false, isMedical: false, isBook: false, isArrowUp: false,
+    emoji: (cat && CAT_EMOJI[cat]) || '',
+  };
+  if (key && key in flags) flags[key as keyof Omit<IconFlags, 'emoji'>] = true;
   return flags;
 }
 

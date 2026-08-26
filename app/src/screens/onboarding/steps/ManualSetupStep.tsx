@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../../../store/types';
 import type { ManualData } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
-import { moneyWhole } from '../../../lib/format';
-import { formatWithCommas, sanitizeRaw } from '../../../components/HeroAmountInput';
+import { moneyWhole, formatWithCommas, sanitizeRaw } from '../../../lib/format';
 import { StepHeader, PlusIcon, XIcon } from './shared';
 
 type Actions = ReturnType<typeof useActions>;

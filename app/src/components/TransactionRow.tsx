@@ -26,6 +26,10 @@ export function TxIcon({ tx }: { tx: RowIconProps }) {
   if (tx.isArrowUp) return (
     <svg {...common} stroke="var(--color-accent-700)"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
   );
+  // Every category without a hand-drawn SVG glyph above (the newer
+  // Essential/Lifestyle categories, and the 'Other' catch-all) falls back
+  // to its emoji rather than rendering nothing.
+  if (tx.emoji) return <span style={{ fontSize: 15, lineHeight: 1 }}>{tx.emoji}</span>;
   return null;
 }
 

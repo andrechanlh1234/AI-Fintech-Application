@@ -1,6 +1,13 @@
-import { iconFlags } from '../../../lib/constants';
-import { TxIcon } from '../../../components/TransactionRow';
-import { RECEIPT_CATEGORY_OPTIONS } from './shared';
+import {
+  CAT_EMOJI, CATEGORY_GROUP_BG, ESSENTIAL_CATEGORIES, LIFESTYLE_CATEGORIES, MONEY_CATEGORIES, OTHERS_CATEGORIES,
+} from '../../../lib/constants';
+
+const SECTIONS: { title: string; categories: string[]; bg: string }[] = [
+  { title: 'Essential spending', categories: ESSENTIAL_CATEGORIES, bg: CATEGORY_GROUP_BG.essential },
+  { title: 'Lifestyle', categories: LIFESTYLE_CATEGORIES, bg: CATEGORY_GROUP_BG.lifestyle },
+  { title: 'Money management', categories: MONEY_CATEGORIES, bg: CATEGORY_GROUP_BG.money },
+  { title: 'Others', categories: OTHERS_CATEGORIES, bg: CATEGORY_GROUP_BG.others },
+];
 
 /** Full-page category grid, opened from ReviewStep's Category row. Not a
  * scanStep -- purely local UI state on the caller (categoryPickerOpen) so
@@ -25,29 +32,45 @@ export function CategoryPickerOverlay({ value, onSelect, onClose }: {
         </button>
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>Select category</span>
       </div>
-      <div style={{ padding: '12px 20px 32px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px 12px' }}>
-        {RECEIPT_CATEGORY_OPTIONS.map((opt) => {
-          const active = value === opt;
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => { onSelect(opt); onClose(); }}
-              className="pressable"
-              style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}
-            >
-              <span style={{
-                width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: active ? 'var(--color-accent)' : 'var(--color-neutral-200)',
-                color: active ? '#fff' : 'var(--color-text-muted)', position: 'relative', flexShrink: 0,
-                boxShadow: active ? '0 0 0 3px var(--color-accent-100)' : 'none',
-              }}>
-                <TxIcon tx={{ ...iconFlags(opt), hasBrand: false, badgeLetter: '' }} />
-              </span>
-              <span style={{ font: '600 12px var(--font-body)', color: 'var(--color-text)', textAlign: 'center' }}>{opt}</span>
-            </button>
-          );
-        })}
+
+      <div style={{ padding: '8px 20px 32px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {SECTIONS.map((section) => (
+          <div key={section.title}>
+            <div style={{ font: '700 15px var(--font-heading)', marginBottom: 12 }}>{section.title}</div>
+            <div className="card elev-sm" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px 12px' }}>
+              {section.categories.map((opt) => {
+                const active = value === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => { onSelect(opt); onClose(); }}
+                    className="pressable"
+                    style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}
+                  >
+                    <span style={{
+                      width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: section.bg, fontSize: 26, lineHeight: 1, flexShrink: 0, position: 'relative',
+                      boxShadow: active ? '0 0 0 3px var(--color-accent)' : 'none',
+                    }}>
+                      {CAT_EMOJI[opt]}
+                      {active && (
+                        <span style={{
+                          position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: '50%',
+                          background: 'var(--color-accent)', border: '2px solid var(--color-bg)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                        </span>
+                      )}
+                    </span>
+                    <span style={{ font: '600 12px var(--font-body)', color: 'var(--color-text)', textAlign: 'center' }}>{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

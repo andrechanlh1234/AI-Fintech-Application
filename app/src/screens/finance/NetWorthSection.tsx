@@ -173,23 +173,6 @@ export function NetWorthSection() {
         })}
       </div>
 
-      {chart.hasSelection && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 -2px' }}>
-          <button
-            type="button"
-            onClick={actions.clearNwSelection}
-            aria-label="Clear"
-            className="pressable"
-            style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 2 }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-        </div>
-      )}
-
       <div ref={chartWrapRef} style={{ position: 'relative' }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}>
         {chart.hasSelection && (
           <div
@@ -220,7 +203,14 @@ export function NetWorthSection() {
             <polygon points={chart.areaPoints} fill="url(#nwFill)" />
             <polyline points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
             {chart.seriesLabels && chart.pts.map(([cx, cy], i) => (
-              <circle key={i} cx={cx} cy={cy} r={9} fill="transparent" onClick={() => actions.selectNwPoint(i)} style={{ cursor: 'pointer' }} />
+              <circle
+                key={i} cx={cx} cy={cy} r={9} fill="transparent" style={{ cursor: 'pointer' }}
+                // Tapping the already-selected point again clears it -- the
+                // only way to dismiss now that there's no dedicated close
+                // button (removed so selecting/deselecting never shifts the
+                // chart's layout up or down).
+                onClick={() => (state.nwSelectedIdx === i ? actions.clearNwSelection() : actions.selectNwPoint(i))}
+              />
             ))}
           </svg>
           {/* The dots below are HTML, not SVG, deliberately: the svg above

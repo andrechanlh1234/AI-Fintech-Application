@@ -1,12 +1,7 @@
 import { useState, type CSSProperties } from 'react';
-import { CATEGORY_OPTIONS, paymentMethodOptions, subBadge } from '../../../lib/constants';
+import { paymentMethodOptions, subBadge } from '../../../lib/constants';
 import { todayIso } from '../../../lib/format';
 import type { ManualData } from '../../../store/types';
-
-// Quick-mode receipts always save as an expense (see SAVE_RECEIPT in
-// reducer.ts) -- 'Income' has no place here, unlike CATEGORY_OPTIONS'
-// full list, which also feeds pickers that do need it.
-export const RECEIPT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((c) => c !== 'Income');
 
 export function chipStyle(active: boolean): CSSProperties {
   return {
@@ -25,8 +20,9 @@ export function chipStyle(active: boolean): CSSProperties {
 // input via native label->control forwarding, which is what actually opens
 // the device's own date UI (a transparent overlay sitting *on top* of a
 // separate fake chip was tried first and proved unreliable on iOS Safari;
-// this is the input itself, just dressed up, the same trust-the-platform
-// reasoning as HeroAmountInput using inputMode="decimal" over a custom keypad).
+// this is the input itself, just dressed up -- the date field still trusts
+// the platform's own picker, unlike the amount field (see
+// AmountKeypadSheet), which needs real arithmetic a native keyboard can't do.
 export function DateChips({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
   const today = todayIso();
   const isToday = value === today;

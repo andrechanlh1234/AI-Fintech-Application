@@ -76,11 +76,24 @@ export interface TaxItemData { captured: number; receipts: TaxReceipt[] }
 // than guessing. This drives real captured-amount totals — there is no
 // hardcoded per-item "captured" data anymore; see selectTaxCenter in
 // store/selectors.ts, which builds a capturedData map from state.transactions.
+//
+// Fitness -> life_general because LHDN's Lifestyle relief explicitly covers
+// sports equipment (see RELIEF_INFO below); Education -> indiv_education is
+// a direct name match to "Education Fees"; Insurance -> epf_life is a direct
+// match to "Life Insurance & EPF". Groceries, Transport, Petrol, Family,
+// Home, Entertainment, Travel, Wellness and Hobbies have no clear standing
+// LHDN relief and are deliberately left unmapped.
 const CATEGORY_TO_RELIEF_KEY: Record<string, string> = {
-  Lifestyle: 'life_general',
-  Health: 'med_self',
+  Medical: 'med_self',
+  Education: 'indiv_education',
+  Insurance: 'epf_life',
   Shopping: 'life_general',
   Bills: 'life_general',
+  Fitness: 'life_general',
+  // legacy aliases (pre-taxonomy-change categories, kept so already-saved
+  // transactions still count toward the same relief they always did)
+  Lifestyle: 'life_general',
+  Health: 'med_self',
 };
 
 export function categoryToReliefKey(category: string): string | null {
@@ -214,6 +227,13 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
 // captured) is computed live from the user's actual transactions in
 // selectReliefImpact (store/selectors.ts), not hardcoded here.
 export const RELIEF_INFO: Record<string, { name: string; cap: number; why: string }> = {
+  Shopping: { name: 'Lifestyle Relief', cap: 2500, why: "Books, personal computers/smartphones and internet subscriptions qualify under LHDN's Lifestyle relief." },
+  Bills: { name: 'Lifestyle Relief', cap: 2500, why: "Internet and mobile subscriptions qualify under LHDN's Lifestyle relief." },
+  Fitness: { name: 'Lifestyle Relief', cap: 2500, why: "Sports equipment and gym memberships qualify under LHDN's Lifestyle relief." },
+  Medical: { name: 'Medical Expenses Relief', cap: 10000, why: 'Medical treatment for yourself, your spouse or child is deductible under the Medical Expenses relief.' },
+  Education: { name: 'Education Fees Relief', cap: 7000, why: 'Course/tuition fees for further education qualify under the Education Fees relief.' },
+  Insurance: { name: 'Life Insurance & EPF Relief', cap: 7000, why: 'Life insurance premiums are deductible under the Life Insurance & EPF relief.' },
+  // legacy aliases
   Lifestyle: { name: 'Lifestyle Relief', cap: 2500, why: "Books, personal computers/smartphones, sports equipment and internet subscriptions qualify under LHDN's Lifestyle relief." },
   Health: { name: 'Medical Expenses Relief', cap: 10000, why: 'Medical treatment for yourself, your spouse or child is deductible under the Medical Expenses relief.' },
 };
