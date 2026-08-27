@@ -15,6 +15,11 @@ export default defineConfig({
     // on a phone, which needs HTTPS or localhost and a plain LAN IP over
     // http:// doesn't qualify).
     allowedHosts: ['.trycloudflare.com'],
+    // iOS Safari (especially an installed standalone PWA) caches module
+    // responses hard and revalidates unreliably, so edits didn't show up
+    // on the phone during tunnel demos. Force every dev response to be
+    // refetched. Dev only -- production builds are content-hashed.
+    headers: { 'Cache-Control': 'no-store' },
   },
   plugins: [
     react(),
