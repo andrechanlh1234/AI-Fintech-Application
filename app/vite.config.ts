@@ -25,6 +25,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Self-destroying SW: it unregisters itself and deletes every cache it
+      // ever created, on the next load. `autoUpdate` alone kept installed
+      // clients (the Capacitor iOS WKWebView, an installed iOS PWA) pinned
+      // to a stale precache -- the update-and-reload handshake is unreliable
+      // in WKWebView and in iOS standalone mode, so edits never showed up on
+      // device even after a fresh build+install. This app ships its assets
+      // locally in the Capacitor build and is served no-store by the dev
+      // server, so an offline precache buys nothing here and only causes
+      // stale-content bugs. Flip back to a normal precache SW only when
+      // there's a real hosted deployment that needs offline support.
+      selfDestroying: true,
       // The default injected registration script just calls .register()
       // with no update handling at all -- a new SW would install and (per
       // the workbox self.skipWaiting()/clientsClaim() this registerType
