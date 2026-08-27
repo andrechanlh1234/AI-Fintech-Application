@@ -1,6 +1,21 @@
 import { useActions } from '../store/StoreProvider';
 import { CATEGORY_OPTIONS } from '../lib/constants';
 import { lineItemIsInvalid, lineItemNeedsReview, type ReceiptLineItemDraft } from '../lib/receipts';
+import { RELIEF_INFO } from '../lib/taxEngine';
+
+/** The plain-language "why" shown under each item's deductible toggle, so a
+ * scanned receipt explains its tax call instead of just flipping a badge. */
+function deductibleReason(cat: string, deductible: boolean): string {
+  const info = RELIEF_INFO[cat];
+  if (deductible) {
+    return info
+      ? `Counts toward ${info.name} (RM ${info.cap.toLocaleString()} cap/year). ${info.why}`
+      : `Marked deductible, but ${cat} has no matching LHDN relief — it won't be counted automatically.`;
+  }
+  return info
+    ? `${cat} can qualify for ${info.name}. Tap the badge to include it.`
+    : `No LHDN relief category maps to ${cat}.`;
+}
 
 function WarningIcon() {
   return (
@@ -86,6 +101,9 @@ export function ReceiptLineItemsEditor({ items }: { items: ReceiptLineItemDraft[
               >
                 {item.deductible ? 'Potentially deductible' : 'Not deductible'}
               </button>
+            </div>
+            <div style={{ fontSize: 11, lineHeight: 1.45, color: 'var(--color-text-muted)' }}>
+              {deductibleReason(item.cat, item.deductible)}
             </div>
             {invalid && !flagged && (
               <div style={{ fontSize: 11, color: 'var(--color-danger-700)' }}>Add a description and an amount to continue.</div>

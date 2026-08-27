@@ -211,15 +211,21 @@ export function OnboardingFlow() {
               <label>Name</label>
               <input className="input" value={ob.name} onChange={(e) => actions.setOb('name', e.target.value)} placeholder="Aina Natasha" />
             </div>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-              <div className="field" style={{ flex: 1 }}>
+            {/* Uneven split + explicit minWidth:0 on each column: WebKit renders
+                <input type="date"> at a wide intrinsic size that a bare
+                `flex: 1` won't shrink, so an even 50/50 left the date box
+                overlapping Country. Date gets the larger share (it holds
+                day/month/year plus the native picker icon); the wider gap
+                keeps clear air between them. */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+              <div className="field" style={{ flex: 5, minWidth: 0 }}>
                 <label>Date of birth</label>
                 <input type="date" className="input" value={ob.dob} onChange={(e) => actions.setOb('dob', e.target.value)} />
                 {ob.dob && computeAge(ob.dob) !== null && (
                   <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 4 }}>{computeAge(ob.dob)} years old</div>
                 )}
               </div>
-              <div className="field" style={{ flex: 1 }}>
+              <div className="field" style={{ flex: 4, minWidth: 0 }}>
                 <label>Country</label>
                 <select className="input" value={ob.country} onChange={(e) => actions.setOb('country', e.target.value)}>
                   {COUNTRY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}

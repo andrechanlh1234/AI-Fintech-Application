@@ -257,6 +257,37 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
         </div>
       )}
 
+      {/* Receipt-level tax summary for the scan / "Add line items" path.
+          Quick mode has its own single Yes/No note above; detailed mode
+          decides per item (badge on each row), so this recaps the result
+          and points back at those controls -- so every path ends with a
+          clear "is this deductible, and why" note before Save. */}
+      {draft.mode === 'detailed' && state.lineItemDrafts.length > 0 && (() => {
+        const deductible = state.lineItemDrafts.filter((i) => i.deductible);
+        const sum = deductible.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+        const any = deductible.length > 0;
+        return (
+          <div
+            style={{
+              border: `1.5px solid ${any ? 'var(--color-tax-300)' : 'var(--color-neutral-300)'}`,
+              background: any ? 'var(--color-tax-100)' : 'var(--color-surface)',
+              borderRadius: 'var(--radius-md)', padding: 16, marginBottom: 18, boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+              {any
+                ? `${deductible.length} of ${state.lineItemDrafts.length} item${state.lineItemDrafts.length === 1 ? '' : 's'} tax deductible`
+                : 'Not tax deductible'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              {any
+                ? `About RM ${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} will count toward your tax reliefs. Tap the badge on any item above to change what's included.`
+                : 'No item is marked deductible. If something here qualifies for an LHDN relief, tap its badge above to include it.'}
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ flex: 1 }} />
       <button
         type="button"
