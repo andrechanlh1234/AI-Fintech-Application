@@ -87,14 +87,24 @@ def generate_ai_reply(user_text: str, history: list[dict] | None = None, context
         json={
             "contents": contents,
             "systemInstruction": {"parts": [{"text": system_text}]},
-            # Generous headroom, not just for the visible reply: newer Gemini
-            # models spend a substantial hidden "thinking" token budget
-            # before producing output (observed ~350-900 tokens even for a
-            # simple prompt) — too low a cap here truncates mid-thought
-            # before any visible text comes out at all.
-            "generationConfig": {"maxOutputTokens": 2048},
+            "generationConfig": {
+                # Generous headroom, not just for the visible reply: Gemini
+                # models spend a hidden "thinking" budget before producing
+                # output — too low a cap truncates mid-thought before any
+                # visible text comes out.
+                "maxOutputTokens": 2048,
+                # But cap how *much* it thinks. At the default effort,
+                # gemini-3.x-flash took ~40s for a one-line finance answer
+                # here — past the timeout below, so every reply silently
+                # fell back to the canned generator. "low" brings the same
+                # prompt to ~5s with no real quality loss for short chat
+                # answers. (Gemini 3 param; older models used
+                # thinkingBudget and would 400 on this — not a concern
+                # while a 3.x model is configured.)
+                "thinkingConfig": {"thinkingLevel": "low"},
+            },
         },
-        timeout=30,  # thinking-model latency varies more than a typical API call
+        timeout=45,  # headroom over the ~5s typical; thinking-model latency is spiky
     )
     res.raise_for_status()
     data = res.json()
