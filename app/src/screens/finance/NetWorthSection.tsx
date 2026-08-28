@@ -130,10 +130,10 @@ export function NetWorthSection() {
     const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     actions.selectNwPoint(Math.round(pct * (chart.pointCount - 1)));
   };
-  let dragging = false;
-  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => { dragging = true; scrubAt(e.clientX, e.currentTarget); };
-  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => { if (dragging) scrubAt(e.clientX, e.currentTarget); };
-  const onUp = () => { dragging = false; };
+  const draggingRef = useRef(false);
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => { draggingRef.current = true; scrubAt(e.clientX, e.currentTarget); };
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => { if (draggingRef.current) scrubAt(e.clientX, e.currentTarget); };
+  const onUp = () => { draggingRef.current = false; };
 
   const openRow = (row: NwRow) => {
     if (!row.clickable || !row.id) return;

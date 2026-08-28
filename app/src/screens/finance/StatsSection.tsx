@@ -51,16 +51,20 @@ function StatsCategoryDetail() {
 function StatsDoughnut({ bars, sumLabel }: { bars: ReturnType<typeof selectStatsPage>['statsCategoryBars']; sumLabel: string }) {
   const R = 80;
   const C = 2 * Math.PI * R;
-  let cumulative = 0;
+  // Precompute each segment's starting angle as a running sum, functionally,
+  // so nothing is reassigned after render (immutability lint rule).
+  const startPct = bars.reduce<number[]>((acc, _c, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + bars[i - 1].pct);
+    return acc;
+  }, []);
 
   return (
     <div style={{ position: 'relative', width: 200, height: 200, margin: '0 auto 24px' }}>
       <svg width={200} height={200} viewBox="0 0 200 200">
         <circle cx={100} cy={100} r={R} fill="none" stroke="var(--color-neutral-200)" strokeWidth={28} />
-        {bars.map((c) => {
+        {bars.map((c, ci) => {
           const dash = (c.pct / 100) * C;
-          const offset = -((cumulative / 100) * C);
-          cumulative += c.pct;
+          const offset = -((startPct[ci] / 100) * C);
           return (
             <circle
               key={c.name}

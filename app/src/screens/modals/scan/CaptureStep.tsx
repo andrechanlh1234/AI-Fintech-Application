@@ -30,10 +30,9 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
   // e.g. testing over a plain-http LAN IP from a phone.
   useEffect(() => {
     let cancelled = false;
-    setLiveCameraReady(false);
-    setTorchSupported(false);
-    setTorchOn(false);
-
+    // (No state reset here — this effect runs once on mount and the three
+    // flags already start false; resetting them synchronously in the effect
+    // was a redundant cascading render.)
     if (!navigator.mediaDevices?.getUserMedia) return;
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
