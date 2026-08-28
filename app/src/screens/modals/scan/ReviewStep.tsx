@@ -111,7 +111,7 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
           </div>
         </button>
 
-        <div style={{ display: 'flex', gap: 12, borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
           <div className="field" style={{ flex: 1, marginBottom: 0 }}>
             <label>Date</label>
             <DateField value={draft.date} onChange={(iso) => actions.setReceiptDraftField('date', iso)} />
@@ -119,7 +119,7 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
           <div className="field" style={{ flex: 1, marginBottom: 0 }}>
             <label>Payment method</label>
             <select
-              className="input"
+              className="input picker-field"
               value={PAYMENT_METHODS.includes(state.scanPaymentMethod) ? state.scanPaymentMethod : 'Cash'}
               onChange={(e) => actions.setScanPaymentMethod(e.target.value)}
             >

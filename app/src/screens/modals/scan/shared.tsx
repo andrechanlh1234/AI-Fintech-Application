@@ -8,18 +8,24 @@ function formatLongDate(iso: string): string {
 }
 
 /**
- * One date control: shows the date as "Aug 28, 2026" and, on a tap anywhere,
- * opens the device's native date picker. The <input type="date"> fills the
- * whole control transparently so the tap lands on the input itself — a
- * separate visible overlay on a fake field proved flaky on iOS.
+ * One date control, styled to be the exact same box as the payment-method
+ * <select> beside it. Shows the date as "Aug 28, 2026"; a tap anywhere
+ * forwards (native <label> behaviour) to a full-size transparent
+ * <input type="date">, which opens the device's own date picker.
+ *
+ * `margin: 0` inline is deliberate: this is a <label> nested inside `.field`,
+ * so it would otherwise inherit `.field label`'s header spacing/size and
+ * sit lower than the <select>.
  */
 export function DateField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
   return (
-    <label
-      className="input"
-      style={{ display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
-    >
-      <span style={{ font: '600 13.5px var(--font-body)', color: value ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+    <label className="input picker-field" style={{ position: 'relative', cursor: 'pointer', margin: 0, display: 'flex', alignItems: 'center' }}>
+      <span
+        style={{
+          fontSize: 12, fontWeight: 400, whiteSpace: 'nowrap',
+          color: value ? 'var(--color-text)' : 'var(--color-text-muted)',
+        }}
+      >
         {formatLongDate(value)}
       </span>
       <input
@@ -30,7 +36,7 @@ export function DateField({ value, onChange }: { value: string; onChange: (iso: 
         aria-label="Date"
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%',
-          opacity: 0, border: 0, padding: 0, margin: 0, cursor: 'pointer',
+          opacity: 0, border: 0, padding: 0, margin: 0, cursor: 'pointer', fontSize: 16,
         }}
       />
     </label>
