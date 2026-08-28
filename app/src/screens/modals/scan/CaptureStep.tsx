@@ -168,7 +168,6 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
           style={{
             position: 'absolute', top: '7%', bottom: '13%', left: 24, right: 24,
             borderRadius: 22, pointerEvents: 'none',
-            border: '1px solid rgba(255,255,255,0.22)',
             boxShadow: '0 0 0 100vmax rgba(0,0,0,0.46)',
           }}
         />
@@ -208,15 +207,15 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             if (file) onCaptured(file);
           }}
         />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 28, width: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 34, width: '100%' }}>
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
             aria-label="Choose a photo or file"
             className="pressable"
-            style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}
+            style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
           </button>
           <button
             type="button"
@@ -224,12 +223,12 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             aria-label="Capture"
             className="pressable"
             style={{
-              width: 66, height: 66, padding: 0, borderRadius: '50%', background: 'transparent',
-              border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 82, height: 82, padding: 0, borderRadius: '50%', background: 'transparent',
+              border: '5px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxSizing: 'border-box', flexShrink: 0,
             }}
           >
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+            <div style={{ width: 65, height: 65, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
           </button>
           {torchSupported ? (
             <button
@@ -237,13 +236,13 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
               onClick={toggleTorch}
               aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
               className="pressable"
-              style={{ width: 44, height: 44, borderRadius: '50%', background: torchOn ? '#fff' : 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: torchOn ? '#0f100f' : '#fff', flexShrink: 0 }}
+              style={{ width: 54, height: 54, borderRadius: '50%', background: torchOn ? '#fff' : 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: torchOn ? '#0f100f' : '#fff', flexShrink: 0 }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
             </button>
           ) : (
             // Keeps the capture button centered whether or not flash is available.
-            <div style={{ width: 44, height: 44, flexShrink: 0 }} />
+            <div style={{ width: 54, height: 54, flexShrink: 0 }} />
           )}
         </div>
         <button
