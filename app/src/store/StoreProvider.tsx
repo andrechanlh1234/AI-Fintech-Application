@@ -38,8 +38,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const user = await fetchMe();
-        dispatch({ type: 'SET_AUTH_USER', user });
         const remote = await fetchRemoteState();
+        // Dispatch SET_AUTH_USER only *after* the remote pull resolves, in the
+        // same batch as APPLY_REMOTE_STATE. Setting authUser earlier arms the
+        // debounced push effect below; if the GET then takes >800ms it would
+        // upload the pre-login guest state and overwrite the account's real
+        // data on the server before it's ever loaded (H2).
+        dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
         if (justSignedInViaGoogle) dispatch({ type: 'OAUTH_LOGIN_COMPLETE' });
       } catch {
@@ -99,6 +104,15 @@ type ManualListKey = keyof ManualData;
 export function useActions() {
   const { state, dispatch } = useStore();
 
+  // A few action creators read from `state` when invoked (AI history/context,
+  // link-target toggling, the password-reset token). The returned object is
+  // memoised for referential stability, so those closures must read the
+  // *current* state through a ref rather than whatever `state` was when the
+  // memo last built — otherwise, for a manual-setup user whose `linkedIds`
+  // never changes, they permanently see the first render's state (H4).
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; });
+
   return useMemo(() => {
     return {
       // onboarding
@@ -112,7 +126,7 @@ export function useActions() {
       chooseLinkMethod: (nextStep: string) => dispatch({ type: 'CHOOSE_SETUP_METHOD', method: 'link', nextStep }),
       chooseManualMethod: (nextStep: string) => dispatch({ type: 'CHOOSE_SETUP_METHOD', method: 'manual', nextStep }),
       toggleLinkTarget: (id: string) => {
-        if (state.ob.linkedIds.includes(id)) {
+        if (stateRef.current.ob.linkedIds.includes(id)) {
           dispatch({ type: 'TOGGLE_LINK_TARGET_REMOVE', id });
           return;
         }
@@ -311,8 +325,8 @@ export function useActions() {
         // fall back to the same client-side canned reply — the chat must
         // never go silent or error out.
         const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
-        const history = state.aiMessages; // prior turns, before this user message is appended above
-        const context = selectAiContext(state);
+        const history = stateRef.current.aiMessages; // prior turns, before this user message is appended above
+        const context = selectAiContext(stateRef.current);
         Promise.all([requestAiReply(t, history, context).catch(() => null), minDelay])
           .then(([res]) => {
             const reply = res && res.source === 'gemini' && res.reply ? res.reply : aiCraftReply(t);
@@ -321,21 +335,30 @@ export function useActions() {
       },
 
       // accounts
+      // Pull the account's synced state *before* announcing the sign-in, so
+      // the debounced push effect can't fire with pre-login guest state and
+      // clobber the server copy (H2). For a fresh signup the pull is just
+      // null and the guest state is legitimately adopted into the new account.
       authSignup: async (email: string, password: string) => {
         const user = await apiSignup(email, password);
-        dispatch({ type: 'SET_AUTH_USER', user });
         const remote = await fetchRemoteState();
+        dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
       },
       authLogin: async (email: string, password: string) => {
         const user = await apiLogin(email, password);
-        dispatch({ type: 'SET_AUTH_USER', user });
         const remote = await fetchRemoteState();
+        dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
       },
       authLogout: () => {
+        // Drop the token *and* the persisted blob, then reload to a clean
+        // guest state — otherwise the previous account's data lingers in
+        // localStorage for the next guest or account on this browser, and
+        // (via the sync effect) could be pushed up to that next account (M5).
         apiLogout();
-        dispatch({ type: 'SET_AUTH_USER', user: null });
+        clearPersisted();
+        window.location.reload();
       },
       openAuthPanel: () => dispatch({ type: 'OPEN_AUTH_PANEL' }),
       closeAuthPanel: () => dispatch({ type: 'CLOSE_AUTH_PANEL' }),
@@ -343,13 +366,14 @@ export function useActions() {
       closeLegal: () => dispatch({ type: 'CLOSE_LEGAL' }),
       requestPasswordReset: (email: string) => apiForgotPassword(email),
       completePasswordReset: async (newPassword: string) => {
-        if (!state.resetToken) throw new Error('Missing reset token');
-        await apiResetPassword(state.resetToken, newPassword);
+        if (!stateRef.current.resetToken) throw new Error('Missing reset token');
+        await apiResetPassword(stateRef.current.resetToken, newPassword);
         dispatch({ type: 'SET_RESET_TOKEN', token: null });
       },
       cancelPasswordReset: () => dispatch({ type: 'SET_RESET_TOKEN', token: null }),
       setUserMode: (mode: 'developer' | 'customer') => dispatch({ type: 'SET_USER_MODE', mode }),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.linkedIds]);
+    // `dispatch` is stable; every state read now goes through `stateRef`, so
+    // this object only needs to be built once (H4).
+  }, [dispatch]);
 }
