@@ -410,21 +410,28 @@ textarea.input { min-height: 90px; resize: vertical; }
 .tab-btn[data-active="true"] svg { transform: scale(1.08); }
 .tab-btn:active svg { transform: scale(0.85); }
 
-/* Liquid-glass selection lens (iOS 26 style): a translucent, blurred capsule
-   that springs between tab slots behind the active item, with a bright top
-   rim and a soft ambient shadow. Position + width are measured live in
-   TabBar.tsx so this stays correct if the bar layout changes. */
+/* Liquid-glass selection lens (iOS 26 style): a translucent, blurred
+   rounded-rect that springs between tab slots behind the active item — a
+   soft squircle sized to the stacked icon+label, not a flat ellipse. Bright
+   top rim + faint vertical sheen so it reads as glass, with a whisper of
+   accent tint tying it to the green active glyph. Position + width are
+   measured live in TabBar.tsx. */
 .tab-lens {
-  position: absolute; top: 6px; bottom: 6px; left: 0;
-  border-radius: 999px; z-index: 0; pointer-events: none;
-  background: rgba(255, 255, 255, 0.55);
-  -webkit-backdrop-filter: blur(7px) saturate(150%);
-  backdrop-filter: blur(7px) saturate(150%);
+  position: absolute; top: 3px; bottom: 3px; left: 0;
+  border-radius: 17px; z-index: 0; pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 9%, rgba(255, 255, 255, 0.66)),
+    rgba(255, 255, 255, 0.42)
+  );
+  -webkit-backdrop-filter: blur(9px) saturate(165%);
+  backdrop-filter: blur(9px) saturate(165%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
-    0 1px 4px rgba(0, 0, 0, 0.10);
-  transition: transform .42s cubic-bezier(.5, 1.3, .5, 1), width .42s cubic-bezier(.5, 1.3, .5, 1);
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.045),
+    0 2px 6px rgba(0, 0, 0, 0.10);
+  transition: transform .44s cubic-bezier(.5, 1.28, .5, 1), width .44s cubic-bezier(.5, 1.28, .5, 1);
   will-change: transform;
 }
 

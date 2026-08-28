@@ -72,7 +72,7 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
   // any future layout change, no hardcoded slot maths.
   useLayoutEffect(() => {
     const btn = barRef.current?.querySelector<HTMLElement>('[data-active="true"]');
-    if (btn) setLens({ x: btn.offsetLeft + 3, w: btn.offsetWidth - 6 });
+    if (btn) setLens({ x: btn.offsetLeft + 2, w: btn.offsetWidth - 4 });
   }, [active]);
 
   return (
