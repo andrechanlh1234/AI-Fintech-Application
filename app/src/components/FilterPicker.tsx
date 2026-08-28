@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useDismissOnOutside } from './PeriodPicker';
 
 /** Apple-style single-select filter dropdown: a "Filter ▾" trigger that
@@ -44,12 +44,12 @@ export function FilterPicker({
       </button>
       {open && (
         <div
-          className="material-chrome pop-in"
+          className="material-chrome popover-origin"
           style={{
             position: 'absolute', top: 'calc(100% + 8px)', [align]: 0, zIndex: 30, minWidth: 196, maxHeight: 320, overflowY: 'auto',
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
-            padding: 6,
-          }}
+            padding: 6, '--pop-origin': `top ${align}`,
+          } as CSSProperties}
         >
           {[allLabel, ...options].map((opt, i, arr) => {
             const selected = opt === value;

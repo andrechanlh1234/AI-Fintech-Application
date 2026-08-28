@@ -52,12 +52,12 @@ function YearMenu({
     align === 'right' ? { right: 0 } : align === 'left' ? { left: 0 } : { left: '50%', transform: 'translateX(-50%)' };
   return (
     <div
-      className="material-chrome pop-in"
+      className="material-chrome popover-origin"
       style={{
         position: 'absolute', top: 'calc(100% + 8px)', zIndex: 30, minWidth: 168,
         borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
-        overflow: 'hidden', padding: 6, ...posStyle,
-      }}
+        overflow: 'hidden', padding: 6, '--pop-origin': `top ${align === 'center' ? 'center' : align}`, ...posStyle,
+      } as CSSProperties}
     >
       {years.map((y, i) => {
         const selected = y === year;
@@ -136,7 +136,7 @@ export function MonthPicker({
         </button>
       </div>
       {open && (
-        <div className="pop-in card" style={{ marginTop: 14, padding: 16 }}>
+        <div className="popover-origin card" style={{ marginTop: 14, padding: 16, '--pop-origin': 'top center' } as CSSProperties}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14, position: 'relative' }}>
             <button
               type="button"
