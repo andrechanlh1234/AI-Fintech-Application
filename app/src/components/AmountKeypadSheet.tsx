@@ -1,6 +1,7 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { BottomSheet } from './BottomSheet';
 import { formatWithCommas, sanitizeRaw } from '../lib/format';
+import { popScale } from '../lib/motion';
 
 type Op = '+' | '−' | '×' | '÷';
 
@@ -31,7 +32,22 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
   onClose: () => void;
   onSave: (raw: string) => void;
 }) {
-  const [entry, setEntry] = useState('0');
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      {/* Keyed on the incoming value so the body remounts — and its state
+          re-seeds from `value` via the useState initialisers — every time
+          the sheet opens or the saved amount changes. No reset effect. */}
+      <KeypadBody key={value || '0'} value={value} onClose={onClose} onSave={onSave} />
+    </BottomSheet>
+  );
+}
+
+function seedEntry(value: string): string {
+  return value && parseFloat(value) > 0 ? value : '0';
+}
+
+function KeypadBody({ value, onClose, onSave }: { value: string; onClose: () => void; onSave: (raw: string) => void }) {
+  const [entry, setEntry] = useState(seedEntry(value));
   const [accumulator, setAccumulator] = useState<number | null>(null);
   const [pendingOp, setPendingOp] = useState<Op | null>(null);
   // True right after an operator or "=" -- the display still shows the
@@ -40,19 +56,13 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
   // that leftover value (e.g. "12" + then "5" must become "5", not "125").
   const [freshEntry, setFreshEntry] = useState(false);
 
-  // Reseed from whatever's already saved every time the sheet opens (not
-  // on every keystroke elsewhere) -- a fresh calculator each time, but
-  // starting from the current amount so re-opening to nudge it doesn't
-  // throw away what's already there.
-  useEffect(() => {
-    if (!open) return;
-    setEntry(value && parseFloat(value) > 0 ? value : '0');
-    setAccumulator(null);
-    setPendingOp(null);
-    setFreshEntry(false);
-  }, [open, value]);
+  // The big display number "pops" (scales up ~3px then springs back) on
+  // every key that changes it — like the iOS calculator / Ryt Bank app.
+  const displayRef = useRef<HTMLSpanElement>(null);
+  const pop = () => popScale(displayRef.current, 3, 38);
 
   const pressDigit = (d: string) => {
+    pop();
     if (freshEntry) { setEntry(d === '.' ? '0.' : d); setFreshEntry(false); return; }
     if (d === '.' && entry.includes('.')) return;
     if (entry === '0' && d !== '.') { setEntry(d); return; }
@@ -63,11 +73,13 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
   };
 
   const pressBackspace = () => {
+    pop();
     if (freshEntry) { setEntry('0'); setFreshEntry(false); return; }
     setEntry((e) => (e.length <= 1 ? '0' : e.slice(0, -1)));
   };
 
   const pressOp = (op: Op) => {
+    pop();
     const current = parseFloat(entry) || 0;
     if (pendingOp != null && accumulator != null && !freshEntry) {
       // Chained operator ("12 + 5 +") -- evaluate the pending op first and
@@ -84,6 +96,7 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
 
   const pressEquals = () => {
     if (pendingOp == null || accumulator == null) return;
+    pop();
     const result = round2(applyOp(accumulator, parseFloat(entry) || 0, pendingOp));
     setEntry(String(result));
     setAccumulator(null);
@@ -129,7 +142,7 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
     : null;
 
   return (
-    <BottomSheet open={open} onClose={onClose}>
+    <>
       <div style={{ padding: '10px 8px 0' }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--color-neutral-300)', margin: '4px auto 4px' }} />
       </div>
@@ -140,7 +153,13 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
             <span className="type-numeric" style={{ font: '600 25px var(--font-heading)', color: 'var(--color-text-muted)' }}>{greyPrefix}</span>
           )}
           <span style={{ font: '700 20px var(--font-heading)', color: 'var(--color-text-muted)' }}>RM</span>
-          <span className="type-numeric" style={{ font: '700 38px var(--font-heading)' }}>{bigDisplayText}</span>
+          <span
+            ref={displayRef}
+            className="type-numeric"
+            style={{ font: '700 38px var(--font-heading)', display: 'inline-block', transformOrigin: 'center bottom', willChange: 'transform' }}
+          >
+            {bigDisplayText}
+          </span>
         </div>
       </div>
 
@@ -170,6 +189,7 @@ export function AmountKeypadSheet({ open, value, onClose, onSave }: {
       <div style={{ padding: '18px 20px 28px' }}>
         <button type="button" onClick={handleSave} className="btn btn-primary btn-lg">Save</button>
       </div>
-    </BottomSheet>
+    </>
   );
 }
+
