@@ -4,7 +4,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { animate, captureSharedOrigin, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
+import { animate, captureSharedOrigin, playSharedMorph, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
 import { BRAND, subBadge } from '../../lib/constants';
 import type { AppState } from '../../store/types';
 
@@ -167,8 +167,13 @@ export function NetWorthSection() {
     else actions.openBalanceDetail(row.listKey, row.id);
   };
 
+  // Shared-element landing: if the user arrived here by tapping Home's
+  // Net worth card, morph that card's frame into this screen's header.
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { playSharedMorph(morphRef.current); }, []);
+
   return (
-    <div>
+    <div ref={morphRef}>
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Net worth</div>
       <AnimatedNumber
         className="type-numeric"

@@ -7,6 +7,7 @@ import { BudgetGauge } from './BudgetGauge';
 import { BudgetUtilisationBar } from '../../components/BudgetUtilisationBar';
 import { AddBudgetCategoryForm } from '../../components/AddBudgetCategoryForm';
 import { BUDGET_COMMON_CATEGORIES } from '../../lib/constants';
+import { captureSharedOrigin } from '../../lib/motion';
 
 // Ported from Cukai v7.dc.html lines 1297-1404: the gauge, bucket list, and
 // subscriptions summary that make up the Budgets screen.
@@ -60,7 +61,7 @@ export function BudgetsSection() {
                 <div key={c.id}>
                   <button
                     type="button"
-                    onClick={() => actions.openBudgetItemDetail(c.detailKey)}
+                    onClick={(e) => { captureSharedOrigin(e.currentTarget); actions.openBudgetItemDetail(c.detailKey); }}
                     className="pressable"
                     style={{ all: 'unset', cursor: 'pointer', display: 'block', width: '100%', boxSizing: 'border-box' }}
                   >

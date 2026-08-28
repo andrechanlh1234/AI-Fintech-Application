@@ -80,6 +80,43 @@ export function popScale(el: Animatable, magnitude = 3, basePx = 38): Animation 
 }
 
 /**
+ * Fluid Push companion (spec §1): keep a static visual copy of the
+ * *outgoing* screen for the length of the push and animate it receding —
+ * forward nav pushes it back (scale to ~0.965 + fade), back nav slides it
+ * off to the right. It's a plain DOM clone appended behind the incoming
+ * screen (z-index 0 vs the incoming page's 1), so the outgoing screen's own
+ * effects (camera, sync, AI chat) never re-fire. Caller captures the
+ * outgoing DOM's `innerHTML` + rect synchronously (before the swap) and
+ * hands them here from a layout effect.
+ */
+export function playPageExit(html: string, rect: DOMRect | null, dir: 'forward' | 'back'): void {
+  if (!html || !rect || !rect.width || prefersReducedMotion()) return;
+  const ghost = document.createElement('div');
+  ghost.setAttribute('aria-hidden', 'true');
+  Object.assign(ghost.style, {
+    position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`, margin: '0',
+    width: `${rect.width}px`, height: `${Math.min(rect.height, window.innerHeight)}px`,
+    overflow: 'hidden', pointerEvents: 'none', zIndex: '0',
+    background: 'var(--color-bg)', willChange: 'transform, opacity',
+    transformOrigin: dir === 'forward' ? 'center center' : 'left center',
+  } as Partial<CSSStyleDeclaration> as CSSStyleDeclaration);
+  ghost.innerHTML = html;
+  document.body.appendChild(ghost);
+
+  const to = dir === 'forward'
+    ? { transform: 'translateX(-6%) scale(0.965)', opacity: 0.35 }
+    : { transform: 'translateX(64%)', opacity: 0.4 };
+  const anim = ghost.animate(
+    [{ transform: 'translateX(0) scale(1)', opacity: 1 }, to],
+    { duration: DUR.page, easing: EASE_DECEL, fill: 'forwards' },
+  );
+  const cleanup = () => ghost.remove();
+  anim.addEventListener('finish', cleanup);
+  anim.addEventListener('cancel', cleanup);
+  window.setTimeout(cleanup, DUR.page + 150);
+}
+
+/**
  * FLIP: given a set of elements keyed by id, capture their rects, run
  * `mutate()` (which reorders/inserts DOM), then animate each surviving
  * element from its old box to its new one via transform only. New elements
@@ -135,6 +172,12 @@ export function captureSharedOrigin(el: Animatable): void {
   sharedOrigin = { rect, html: (el as HTMLElement).outerHTML, bg: cs.backgroundColor };
   // Auto-expire so a stale capture never morphs an unrelated later screen.
   window.setTimeout(() => { sharedOrigin = null; }, 400);
+}
+
+/** True while a shared-element capture is waiting to be consumed — lets the
+ *  page-push transition stand down so the morph is the only motion. */
+export function hasPendingSharedOrigin(): boolean {
+  return sharedOrigin != null;
 }
 
 export function playSharedMorph(destEl: Animatable): void {

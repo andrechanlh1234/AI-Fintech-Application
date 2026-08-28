@@ -3,6 +3,7 @@ import { selectHomeDashboard, selectNetWorth, selectNetWorthChart, selectReviewF
 import { moneyWhole } from '../lib/format';
 import { NOTIFICATIONS } from '../lib/seedData';
 import { NetWorthSparkline } from '../components/NetWorthSparkline';
+import { captureSharedOrigin } from '../lib/motion';
 
 const ICONS = {
   car: (
@@ -89,7 +90,7 @@ export function Home() {
       <div style={{ marginBottom: 18, padding: 14, borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--color-neutral-300)', boxShadow: 'var(--shadow-sm)' }}>
         <button
           type="button"
-          onClick={actions.goFinanceNetWorth}
+          onClick={(e) => { captureSharedOrigin(e.currentTarget); actions.goFinanceNetWorth(); }}
           className="pressable"
           style={{ all: 'unset', display: 'block', width: '100%', cursor: 'pointer', boxSizing: 'border-box' }}
         >

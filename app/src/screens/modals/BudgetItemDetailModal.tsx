@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { moneyWhole } from '../../lib/format';
+import { playSharedMorph } from '../../lib/motion';
 
 // Ported from Cukai v7.dc.html lines 713-736 (budgetItemDetailOpen modal).
 // state.budgetItemDetailOpen is "bucketKey:categoryId" — look up the live
@@ -8,6 +10,10 @@ export function BudgetItemDetailModal() {
   const { state } = useStore();
   const actions = useActions();
   const open = state.budgetItemDetailOpen;
+  // This overlay is always mounted (self-gates on the flag), so key the
+  // shared-element morph on the flag rather than an on-mount [] effect.
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (open) playSharedMorph(morphRef.current); }, [open]);
   if (!open) return null;
 
   const [bucketKey, catId] = open.split(':');
@@ -19,6 +25,7 @@ export function BudgetItemDetailModal() {
 
   return (
     <div
+      ref={morphRef}
       className="screen-in"
       style={{
         position: 'absolute', inset: 0, zIndex: 47, background: 'var(--color-bg)',
