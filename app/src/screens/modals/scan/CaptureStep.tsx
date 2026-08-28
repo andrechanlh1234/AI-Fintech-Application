@@ -7,6 +7,19 @@ import { BottomSheet } from '../../../components/BottomSheet';
 // shapes rather than casting to `any` at every call site.
 interface TorchCapabilities extends MediaTrackCapabilities { torch?: boolean }
 interface TorchConstraintSet extends MediaTrackConstraintSet { torch?: boolean }
+interface FocusConstraintSet extends MediaTrackConstraintSet { focusMode?: string }
+
+// Ask for the back camera at the highest resolution the sensor offers, with
+// continuous autofocus. `ideal` (not `exact`) so a device that can't hit
+// these still returns its best stream rather than failing; `advanced` is
+// best-effort and never causes a rejection.
+const HD_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  facingMode: { ideal: 'environment' },
+  width: { ideal: 3840 },
+  height: { ideal: 2160 },
+  frameRate: { ideal: 30 },
+  advanced: [{ focusMode: 'continuous' } as FocusConstraintSet],
+};
 
 export function CaptureStep({ onClose, onManual, onCaptured }: {
   onClose: () => void;
@@ -35,7 +48,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
     // was a redundant cascading render.)
     if (!navigator.mediaDevices?.getUserMedia) return;
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    navigator.mediaDevices.getUserMedia({ video: HD_VIDEO_CONSTRAINTS })
       .then((stream) => {
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
@@ -44,6 +57,14 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
         setLiveCameraReady(true);
+        // Some devices open at a modest default and only raise resolution
+        // on a follow-up request — nudge it up once the track is live.
+        const vtrack = stream.getVideoTracks()[0];
+        const s = vtrack?.getSettings?.();
+        if (vtrack && s && (s.width ?? 0) < 1920) {
+          vtrack.applyConstraints({ width: { ideal: 3840 }, height: { ideal: 2160 }, advanced: [{ focusMode: 'continuous' } as FocusConstraintSet] })
+            .catch(() => { /* device won't go higher — keep what we have */ });
+        }
         // Torch is device/browser-dependent (notably absent on iOS Safari,
         // even inside a PWA) -- only show the flash button where the
         // active track actually reports the capability, rather than
@@ -70,7 +91,21 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
       .catch(() => { /* capability changed mid-session / constraint rejected — leave state as-is */ });
   };
 
-  const captureFromLiveVideo = () => {
+  const captureFromLiveVideo = async () => {
+    // Prefer a true full-resolution still from the camera hardware
+    // (ImageCapture.takePhoto) — it can exceed the live preview stream's
+    // resolution. Not available in every engine (notably iOS WKWebView as
+    // of iOS 17), so fall back to a frame grab at the stream's native size.
+    const track = streamRef.current?.getVideoTracks()[0];
+    const ImageCaptureCtor = (window as unknown as { ImageCapture?: new (t: MediaStreamTrack) => { takePhoto: () => Promise<Blob> } }).ImageCapture;
+    if (track && ImageCaptureCtor) {
+      try {
+        const blob = await new ImageCaptureCtor(track).takePhoto();
+        onCaptured(new File([blob], 'receipt.jpg', { type: blob.type || 'image/jpeg' }));
+        return;
+      } catch { /* fall through to the canvas grab */ }
+    }
+
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
     const canvas = document.createElement('canvas');
@@ -81,7 +116,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
     ctx.drawImage(video, 0, 0);
     canvas.toBlob((blob) => {
       if (blob) onCaptured(new File([blob], 'receipt.jpg', { type: 'image/jpeg' }));
-    }, 'image/jpeg', 0.92);
+    }, 'image/jpeg', 0.95);
   };
 
   const handleCaptureClick = () => {
