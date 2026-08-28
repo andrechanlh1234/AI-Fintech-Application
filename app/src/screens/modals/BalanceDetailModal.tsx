@@ -1,5 +1,6 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { money } from '../../lib/format';
+import { AnimatedNumber } from '../../components/AnimatedNumber';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
 import { HistoryRow } from './HistoryRow';
@@ -32,7 +33,7 @@ export function BalanceDetailModal() {
   if (!rec) return null;
 
   const isManual = !listKey.startsWith('seed.');
-  const balanceLabel = money(parseFloat(String(rec.amount)) || 0);
+  const balanceValue = parseFloat(String(rec.amount)) || 0;
   const draft = state.balanceDraft;
   const isAdd = draft.mode !== 'deduct';
   const isDeduct = draft.mode === 'deduct';
@@ -65,7 +66,13 @@ export function BalanceDetailModal() {
         )}
       </div>
 
-      <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 20 }}>RM {balanceLabel}</div>
+      <AnimatedNumber
+        className="type-numeric"
+        style={{ fontWeight: 700, fontSize: 26, marginBottom: 20, display: 'block' }}
+        value={balanceValue}
+        format={money}
+        prefix="RM "
+      />
 
       <div className="seg" style={{ marginBottom: 14, width: '100%' }}>
         <label

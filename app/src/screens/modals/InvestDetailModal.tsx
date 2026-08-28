@@ -1,5 +1,6 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { money, sanitizeRaw } from '../../lib/format';
+import { AnimatedNumber } from '../../components/AnimatedNumber';
 import type { ManualData } from '../../store/types';
 
 interface InvRow { id: string; name: string; qty: string; buy: string; cur: string }
@@ -63,7 +64,13 @@ export function InvestDetailModal() {
         )}
       </div>
 
-      <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 4 }}>RM {money(value)}</div>
+      <AnimatedNumber
+        className="type-numeric"
+        style={{ fontWeight: 700, fontSize: 26, marginBottom: 4, display: 'block' }}
+        value={value}
+        format={money}
+        prefix="RM "
+      />
       <div className="type-numeric" style={{ fontSize: 12.5, fontWeight: 600, color: hasBuyPrice ? gainColor : 'var(--color-text-muted)', marginBottom: 20 }}>
         {hasBuyPrice ? `${gainSign}RM ${money(Math.abs(gain))} gain/loss` : 'Add a buy price to see gain/loss'}
       </div>
