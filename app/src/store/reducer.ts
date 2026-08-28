@@ -620,7 +620,11 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
         receiptDraft: {
           ...state.receiptDraft,
-          merchant: r.vendor, date: r.date || state.receiptDraft.date,
+          // Leave the field empty (with its placeholder) when the scan
+          // couldn't read a name — "Unknown vendor" pre-filled reads like a
+          // real detection and the user then has to clear it first.
+          merchant: r.vendor && r.vendor !== 'Unknown vendor' ? r.vendor : '',
+          date: r.date || state.receiptDraft.date,
           total: r.total != null ? r.total.toFixed(2) : '',
           mode: 'detailed',
         },
