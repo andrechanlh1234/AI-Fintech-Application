@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { StoreProvider, useStore, useActions } from './store/StoreProvider';
 import { TabBar } from './components/TabBar';
 import { BottomSheet } from './components/BottomSheet';
+import { PageTransition } from './components/PageTransition';
 import { OnboardingFlow } from './screens/onboarding/OnboardingFlow';
 import { Home } from './screens/Home';
 import { FinanceTab } from './screens/finance/FinanceTab';
@@ -43,6 +44,8 @@ function AppShell() {
   // Ported from the source's `showMainApp` flag: the bottom tab bar hides
   // whenever a full-screen overlay is open, so it never overlaps that
   // overlay's own bottom action button.
+  const TAB_ORDER: Record<string, number> = { home: 0, finance: 1, tax: 2, ai: 3 };
+
   const showTabBar = !state.scanOpen && !state.reviewOpen && !state.morePanelOpen
     && !state.notifPanelOpen && !state.taxPackOpen && !state.budgetItemDetailOpen
     && !state.addSubOpen && !state.taxItemDetailOpen && !state.donateOpen
@@ -51,10 +54,12 @@ function AppShell() {
   return (
     <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 90, minHeight: '100vh', position: 'relative' }}>
-        {state.tab === 'home' && <Home />}
-        {state.tab === 'finance' && <FinanceTab />}
-        {state.tab === 'tax' && <TaxCenter />}
-        {state.tab === 'ai' && <AiChat />}
+        <PageTransition pageKey={state.tab} order={TAB_ORDER[state.tab] ?? 0}>
+          {state.tab === 'home' && <Home />}
+          {state.tab === 'finance' && <FinanceTab />}
+          {state.tab === 'tax' && <TaxCenter />}
+          {state.tab === 'ai' && <AiChat />}
+        </PageTransition>
 
         {/* Self-positioned full-screen overlays (position:absolute;inset:0 within
             this relative container) — they self-gate on their own state flag. */}

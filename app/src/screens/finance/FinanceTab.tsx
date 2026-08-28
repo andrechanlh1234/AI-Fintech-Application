@@ -1,4 +1,5 @@
 import { useStore, useActions } from '../../store/StoreProvider';
+import { PageTransition } from '../../components/PageTransition';
 import type { FinanceSection } from '../../store/types';
 import { NetWorthSection } from './NetWorthSection';
 import RecordSection from './RecordSection';
@@ -46,12 +47,12 @@ export function FinanceTab() {
         ))}
       </div>
 
-      <div key={state.financeSection} className="tab-panel-in">
+      <PageTransition pageKey={state.financeSection} order={activeIdx}>
         {state.financeSection === 'networth' && <NetWorthSection />}
         {state.financeSection === 'record' && <RecordSection />}
         {state.financeSection === 'budgets' && <BudgetsSection />}
         {state.financeSection === 'stats' && <StatsSection />}
-      </div>
+      </PageTransition>
     </div>
   );
 }
