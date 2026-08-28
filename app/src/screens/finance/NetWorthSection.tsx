@@ -1,12 +1,19 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
+import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { animate, captureSharedOrigin, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
 import { BRAND, subBadge } from '../../lib/constants';
 import type { AppState } from '../../store/types';
 
 const RANGE_OPTIONS: AppState['netWorthRange'][] = ['1M', '3M', '6M', '1Y', '3Y', 'ALL'];
+
+// Persists across mounts so the chart draw plays once per session and then
+// only when the underlying data series actually changes — not on a
+// back-nav or a range/filter toggle (spec §7).
+let lastDrawnSeriesSig: string | null = null;
 
 function AddLink({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -29,7 +36,7 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
   return (
     <button
       type="button"
-      onClick={row.clickable ? onOpen : undefined}
+      onClick={row.clickable ? (e) => { captureSharedOrigin(e.currentTarget); onOpen(); } : undefined}
       className="pressable"
       style={{
         all: 'unset', cursor: row.clickable ? 'pointer' : 'default', display: 'flex', alignItems: 'center',
@@ -62,10 +69,29 @@ export function NetWorthSection() {
   const nw = selectNetWorth(state);
   const chart = selectNetWorthChart(state);
 
-  const netWorthLabel = money(nw.netWorth);
   const netWorthDeltaText = 'RM ' + moneyWhole(Math.abs(chart.delta)) + ' (' + chart.deltaPct.toFixed(1) + '%)';
-  const assetsLabel = moneyWhole(nw.assets);
-  const liabilitiesLabel = moneyWhole(nw.liabilities);
+
+  // Chart-draw (spec §7): trace the line on, then fade in the fill + dots —
+  // once per mount, and again only when the data series identity changes
+  // (a real balance edit), never on a range toggle or back-nav.
+  const lineRef = useRef<SVGPolylineElement>(null);
+  const areaRef = useRef<SVGPolygonElement>(null);
+  const seriesSig = `${state.netWorthHistory?.length ?? 0}:${nw.netWorth.toFixed(2)}:${nw.assets.toFixed(2)}`;
+  useEffect(() => {
+    if (seriesSig === lastDrawnSeriesSig) return;
+    lastDrawnSeriesSig = seriesSig;
+    const line = lineRef.current;
+    if (!line || prefersReducedMotion() || typeof line.getTotalLength !== 'function') return;
+    const len = line.getTotalLength();
+    if (!len) return;
+    line.style.strokeDasharray = String(len);
+    line.animate(
+      [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+      { duration: DUR.chart, easing: EASE_DECEL, fill: 'forwards' },
+    ).addEventListener('finish', () => { line.style.strokeDasharray = ''; });
+    animate(areaRef.current, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: DUR.chart * 0.45, fill: 'backwards' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seriesSig]);
 
   // Robust tooltip positioning: a fixed percentage clamp (the old approach)
   // assumes a tooltip width that never actually matches its rendered width,
@@ -130,10 +156,10 @@ export function NetWorthSection() {
     const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     actions.selectNwPoint(Math.round(pct * (chart.pointCount - 1)));
   };
-  let dragging = false;
-  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => { dragging = true; scrubAt(e.clientX, e.currentTarget); };
-  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => { if (dragging) scrubAt(e.clientX, e.currentTarget); };
-  const onUp = () => { dragging = false; };
+  const draggingRef = useRef(false);
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => { draggingRef.current = true; scrubAt(e.clientX, e.currentTarget); };
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => { if (draggingRef.current) scrubAt(e.clientX, e.currentTarget); };
+  const onUp = () => { draggingRef.current = false; };
 
   const openRow = (row: NwRow) => {
     if (!row.clickable || !row.id) return;
@@ -144,7 +170,13 @@ export function NetWorthSection() {
   return (
     <div>
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Net worth</div>
-      <div className="type-numeric" style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1, whiteSpace: 'nowrap', margin: '4px 0 6px' }}>RM {netWorthLabel}</div>
+      <AnimatedNumber
+        className="type-numeric"
+        style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 26, letterSpacing: '-0.02em', lineHeight: 1, whiteSpace: 'nowrap', margin: '4px 0 6px', display: 'block' }}
+        value={nw.netWorth}
+        format={money}
+        prefix="RM "
+      />
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-accent-700)', fontWeight: 600, fontSize: 12.5, marginBottom: 14 }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7 17 17 7" />
@@ -200,8 +232,8 @@ export function NetWorthSection() {
             {chart.hasSelection && (
               <line x1={chart.selCx} y1={0} x2={chart.selCx} y2={140} stroke="var(--color-accent)" strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
             )}
-            <polygon points={chart.areaPoints} fill="url(#nwFill)" />
-            <polyline points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            <polygon ref={areaRef} points={chart.areaPoints} fill="url(#nwFill)" />
+            <polyline ref={lineRef} points={chart.linePoints} fill="none" stroke="var(--color-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
             {chart.seriesLabels && chart.pts.map(([cx, cy], i) => (
               <circle
                 key={i} cx={cx} cy={cy} r={9} fill="transparent" style={{ cursor: 'pointer' }}
@@ -248,11 +280,11 @@ export function NetWorthSection() {
       <div style={{ display: 'flex', gap: 28, margin: '10px 0 20px' }}>
         <div>
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Total assets</div>
-          <div className="type-numeric" style={{ fontWeight: 700, fontSize: 15 }}>RM {assetsLabel}</div>
+          <AnimatedNumber className="type-numeric" style={{ fontWeight: 700, fontSize: 15, display: 'block' }} value={nw.assets} format={moneyWhole} prefix="RM " />
         </div>
         <div>
           <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Liabilities</div>
-          <div className="type-numeric" style={{ fontWeight: 700, fontSize: 15 }}>RM {liabilitiesLabel}</div>
+          <AnimatedNumber className="type-numeric" style={{ fontWeight: 700, fontSize: 15, display: 'block' }} value={nw.liabilities} format={moneyWhole} prefix="RM " />
         </div>
       </div>
 

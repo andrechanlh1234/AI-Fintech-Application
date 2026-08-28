@@ -3,7 +3,7 @@ export function UnableToScanStep({ onSnapAgain, onAddCustomAmount }: {
   onAddCustomAmount: () => void;
 }) {
   return (
-    <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', minHeight: '100vh' }}>
+    <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', minHeight: '100dvh' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 18 }}>
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, margin: '0 auto' }}>Review receipt</span>
       </div>

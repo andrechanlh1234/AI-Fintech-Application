@@ -1,5 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { money } from '../../lib/format';
+import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { playSharedMorph } from '../../lib/motion';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
 import { HistoryRow } from './HistoryRow';
@@ -23,6 +26,8 @@ function resolveRow(state: ReturnType<typeof useStore>['state'], listKey: string
 export function BalanceDetailModal() {
   const { state } = useStore();
   const actions = useActions();
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { playSharedMorph(morphRef.current); }, []);
 
   if (!state.balanceDetailOpen) return null;
   const sep = state.balanceDetailOpen.indexOf(':');
@@ -32,7 +37,7 @@ export function BalanceDetailModal() {
   if (!rec) return null;
 
   const isManual = !listKey.startsWith('seed.');
-  const balanceLabel = money(parseFloat(String(rec.amount)) || 0);
+  const balanceValue = parseFloat(String(rec.amount)) || 0;
   const draft = state.balanceDraft;
   const isAdd = draft.mode !== 'deduct';
   const isDeduct = draft.mode === 'deduct';
@@ -40,7 +45,7 @@ export function BalanceDetailModal() {
   const previewHistory = history.slice(0, HISTORY_PREVIEW_COUNT);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
+    <div ref={morphRef} style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
         <button
           type="button"
@@ -65,7 +70,13 @@ export function BalanceDetailModal() {
         )}
       </div>
 
-      <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 20 }}>RM {balanceLabel}</div>
+      <AnimatedNumber
+        className="type-numeric"
+        style={{ fontWeight: 700, fontSize: 26, marginBottom: 20, display: 'block' }}
+        value={balanceValue}
+        format={money}
+        prefix="RM "
+      />
 
       <div className="seg" style={{ marginBottom: 14, width: '100%' }}>
         <label

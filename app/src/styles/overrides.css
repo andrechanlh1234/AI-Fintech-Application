@@ -35,7 +35,9 @@
 
 * { -webkit-tap-highlight-color: transparent; }
 
-body { margin: 0; background: var(--color-neutral-200); font-family: var(--font-body); }
+body { margin: 0; background: var(--color-neutral-200); font-family: var(--font-body); overflow-x: hidden; }
+/* Wide content (chip rows, charts, code) must scroll inside its own
+   container — the page body itself never scrolls sideways. */
 a { color: var(--color-accent-700); text-decoration: none; }
 a:hover { color: var(--color-accent-800); }
 input[type="radio"] { accent-color: var(--color-accent); }

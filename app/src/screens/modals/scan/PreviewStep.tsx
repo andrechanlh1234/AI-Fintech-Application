@@ -4,7 +4,7 @@ export function PreviewStep({ photoUrl, onSnapAgain, onContinue }: {
   onContinue: () => void;
 }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg,#2a2c2b,#0f100f)', position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg,#2a2c2b,#0f100f)', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: 'calc(env(safe-area-inset-top) + 16px) 18px 16px' }}>
         <button
           type="button"

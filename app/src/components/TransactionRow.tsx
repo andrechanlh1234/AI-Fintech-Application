@@ -1,4 +1,5 @@
 import type { IconFlags } from '../lib/constants';
+import { captureSharedOrigin } from '../lib/motion';
 
 type RowIconProps = IconFlags & { hasBrand: boolean; badgeLetter: string };
 
@@ -53,7 +54,7 @@ export function TransactionRow({
   return (
     <button
       type="button"
-      onClick={onOpen}
+      onClick={onOpen ? (e) => { captureSharedOrigin(e.currentTarget); onOpen(); } : undefined}
       disabled={!clickable}
       className="pressable"
       style={{
