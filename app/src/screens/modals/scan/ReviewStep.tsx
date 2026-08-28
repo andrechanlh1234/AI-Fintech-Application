@@ -215,18 +215,19 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
         );
       })()}
 
-      {state.scanMethod === 'manual' && (
-        <div className="seg" style={{ marginBottom: 18 }}>
-          <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
-            <input type="radio" name="receiptMode" checked={draft.mode === 'quick'} onChange={() => actions.setReceiptMode('quick')} />
-            Quick
-          </label>
-          <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
-            <input type="radio" name="receiptMode" checked={draft.mode === 'detailed'} onChange={() => actions.setReceiptMode('detailed')} />
-            Add line items
-          </label>
-        </div>
-      )}
+      {/* Available for scanned receipts too now: a multi-item scan lands in
+          "Add line items", but the user can collapse it to a single Quick
+          expense (one name, one category) if that's all they want logged. */}
+      <div className="seg" style={{ marginBottom: 18 }}>
+        <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
+          <input type="radio" name="receiptMode" checked={draft.mode === 'quick'} onChange={() => actions.setReceiptMode('quick')} />
+          Quick
+        </label>
+        <label className="seg-opt" style={{ flex: 1, justifyContent: 'center' }}>
+          <input type="radio" name="receiptMode" checked={draft.mode === 'detailed'} onChange={() => actions.setReceiptMode('detailed')} />
+          Add line items
+        </label>
+      </div>
 
       {draft.mode === 'detailed' && (
         <div style={{ marginBottom: 20 }}>

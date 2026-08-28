@@ -617,17 +617,47 @@ export function reducer(state: AppState, action: Action): AppState {
         confidence: li.confidence, touched: false,
       }));
       const scannedVendor = r.vendor && r.vendor !== 'Unknown vendor' ? r.vendor : '';
+
+      // "Expense name" should read as what was bought, not the store. The
+      // Tesseract fallback emits one "line item" that just echoes the vendor
+      // name — ignore that so it doesn't become the expense name too.
+      const itemNames = r.lineItems
+        .map((li) => (li.description || '').trim())
+        .filter((d) => d && d.toLowerCase() !== scannedVendor.toLowerCase());
+      let expenseName = '';
+      if (itemNames.length === 1) {
+        expenseName = itemNames[0].slice(0, 40);
+      } else if (itemNames.length > 1) {
+        const head = itemNames[0].length <= 34 ? itemNames[0] : itemNames[0].slice(0, 33).trimEnd() + '…';
+        expenseName = `${head} +${itemNames.length - 1} more`;
+      }
+
+      // Dominant category across the scanned items, weighted by amount — this
+      // is what the category chip should be pre-selected to.
+      const catWeight: Record<string, number> = {};
+      r.lineItems.forEach((li) => {
+        const c = mapOcrCategory(li.category);
+        catWeight[c] = (catWeight[c] || 0) + (li.amount || 1);
+      });
+      const primaryCategory = Object.entries(catWeight).sort((a, b) => b[1] - a[1])[0]?.[0]
+        || state.receiptDraft.quickCategory;
+
+      // A single-item receipt (or a Tesseract fallback with none) lands in
+      // quick mode: one expense name + one pre-selected category chip.
+      // Multi-item receipts keep the per-line editor.
+      const mode: 'quick' | 'detailed' = r.lineItems.length <= 1 ? 'quick' : 'detailed';
+
       return {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
         receiptDraft: {
           ...state.receiptDraft,
-          merchant: r.vendor,
-          // Also pre-fill the dedicated "Vendor / Merchant" field from the
-          // scan (it was previously left blank for the user to retype).
+          merchant: expenseName || scannedVendor,
           vendor: scannedVendor || state.receiptDraft.vendor,
           date: r.date || state.receiptDraft.date,
           total: r.total != null ? r.total.toFixed(2) : '',
-          mode: 'detailed',
+          quickCategory: primaryCategory,
+          tax: categoryToReliefKey(primaryCategory) != null,
+          mode,
         },
         lineItemDrafts,
       };
