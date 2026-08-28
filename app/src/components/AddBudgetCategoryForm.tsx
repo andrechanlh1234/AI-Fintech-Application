@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useActions } from '../store/StoreProvider';
+import { KeypadField } from './AmountKeypadSheet';
 
 /** Guided add-category flow shared by onboarding's BudgetSetupStep and the
  * post-onboarding Budgets screen: pick a name first (a dropdown of common
@@ -40,10 +41,7 @@ export function AddBudgetCategoryForm({
     return (
       <div className="card" style={{ flexDirection: 'column', gap: 10, padding: '12px', marginBottom: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600 }}>{chosenName}</div>
-        <input
-          className="input" autoFocus value={cap} onChange={(e) => setCap(e.target.value)}
-          placeholder="Monthly cap (RM)" inputMode="decimal"
-        />
+        <KeypadField value={cap} onSave={setCap} placeholder="Monthly cap (RM)" />
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={onDone} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
           <button type="button" onClick={submitCap} className="btn btn-primary" style={{ flex: 1 }}>Add</button>

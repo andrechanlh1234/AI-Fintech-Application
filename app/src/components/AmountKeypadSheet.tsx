@@ -26,6 +26,33 @@ const DIGIT_ROWS = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']];
  * matching how a receipt total is often actually arrived at (adding up a
  * few line items by hand) rather than requiring the user to pre-compute it
  * themselves on a separate device. */
+/** A field that looks like `.input` but opens the calculator keypad on tap
+ * instead of a native keyboard. Drop-in replacement for a numeric text
+ * input anywhere in the app. */
+export function KeypadField({ value, onSave, placeholder = '0.00', style }: {
+  value: string;
+  onSave: (raw: string) => void;
+  placeholder?: string;
+  style?: CSSProperties;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="input"
+        style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box', ...style }}
+      >
+        <span style={{ color: value ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+          {value ? formatWithCommas(value) : placeholder}
+        </span>
+      </button>
+      <AmountKeypadSheet open={open} value={value} onClose={() => setOpen(false)} onSave={onSave} />
+    </>
+  );
+}
+
 export function AmountKeypadSheet({ open, value, onClose, onSave }: {
   open: boolean;
   value: string;

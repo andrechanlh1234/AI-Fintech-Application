@@ -1,5 +1,6 @@
 import { useActions } from '../store/StoreProvider';
 import { CATEGORY_OPTIONS } from '../lib/constants';
+import { KeypadField } from './AmountKeypadSheet';
 import { lineItemIsInvalid, lineItemNeedsReview, type ReceiptLineItemDraft } from '../lib/receipts';
 import { RELIEF_INFO } from '../lib/taxEngine';
 
@@ -63,10 +64,10 @@ export function ReceiptLineItemsEditor({ items }: { items: ReceiptLineItemDraft[
                 value={item.description}
                 onChange={(e) => actions.setLineItemDraftField(item.id, 'description', e.target.value)}
               />
-              <input
-                className="input" style={{ flex: 1, minWidth: 0 }} placeholder="0.00" inputMode="decimal"
+              <KeypadField
                 value={item.amount}
-                onChange={(e) => actions.setLineItemDraftField(item.id, 'amount', e.target.value)}
+                onSave={(v) => actions.setLineItemDraftField(item.id, 'amount', v)}
+                style={{ flex: 1, minWidth: 0 }}
               />
               <button
                 type="button"

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
+import { KeypadField } from '../../components/AmountKeypadSheet';
 import { playSharedMorph } from '../../lib/motion';
 
 // Tap a transaction row in Record to open this: edit every field a scan/
@@ -67,7 +68,7 @@ export function TxDetailModal() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Amount (RM)</label>
-          <input className="input" value={draft.amount} onChange={(e) => actions.setTxDraftField('amount', e.target.value)} placeholder="0.00" />
+          <KeypadField value={draft.amount} onSave={(v) => actions.setTxDraftField('amount', v)} />
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Date</label>

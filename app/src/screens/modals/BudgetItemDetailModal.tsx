@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { moneyWhole } from '../../lib/format';
+import { KeypadField } from '../../components/AmountKeypadSheet';
 import { playSharedMorph } from '../../lib/motion';
 
 // Ported from Cukai v7.dc.html lines 713-736 (budgetItemDetailOpen modal).
@@ -64,11 +65,9 @@ export function BudgetItemDetailModal() {
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Monthly budget (RM)</label>
-          <input
-            className="input"
-            value={String(category.cap)}
-            onChange={(e) => actions.setBucketCategoryCap(bucketKey, catId, parseFloat(e.target.value) || 0)}
-            placeholder="0.00"
+          <KeypadField
+            value={category.cap ? String(category.cap) : ''}
+            onSave={(v) => actions.setBucketCategoryCap(bucketKey, catId, parseFloat(v) || 0)}
           />
         </div>
       </div>
@@ -86,10 +85,9 @@ export function BudgetItemDetailModal() {
             placeholder="Item name"
             style={{ flex: 1.3 }}
           />
-          <input
-            className="input"
-            value={String(it.amount)}
-            onChange={(e) => actions.setBucketItemField(bucketKey, catId, it.id, 'amount', e.target.value)}
+          <KeypadField
+            value={it.amount ? String(it.amount) : ''}
+            onSave={(v) => actions.setBucketItemField(bucketKey, catId, it.id, 'amount', v)}
             placeholder="Amount (RM)"
             style={{ flex: 1 }}
           />

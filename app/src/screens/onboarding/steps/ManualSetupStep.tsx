@@ -1,9 +1,10 @@
 // Ported from Cukai v7.dc.html lines 349-430 (obIsManualSetup).
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { AppState } from '../../../store/types';
 import type { ManualData } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
-import { moneyWhole, formatWithCommas, sanitizeRaw } from '../../../lib/format';
+import { moneyWhole, formatWithCommas } from '../../../lib/format';
+import { AmountKeypadSheet, KeypadField } from '../../../components/AmountKeypadSheet';
 import { StepHeader, PlusIcon, XIcon } from './shared';
 
 type Actions = ReturnType<typeof useActions>;
@@ -26,34 +27,26 @@ function RowIcon({ listKey }: { listKey: RecordListKey }) {
   );
 }
 
-// Same live comma-formatting as HeroAmountInput, sized for a compact list
-// row instead of a full-screen hero moment -- so "type 123000" reads back
-// as "123,000" immediately instead of a flat, unformatted digit string.
+// Compact inline amount for a list row: shows the comma-formatted value
+// right-aligned, and opens the calculator keypad on tap (same keypad the
+// receipt-scan amount uses) rather than a native decimal keyboard.
 function AmountField({ value, onChange, placeholder }: { value: string; onChange: (raw: string) => void; placeholder: string }) {
-  const [display, setDisplay] = useState(() => formatWithCommas(value));
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (document.activeElement !== inputRef.current) setDisplay(formatWithCommas(value));
-  }, [value]);
-
+  const [open, setOpen] = useState(false);
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="decimal"
-      value={display}
-      placeholder={placeholder}
-      onChange={(e) => {
-        const raw = sanitizeRaw(e.target.value);
-        onChange(raw);
-        setDisplay(formatWithCommas(raw));
-      }}
-      style={{
-        all: 'unset', flex: 1, textAlign: 'right', font: '700 14.5px var(--font-heading)',
-        fontVariantNumeric: 'tabular-nums', color: 'var(--color-text)', minWidth: 0,
-      }}
-    />
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{
+          all: 'unset', flex: 1, textAlign: 'right', font: '700 14.5px var(--font-heading)',
+          fontVariantNumeric: 'tabular-nums', minWidth: 0, cursor: 'pointer',
+          color: value ? 'var(--color-text)' : 'var(--color-text-muted)',
+        }}
+      >
+        {value ? formatWithCommas(value) : placeholder}
+      </button>
+      <AmountKeypadSheet open={open} value={value} onClose={() => setOpen(false)} onSave={onChange} />
+    </>
   );
 }
 
@@ -147,9 +140,9 @@ export function ManualSetupStep({
             placeholder="Investment name (e.g. Apple stock, BTC)"
           />
           <div style={{ display: 'flex', gap: 8 }}>
-            <input className="input" value={row.qty} onChange={(e) => actions.setInvestField(i, 'qty', e.target.value)} placeholder="Qty" style={{ flex: 1 }} />
-            <input className="input" value={row.buy} onChange={(e) => actions.setInvestField(i, 'buy', e.target.value)} placeholder="Buy price" style={{ flex: 1 }} />
-            <input className="input" value={row.cur} onChange={(e) => actions.setInvestField(i, 'cur', e.target.value)} placeholder="Current price" style={{ flex: 1 }} />
+            <KeypadField value={row.qty} onSave={(v) => actions.setInvestField(i, 'qty', v)} placeholder="Qty" style={{ flex: 1 }} />
+            <KeypadField value={row.buy} onSave={(v) => actions.setInvestField(i, 'buy', v)} placeholder="Buy price" style={{ flex: 1 }} />
+            <KeypadField value={row.cur} onSave={(v) => actions.setInvestField(i, 'cur', v)} placeholder="Current price" style={{ flex: 1 }} />
           </div>
         </div>
       ))}
