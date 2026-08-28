@@ -205,7 +205,12 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
         const status = im.automatic ? 'Automatic' : pct >= 85 ? 'Optimised' : captured > 0 ? 'In progress' : 'Available';
         return { key: im.key, label: im.label, cap, captured, pct, barPct: Math.min(100, pct), remaining, potentialBenefit, status, receipts, rawReceipts: d.receipts };
       });
-    const captured = items.reduce((s, it) => s + it.captured, 0);
+    // Group / total aggregates clamp each item to its own cap: tagging more
+    // than a relief's cap to one bucket must not inflate the group total,
+    // push group/overall % past 100, or (via chargeableIncomeEst) over-reduce
+    // estimated chargeable income. The per-item `captured`/`pct` above stay
+    // raw so the item's own "% Complete" badge can still show an over-claim.
+    const captured = items.reduce((s, it) => s + Math.min(it.captured, it.cap), 0);
     const cap = items.reduce((s, it) => s + it.cap, 0);
     const pct = cap > 0 ? Math.round((captured / cap) * 100) : 0;
     const remaining = Math.max(0, cap - captured);

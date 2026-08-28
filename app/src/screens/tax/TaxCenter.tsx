@@ -63,8 +63,12 @@ export function TaxCenter() {
           </div>
         </div>
         <div style={{ fontSize: 10.5, color: 'var(--color-text-muted)', lineHeight: 1.4 }}>
-          Claiming the rest could save you an extra ~RM {moneyWhole(tax.totalPotentialBenefit)} in tax, estimated at your {tax.taxBracketPct}% bracket
-          based on your income — not guaranteed; verify with HASiL or a qualified tax professional.
+          Claiming the rest could save you an extra ~RM {moneyWhole(tax.totalPotentialBenefit)} in tax, estimated at
+          {' '}{tax.taxBracketPct}%{' '}
+          {tax.incomeKnown
+            ? 'based on the income you entered'
+            : `— a default rate, since you haven't entered your income yet`}
+          {' '}— not guaranteed; verify with HASiL or a qualified tax professional.
         </div>
       </div>
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 16 }} />

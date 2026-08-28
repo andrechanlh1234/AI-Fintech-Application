@@ -415,8 +415,12 @@ export function selectTaxCenter(state: AppState) {
   const grossAnnualIncome = estimateAnnualIncome(ob.approxIncome || ob.income);
   const capturedData = buildCapturedData(state.transactions, state.taxYear);
   const rawTaxModel = buildTaxModel(profile, capturedData);
-  const chargeableIncomeEst = Math.max(0, grossAnnualIncome - 9000 - rawTaxModel.totalCaptured);
-  const marginalRate = grossAnnualIncome > 0 ? marginalTaxRate(chargeableIncomeEst) : ASSUMED_TAX_RATE;
+  // totalCaptured already includes the RM 9,000 automatic "Individual &
+  // Dependent Relatives" relief (indiv_self, automatic:true), so it must not
+  // be subtracted a second time as a literal here.
+  const chargeableIncomeEst = Math.max(0, grossAnnualIncome - rawTaxModel.totalCaptured);
+  const incomeKnown = grossAnnualIncome > 0;
+  const marginalRate = incomeKnown ? marginalTaxRate(chargeableIncomeEst) : ASSUMED_TAX_RATE;
   const taxBracketPct = Math.round(marginalRate * 100);
   const taxModel = buildTaxModel(profile, capturedData, marginalRate);
   const prevTaxYear = 'YA' + (parseInt(state.taxYear.replace(/^YA/, ''), 10) - 1);
@@ -447,7 +451,7 @@ export function selectTaxCenter(state: AppState) {
     grossAnnualIncome, taxBracketPct, taxModel, prevTaxModel, totalCaptured, totalCap, totalAvailable,
     totalPotentialBenefit, taxOptPct, groups: visibleGroups, taxReceiptsAll, taxReceiptsVisible,
     taxReceiptsHasMore: taxReceiptsAll.length > 4, taxItemDetail, benchmarkLastShare, taxDeltaPct,
-    hasReliefProfile, reliefProfileSummary,
+    hasReliefProfile, reliefProfileSummary, incomeKnown, chargeableIncomeEst,
   };
 }
 

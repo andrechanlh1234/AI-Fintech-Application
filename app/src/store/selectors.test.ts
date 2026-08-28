@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { reducer } from './reducer';
 import { buildInitialState } from './initialState';
 import { selectBudgets, selectTaxCenter, selectNetWorth } from './selectors';
+import { INCOME_RANGE_OPTS } from '../lib/constants';
 import type { AppState } from './types';
 
 function openManualReceipt(state: AppState): AppState {
@@ -101,6 +102,40 @@ describe('selectTaxCenter — only deductible detailed-mode line items count tow
 
     const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
     expect(medicalReliefCaptured(tax)).toBe(600);
+  });
+});
+
+describe('selectTaxCenter — relief aggregation clamps to caps', () => {
+  const medicalGroupCaptured = (tax: ReturnType<typeof selectTaxCenter>): number =>
+    tax.groups.find((g) => g.key === 'medical')?.captured ?? 0;
+
+  it('does not subtract the RM 9,000 automatic relief twice from chargeable income (M1)', () => {
+    const incomeLabel = INCOME_RANGE_OPTS.find((l) => l.startsWith('RM 8,300'))!;
+    let state = buildInitialState();
+    state = { ...state, ob: { ...state.ob, income: incomeLabel, approxIncome: '' } };
+
+    const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
+
+    expect(tax.grossAnnualIncome).toBeGreaterThan(0); // label resolved to a real figure
+    expect(tax.totalCaptured).toBe(9000); // only the automatic indiv_self relief, no receipts
+    expect(tax.chargeableIncomeEst).toBe(tax.grossAnnualIncome - 9000);
+    // regression guard: the old formula did gross - 9000 - totalCaptured
+    expect(tax.chargeableIncomeEst).not.toBe(tax.grossAnnualIncome - 18000);
+  });
+
+  it('over-cap tagging inflates only the per-item badge, not the group or grand total (M2)', () => {
+    let state = buildInitialState();
+    // med_self cap is RM 10,000; tag RM 13,500 of medical receipts toward it.
+    state = quickReceipt(state, 'Hospital A', '4500.00', 'Health', '2025-02-01');
+    state = quickReceipt(state, 'Hospital B', '4500.00', 'Health', '2025-03-01');
+    state = quickReceipt(state, 'Hospital C', '4500.00', 'Health', '2025-04-01');
+
+    const tax = selectTaxCenter({ ...state, taxYear: 'YA2025' });
+
+    expect(medicalReliefCaptured(tax)).toBe(13500); // per-item stays raw (can show >100%)
+    expect(medicalGroupCaptured(tax)).toBe(10000); // group clamps each item to its cap
+    expect(tax.totalCaptured).toBeLessThanOrEqual(tax.totalCap);
+    expect(tax.taxOptPct).toBeLessThanOrEqual(100);
   });
 });
 
