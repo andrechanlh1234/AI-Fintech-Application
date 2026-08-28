@@ -75,6 +75,8 @@ export function BottomSheet({ open, onClose, children, align = 'bottom' }: {
           borderRadius: isFull ? 0 : 'var(--radius-lg) var(--radius-lg) 0 0',
           overflowY: 'auto', WebkitOverflowScrolling: 'touch', boxSizing: 'border-box',
           overscrollBehavior: 'contain',
+          // Keep the last row / action button clear of the home indicator.
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
         {children}

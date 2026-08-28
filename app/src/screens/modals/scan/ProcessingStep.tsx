@@ -1,6 +1,6 @@
 export function ProcessingStep({ photoUrl }: { photoUrl: string | null }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f100f', position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#0f100f', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
       {photoUrl && (
         <img
           src={photoUrl}
