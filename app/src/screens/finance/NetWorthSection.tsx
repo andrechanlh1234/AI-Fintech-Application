@@ -93,25 +93,20 @@ export function NetWorthSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesSig]);
 
-  // Range switch (1M / 3M / … / ALL): re-flow the line to the new shape with
-  // a quick partial re-trace + a soft fade, so it glides between ranges the
-  // same way the finance panes glide — not an instant redraw. Skips the
-  // first render (that's the full chart-draw above's job).
-  const firstRangeRun = useRef(true);
-  useEffect(() => {
-    if (firstRangeRun.current) { firstRangeRun.current = false; return; }
-    const line = lineRef.current;
-    if (!line || prefersReducedMotion() || typeof line.getTotalLength !== 'function') return;
-    const len = line.getTotalLength();
-    if (!len) return;
-    line.style.strokeDasharray = String(len);
-    line.animate(
-      [{ strokeDashoffset: len * 0.4 }, { strokeDashoffset: 0 }],
-      { duration: 420, easing: EASE_DECEL, fill: 'forwards' },
-    ).addEventListener('finish', () => { line.style.strokeDasharray = ''; });
-    animate(areaRef.current, [{ opacity: 0.25 }, { opacity: 1 }], { duration: 360, easing: 'ease' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.netWorthRange]);
+  // Range switch (1M / 3M / … / ALL): use the *exact* same motion as the
+  // Finance pane switcher (PageTransition) — a keyed remount of the chart
+  // layer with `.page-enter-forward` / `.page-enter-back` (14px directional
+  // slide + crossfade, .22s, cubic-bezier(.2,.7,.2,1)). Direction is derived
+  // during render via the "store previous value in state" pattern, no refs.
+  const rangeIdx = RANGE_OPTIONS.indexOf(state.netWorthRange);
+  const [rangeSnap, setRangeSnap] = useState<{ range: string; idx: number; dir: 'forward' | 'back' | 'none' }>(
+    { range: state.netWorthRange, idx: rangeIdx, dir: 'none' },
+  );
+  if (state.netWorthRange !== rangeSnap.range) {
+    setRangeSnap({ range: state.netWorthRange, idx: rangeIdx, dir: rangeIdx >= rangeSnap.idx ? 'forward' : 'back' });
+  }
+  const rangeAnimClass = rangeSnap.dir === 'forward' ? 'page-enter-forward'
+    : rangeSnap.dir === 'back' ? 'page-enter-back' : '';
 
   // Robust tooltip positioning: a fixed percentage clamp (the old approach)
   // assumes a tooltip width that never actually matches its rendered width,
@@ -245,7 +240,7 @@ export function NetWorthSection() {
             <span className="type-numeric" style={{ fontWeight: 700, fontSize: 12.5 }}>RM {chart.selectedValueLabel}</span>
           </div>
         )}
-        <div style={{ position: 'relative', margin: '6px 0 4px' }}>
+        <div key={rangeSnap.range} className={rangeAnimClass} style={{ position: 'relative', margin: '6px 0 4px' }}>
           <svg width="100%" height="150" viewBox="0 0 300 140" preserveAspectRatio="none" style={{ display: 'block', touchAction: 'none' }}>
             <defs>
               <linearGradient id="nwFill" x1="0" y1="0" x2="0" y2="1">
