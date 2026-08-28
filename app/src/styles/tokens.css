@@ -418,7 +418,7 @@ textarea.input { min-height: 90px; resize: vertical; }
    measured live in TabBar.tsx. */
 .tab-lens {
   position: absolute; top: 3px; bottom: 3px; left: 0;
-  border-radius: 17px; z-index: 0; pointer-events: none;
+  border-radius: 20px; z-index: 0; pointer-events: none;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-accent) 9%, rgba(255, 255, 255, 0.66)),

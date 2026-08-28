@@ -53,7 +53,7 @@ function AppShell() {
 
   return (
     <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 90, minHeight: '100vh', position: 'relative' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 104, minHeight: '100vh', position: 'relative' }}>
         <PageTransition pageKey={state.tab} order={TAB_ORDER[state.tab] ?? 0}>
           {state.tab === 'home' && <Home />}
           {state.tab === 'finance' && <FinanceTab />}

@@ -7,7 +7,7 @@ import type { Tab } from '../store/types';
 
 function HomeIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-6h-4v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
     </svg>
   );
@@ -15,7 +15,7 @@ function HomeIcon() {
 
 function FinanceIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
       <path d="M21 12a1 1 0 0 1-1 1h-3a2 2 0 0 1 0-4h3a1 1 0 0 1 1 1z" />
     </svg>
@@ -24,7 +24,7 @@ function FinanceIcon() {
 
 function TaxIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="7" cy="7" r="3" />
       <circle cx="17" cy="17" r="3" />
       <line x1="19" y1="5" x2="5" y2="19" />
@@ -34,7 +34,7 @@ function TaxIcon() {
 
 function AiIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <defs>
         <linearGradient id="aiTabGrad" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#4d7cf7" />
@@ -49,7 +49,7 @@ function AiIcon() {
 
 function ScanIcon() {
   return (
-    <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
       <circle cx="12" cy="13" r="3" />
     </svg>
@@ -63,7 +63,7 @@ const TABS: { key: Tab; label: string; Icon: () => ReactElement }[] = [
   { key: 'ai', label: 'AI', Icon: AiIcon },
 ];
 
-const LENS_D = 44; // circular lens diameter during a scrub
+const LENS_D = 50; // circular lens diameter during a scrub
 
 export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t: Tab) => void; onScan: () => void }) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -176,7 +176,7 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
         onPointerCancel={onPointerCancel}
         style={{
           position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          borderRadius: 999, boxShadow: 'var(--shadow-lg)', padding: '10px 16px', gap: 2,
+          borderRadius: 999, boxShadow: 'var(--shadow-lg)', padding: '13px 20px', gap: 4,
           pointerEvents: 'auto', touchAction: 'none',
         }}
       >
@@ -184,7 +184,7 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
           <div className={`tab-lens${scrubX != null ? ' is-circular' : ''}`} style={lensStyle} />
         )}
         {TABS.slice(0, 2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} bulge={bulgeFor(t.key)} onSelect={onSelect} />)}
-        <div style={{ width: 56, flexShrink: 0 }} />
+        <div style={{ width: 62, flexShrink: 0 }} />
         {TABS.slice(2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} bulge={bulgeFor(t.key)} onSelect={onSelect} />)}
 
         <button
@@ -194,8 +194,8 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
           data-noscrub
           className="pressable"
           style={{
-            position: 'absolute', top: -26, left: '50%', transform: 'translateX(-50%)',
-            width: 56, height: 56, borderRadius: '50%',
+            position: 'absolute', top: -29, left: '50%', transform: 'translateX(-50%)',
+            width: 62, height: 62, borderRadius: '50%',
             background: 'linear-gradient(135deg,#17601F 0%,#1F7A2E 40%,#2E9E3F 70%,#5CC46F 100%)',
             border: '4px solid var(--color-bg)', boxShadow: 'var(--shadow-lg)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff',
@@ -218,21 +218,21 @@ function TabButton({ tab, active, bulge = 0, onSelect }: { tab: typeof TABS[numb
       data-active={active}
       onClick={() => onSelect(tab.key)}
       style={{
-        background: 'none', border: 'none', padding: '8px 0', width: 58, borderRadius: 999,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer',
+        background: 'none', border: 'none', padding: '9px 0', width: 66, borderRadius: 999,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer',
         color: tab.key === 'ai' ? undefined : color,
       }}
     >
       <span
         style={{
           display: 'flex',
-          transform: bulge ? `translateY(${(-6 * bulge).toFixed(1)}px) scale(${(1 + bulge * 0.5).toFixed(3)})` : undefined,
+          transform: bulge ? `translateY(${(-7 * bulge).toFixed(1)}px) scale(${(1 + bulge * 0.5).toFixed(3)})` : undefined,
           transition: 'transform .14s cubic-bezier(.3,.9,.3,1)',
         }}
       >
         <tab.Icon />
       </span>
-      <span style={{ fontSize: 9.5, fontWeight: active ? 700 : 500, color, opacity: bulge > 0.55 ? 1 : undefined }}>{tab.label}</span>
+      <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color, opacity: bulge > 0.55 ? 1 : undefined }}>{tab.label}</span>
     </button>
   );
 }
