@@ -431,8 +431,29 @@ textarea.input { min-height: 90px; resize: vertical; }
     inset 0 0 0 0.5px rgba(255, 255, 255, 0.5),
     inset 0 -2px 3px rgba(0, 0, 0, 0.045),
     0 2px 6px rgba(0, 0, 0, 0.10);
-  transition: transform .44s cubic-bezier(.5, 1.28, .5, 1), width .44s cubic-bezier(.5, 1.28, .5, 1);
+  transition: transform .44s cubic-bezier(.5, 1.28, .5, 1), width .44s cubic-bezier(.5, 1.28, .5, 1),
+    height .44s cubic-bezier(.5, 1.28, .5, 1), border-radius .34s ease;
   will-change: transform;
+}
+
+/* Scrub gesture (iOS 26 / WhatsApp): press-and-drag the bar and the lens
+   becomes a magnifier bubble that tracks the finger fast, the bar swells
+   and lifts toward the touch, and the icon under the bubble bulges. */
+.tab-lens.is-circular {
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.6),
+    0 8px 22px rgba(0, 0, 0, 0.20);
+  transition: transform .11s cubic-bezier(.3, .85, .3, 1),
+    width .24s ease, height .24s ease, border-radius .24s ease;
+}
+.material-chrome {
+  transition: padding .3s cubic-bezier(.4, 1.25, .5, 1), transform .3s cubic-bezier(.4, 1.25, .5, 1);
+}
+.material-chrome.is-scrubbing {
+  padding-top: 15px; padding-bottom: 15px;
+  transform: translateY(-9px);
 }
 
 /* — material chrome — the tab bar and input bar float as a translucent
@@ -585,7 +606,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     animation-timing-function: ease !important;
   }
   .sheet-scrim.is-closing { animation: none !important; opacity: 0 !important; }
-  .tab-lens { transition: none !important; }
+  .tab-lens, .tab-lens.is-circular, .material-chrome, .material-chrome.is-scrubbing { transition: none !important; }
   .sheet-scrim { animation-duration: 100ms !important; }
   .chart-line-draw, .chart-area-in, .chart-dots-in, .success-check {
     animation: none !important;

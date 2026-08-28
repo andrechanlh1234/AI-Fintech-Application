@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import type { Tab } from '../store/types';
 
 // Ported from Cukai v7.dc.html lines 1573-1599: a floating pill nav bar
@@ -63,17 +63,104 @@ const TABS: { key: Tab; label: string; Icon: () => ReactElement }[] = [
   { key: 'ai', label: 'AI', Icon: AiIcon },
 ];
 
+const LENS_D = 44; // circular lens diameter during a scrub
+
 export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t: Tab) => void; onScan: () => void }) {
   const barRef = useRef<HTMLDivElement>(null);
   const [lens, setLens] = useState<{ x: number; w: number } | null>(null);
+  // Non-null while the user is scrubbing the bar (iOS 26 / WhatsApp style):
+  // x is the lens centre in bar-local px.
+  const [scrubX, setScrubX] = useState<number | null>(null);
+  const [slots, setSlots] = useState<{ key: Tab; cx: number }[]>([]);
+  const startRef = useRef<{ x: number } | null>(null);
+  const holdRef = useRef<number | null>(null);
+  const scrubbingRef = useRef(false);
 
-  // Measure the active tab button's box within the bar so the glass lens
-  // springs to exactly under it — robust to the mid-bar scan-button gap and
-  // any future layout change, no hardcoded slot maths.
+  // Measure the active tab button's box within the bar so the resting lens
+  // springs to exactly under it — robust to the mid-bar scan-button gap.
   useLayoutEffect(() => {
     const btn = barRef.current?.querySelector<HTMLElement>('[data-active="true"]');
     if (btn) setLens({ x: btn.offsetLeft + 2, w: btn.offsetWidth - 4 });
   }, [active]);
+
+  const measureSlots = (): { key: Tab; cx: number }[] => {
+    const bar = barRef.current;
+    if (!bar) return [];
+    const s = [...bar.querySelectorAll<HTMLElement>('[data-tab]')].map((el) => ({
+      key: el.dataset.tab as Tab,
+      cx: el.offsetLeft + el.offsetWidth / 2,
+    }));
+    setSlots(s);
+    return s;
+  };
+
+  const clampX = (clientX: number, s: { cx: number }[]): number => {
+    const r = barRef.current!.getBoundingClientRect();
+    const lo = s[0]?.cx ?? 24;
+    const hi = s[s.length - 1]?.cx ?? r.width - 24;
+    return Math.max(lo, Math.min(hi, clientX - r.left));
+  };
+
+  const nearestTab = (x: number, s: { key: Tab; cx: number }[]): Tab => {
+    let best = s[0];
+    for (const slot of s) if (Math.abs(slot.cx - x) < Math.abs(best.cx - x)) best = slot;
+    return best.key;
+  };
+
+  const enterScrub = (clientX: number) => {
+    if (scrubbingRef.current || !barRef.current) return;
+    const s = measureSlots();
+    scrubbingRef.current = true;
+    setScrubX(clampX(clientX, s));
+  };
+  const exitScrub = () => {
+    scrubbingRef.current = false;
+    setScrubX(null);
+    if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null; }
+  };
+
+  const onPointerDown = (e: ReactPointerEvent) => {
+    if ((e.target as HTMLElement).closest('[data-noscrub]')) return; // scan button
+    const cx = e.clientX;
+    startRef.current = { x: cx };
+    barRef.current?.setPointerCapture(e.pointerId);
+    holdRef.current = window.setTimeout(() => enterScrub(cx), 150);
+  };
+  const onPointerMove = (e: ReactPointerEvent) => {
+    if (!startRef.current) return;
+    if (!scrubbingRef.current) {
+      if (Math.abs(e.clientX - startRef.current.x) > 8) {
+        if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null; }
+        enterScrub(e.clientX);
+      }
+      return;
+    }
+    setScrubX(clampX(e.clientX, slots));
+  };
+  const onPointerUp = (e: ReactPointerEvent) => {
+    if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null; }
+    if (scrubbingRef.current && scrubX != null && slots.length) {
+      e.preventDefault();
+      onSelect(nearestTab(scrubX, slots));
+    }
+    startRef.current = null;
+    exitScrub();
+    try { barRef.current?.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
+  };
+  const onPointerCancel = () => { startRef.current = null; exitScrub(); };
+
+  const lensStyle = scrubX != null
+    ? { transform: `translate3d(${scrubX - LENS_D / 2}px, 0, 0)`, width: LENS_D }
+    : lens
+      ? { transform: `translate3d(${lens.x}px, 0, 0)`, width: lens.w }
+      : undefined;
+
+  const bulgeFor = (key: Tab): number => {
+    if (scrubX == null) return 0;
+    const slot = slots.find((s) => s.key === key);
+    if (!slot) return 0;
+    return Math.max(0, 1 - Math.abs(scrubX - slot.cx) / 52);
+  };
 
   return (
     <div style={{
@@ -82,23 +169,29 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
     }}>
       <div
         ref={barRef}
-        className="material-chrome"
+        className={`material-chrome${scrubX != null ? ' is-scrubbing' : ''}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         style={{
           position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          borderRadius: 999, boxShadow: 'var(--shadow-lg)', padding: '10px 16px', gap: 2, pointerEvents: 'auto',
+          borderRadius: 999, boxShadow: 'var(--shadow-lg)', padding: '10px 16px', gap: 2,
+          pointerEvents: 'auto', touchAction: 'none',
         }}
       >
-        {lens && (
-          <div className="tab-lens" style={{ transform: `translate3d(${lens.x}px, 0, 0)`, width: lens.w }} />
+        {lensStyle && (
+          <div className={`tab-lens${scrubX != null ? ' is-circular' : ''}`} style={lensStyle} />
         )}
-        {TABS.slice(0, 2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} onSelect={onSelect} />)}
+        {TABS.slice(0, 2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} bulge={bulgeFor(t.key)} onSelect={onSelect} />)}
         <div style={{ width: 56, flexShrink: 0 }} />
-        {TABS.slice(2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} onSelect={onSelect} />)}
+        {TABS.slice(2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} bulge={bulgeFor(t.key)} onSelect={onSelect} />)}
 
         <button
           type="button"
           onClick={onScan}
           aria-label="Scan receipt"
+          data-noscrub
           className="pressable"
           style={{
             position: 'absolute', top: -26, left: '50%', transform: 'translateX(-50%)',
@@ -115,12 +208,13 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
   );
 }
 
-function TabButton({ tab, active, onSelect }: { tab: typeof TABS[number]; active: boolean; onSelect: (t: Tab) => void }) {
+function TabButton({ tab, active, bulge = 0, onSelect }: { tab: typeof TABS[number]; active: boolean; bulge?: number; onSelect: (t: Tab) => void }) {
   const color = active ? 'var(--color-accent-800)' : 'var(--color-text-muted)';
   return (
     <button
       type="button"
       className="tab-btn"
+      data-tab={tab.key}
       data-active={active}
       onClick={() => onSelect(tab.key)}
       style={{
@@ -129,8 +223,16 @@ function TabButton({ tab, active, onSelect }: { tab: typeof TABS[number]; active
         color: tab.key === 'ai' ? undefined : color,
       }}
     >
-      <tab.Icon />
-      <span style={{ fontSize: 9.5, fontWeight: active ? 700 : 500, color }}>{tab.label}</span>
+      <span
+        style={{
+          display: 'flex',
+          transform: bulge ? `translateY(${(-6 * bulge).toFixed(1)}px) scale(${(1 + bulge * 0.5).toFixed(3)})` : undefined,
+          transition: 'transform .14s cubic-bezier(.3,.9,.3,1)',
+        }}
+      >
+        <tab.Icon />
+      </span>
+      <span style={{ fontSize: 9.5, fontWeight: active ? 700 : 500, color, opacity: bulge > 0.55 ? 1 : undefined }}>{tab.label}</span>
     </button>
   );
 }
