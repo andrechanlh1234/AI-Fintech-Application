@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { reducer } from './reducer';
 import { buildInitialState } from './initialState';
-import { selectBudgets, selectTaxCenter, selectNetWorth } from './selectors';
+import { selectBudgets, selectTaxCenter, selectNetWorth, selectRecordPage, selectStatsPage } from './selectors';
 import { INCOME_RANGE_OPTS } from '../lib/constants';
 import type { AppState } from './types';
 
@@ -136,6 +136,31 @@ describe('selectTaxCenter — relief aggregation clamps to caps', () => {
     expect(medicalGroupCaptured(tax)).toBe(10000); // group clamps each item to its cap
     expect(tax.totalCaptured).toBeLessThanOrEqual(tax.totalCap);
     expect(tax.taxOptPct).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('the transaction ledger is real transactions only, not budget plans', () => {
+  it('budget line items do not appear as transactions in Record or Stats', () => {
+    let state: AppState = { ...buildInitialState(), mounted: true };
+    // A budget category with a planned line item, and zero real transactions.
+    state = {
+      ...state,
+      finance: { buckets: [{ key: 'flexible', name: 'Flexible', categories: [
+        { id: 'c1', name: 'Food & Drink', cap: 500, items: [{ id: 'i1', name: 'Weekly groceries', amount: 320 }] },
+      ] }] },
+    };
+
+    const record = selectRecordPage(state);
+    const stats = selectStatsPage(state);
+
+    expect(state.transactions).toHaveLength(0);
+    expect(record.rangeCount).toBe(0);
+    expect(record.groupedTx).toHaveLength(0);
+    expect(stats.statsCategoryBars).toHaveLength(0);
+    expect(stats.statsCategorySumLabel).toBe('0');
+
+    // The plan still counts toward *budget utilisation* — a different question.
+    expect(selectBudgets(state).buckets[0].categories[0].spent).toBe(320);
   });
 });
 

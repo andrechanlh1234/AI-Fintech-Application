@@ -377,13 +377,14 @@ export function selectHomeDashboard(state: AppState) {
     ? { title: 'Lifestyle relief ' + homeLifePct + '% used', sub: 'RM ' + moneyWhole(homeLifeMeta.cap - homeLifeData.captured) + ' of your RM ' + moneyWhole(homeLifeMeta.cap) + ' cap left this year — tap to review in Tax Center →' }
     : { title: "You're pacing well this month", sub: 'RM ' + moneyWhole(homeBudgetTotal - homeBudgetSpent) + ' under budget · tap to review in Tax Center →' };
 
-  const budgetDerivedTx: Transaction[] = [];
-  state.finance.buckets.forEach((b) => b.categories.forEach((c) => c.items.forEach((it) => {
-    if (!it.name) return;
-    const cat = CAT_ICON[c.name] ? c.name : b.key === 'insurance' ? 'Insurance' : b.key === 'goals' ? 'Lifestyle' : 'Bills';
-    budgetDerivedTx.push({ id: 'bud-' + it.id, merchant: it.name, cat, dateLabel: 'Recurring', dateGroup: 'This week', month: SHORT_MONTHS[new Date().getMonth()], amount: -(parseFloat(String(it.amount)) || 0), tax: false, payment: b.name + ' budget' });
-  })));
-  const combinedTx = state.transactions.concat(budgetDerivedTx);
+  // The transaction ledger is exactly state.transactions — real scanned,
+  // typed, or imported entries. Budget line items are *plans*, not spending,
+  // so they must not be synthesised into fake "Recurring" transactions here:
+  // doing that made the Record list, the Stats breakdown, and the Budgets
+  // "spent" figure three different numbers for the same month. Budget
+  // utilisation still counts those line items — but that lives in
+  // selectBudgets, and is a separate question from "what did I actually spend".
+  const combinedTx = state.transactions;
 
   const recentTx = combinedTx.filter((t) => t.dateGroup === 'Today' || t.dateGroup === 'Yesterday').slice(0, 3).map((t) => ({
     ...t, ...rowBadge(t), catLabel: t.cat,
