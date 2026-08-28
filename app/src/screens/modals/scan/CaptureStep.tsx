@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { BottomSheet } from '../../../components/BottomSheet';
 
 // `torch` is a real, widely-implemented MediaTrack capability/constraint
@@ -43,9 +43,6 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
   // e.g. testing over a plain-http LAN IP from a phone.
   useEffect(() => {
     let cancelled = false;
-    // (No state reset here — this effect runs once on mount and the three
-    // flags already start false; resetting them synchronously in the effect
-    // was a redundant cascading render.)
     if (!navigator.mediaDevices?.getUserMedia) return;
 
     navigator.mediaDevices.getUserMedia({ video: HD_VIDEO_CONSTRAINTS })
@@ -67,8 +64,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         }
         // Torch is device/browser-dependent (notably absent on iOS Safari,
         // even inside a PWA) -- only show the flash button where the
-        // active track actually reports the capability, rather than
-        // rendering a control that would silently do nothing.
+        // active track actually reports the capability.
         const track = stream.getVideoTracks()[0];
         const caps = track?.getCapabilities?.() as TorchCapabilities | undefined;
         if (caps?.torch) setTorchSupported(true);
@@ -124,127 +120,136 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
     else fileInputRef.current?.click();
   };
 
+  const circleBtn: CSSProperties = {
+    width: 52, height: 52, borderRadius: '50%', border: 'none', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+    background: 'rgba(20,20,20,0.42)', WebkitBackdropFilter: 'blur(8px)', backdropFilter: 'blur(8px)', color: '#fff',
+  };
+
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg,#2a2c2b,#0f100f)', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'calc(env(safe-area-inset-top) + 16px) 18px 16px', position: 'relative', zIndex: 5 }}>
+    <div style={{ position: 'relative', flex: 1, minHeight: '100dvh', overflow: 'hidden', background: '#0b0c0b' }}>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+          opacity: liveCameraReady ? 1 : 0, transition: 'opacity .25s ease',
+        }}
+      />
+
+      {/* Header — a transparent overlay so the camera fills the screen right
+          up behind the status bar / Dynamic Island. */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'calc(env(safe-area-inset-top) + 6px) 14px 8px' }}>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label="Back"
           className="pressable"
-          style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}
+          style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: '#fff', display: 'flex' }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))' }}><path d="m15 18-6-6 6-6" /></svg>
         </button>
-        <span style={{ font: '600 13px var(--font-body)', color: 'rgba(255,255,255,0.85)', letterSpacing: '0.02em' }}>Add expense</span>
-        {/* Balances the close button so the title stays centered. */}
-        <div style={{ width: 36, height: 36 }} />
+        <span style={{ font: '700 16px var(--font-heading)', color: '#fff', letterSpacing: '0.01em', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Add expense</span>
+        <div style={{ width: 36 }} />
       </div>
-      {/* Full-bleed viewfinder: the video fills the entire remaining screen
-          area edge-to-edge (no margin, no clipping radius), matching a real
-          camera app. The corner-bracket "frame" is a separate, purely
-          decorative overlay inset from the true edges -- it used to share
-          this same margined/clipped box as the video itself, which is what
-          was shrinking the live feed down to a rounded rectangle instead of
-          filling the screen. */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-            opacity: liveCameraReady ? 1 : 0, transition: 'opacity .2s ease',
-          }}
-        />
-        {/* Placement guide only: four rounded corner marks, nothing else — no
-            frame outline, no dim mask. The capture grabs the full camera
-            frame regardless of where these sit. */}
-        <div style={{ position: 'absolute', top: '7%', bottom: '13%', left: 24, right: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: 34, height: 34, borderTop: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '14px 0 0 0' }} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: 34, height: 34, borderTop: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 14px 0 0' }} />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 34, height: 34, borderBottom: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '0 0 0 14px' }} />
-          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 34, height: 34, borderBottom: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 0 14px 0' }} />
-          {!liveCameraReady && (
-            <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.7)', position: 'relative', textAlign: 'center', padding: '0 20px' }}>
-              Align the receipt within the frame
-            </span>
-          )}
-        </div>
+
+      {/* Placement guide: four rounded corner marks only — no frame outline,
+          no dim. The capture always grabs the full camera frame. */}
+      <div style={{ position: 'absolute', top: '13%', bottom: '27%', left: '8%', right: '8%', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: 38, height: 38, borderTop: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '16px 0 0 0' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, width: 38, height: 38, borderTop: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 16px 0 0' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: 38, height: 38, borderBottom: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '0 0 0 16px' }} />
+        <div style={{ position: 'absolute', bottom: 0, right: 0, width: 38, height: 38, borderBottom: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 0 16px 0' }} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '22px 0 34px' }}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = '';
-            if (file) onCaptured(file);
-          }}
-        />
-        <input
-          ref={importFileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = '';
-            if (file) onCaptured(file);
-          }}
-        />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 34, width: '100%' }}>
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            aria-label="Choose a photo or file"
-            className="pressable"
-            style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}
-          >
-            <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
-          </button>
-          <button
-            type="button"
-            onClick={handleCaptureClick}
-            aria-label="Capture"
-            className="pressable"
-            style={{
-              width: 82, height: 82, padding: 0, borderRadius: '50%', background: 'transparent',
-              border: '5px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxSizing: 'border-box', flexShrink: 0,
-            }}
-          >
-            <div style={{ width: 65, height: 65, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
-          </button>
-          {torchSupported ? (
-            <button
-              type="button"
-              onClick={toggleTorch}
-              aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
-              className="pressable"
-              style={{ width: 54, height: 54, borderRadius: '50%', background: torchOn ? '#fff' : 'rgba(255,255,255,0.12)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: torchOn ? '#0f100f' : '#fff', flexShrink: 0 }}
-            >
-              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
-            </button>
-          ) : (
-            // Keeps the capture button centered whether or not flash is available.
-            <div style={{ width: 54, height: 54, flexShrink: 0 }} />
-          )}
+
+      {!liveCameraReady && (
+        <div style={{ position: 'absolute', top: '46%', left: 0, right: 0, textAlign: 'center', color: 'rgba(255,255,255,0.6)', font: '500 13px var(--font-body)', pointerEvents: 'none' }}>
+          Starting camera…
         </div>
+      )}
+
+      {/* Scope note, just below the guide. */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: '75%', display: 'flex', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none' }}>
+        <span style={{ background: 'rgba(255,255,255,0.94)', color: '#1a1c1a', font: '600 13px var(--font-body)', padding: '6px 14px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 7, boxShadow: '0 2px 12px rgba(0,0,0,0.22)' }}>
+          <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🇲🇾</span>
+          Malaysian receipts only
+        </span>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onCaptured(f); }}
+      />
+      <input
+        ref={importFileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onCaptured(f); }}
+      />
+
+      {/* Capture row */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'calc(env(safe-area-inset-bottom) + 92px)', zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40 }}>
         <button
           type="button"
-          onClick={onManual}
+          onClick={() => importFileInputRef.current?.click()}
+          aria-label="Choose from photos"
           className="pressable"
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.75)', font: '600 13px var(--font-body)', cursor: 'pointer' }}
+          style={circleBtn}
         >
-          Enter details manually instead
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
         </button>
+        <button
+          type="button"
+          onClick={handleCaptureClick}
+          aria-label="Capture"
+          className="pressable"
+          style={{
+            width: 76, height: 76, padding: 0, borderRadius: '50%', background: 'transparent',
+            border: '4px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxSizing: 'border-box', flexShrink: 0, boxShadow: '0 2px 14px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+        </button>
+        {torchSupported ? (
+          <button
+            type="button"
+            onClick={toggleTorch}
+            aria-label={torchOn ? 'Turn off flash' : 'Turn on flash'}
+            className="pressable"
+            style={{ ...circleBtn, background: torchOn ? '#fff' : circleBtn.background, color: torchOn ? '#0f100f' : '#fff' }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+          </button>
+        ) : (
+          <div style={{ width: 52, height: 52, flexShrink: 0 }} />
+        )}
       </div>
+
+      {/* "More ways to add expense" — pinned peeking sheet. */}
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="pressable"
+        style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 6,
+          background: 'var(--color-bg)', border: 'none', borderRadius: '20px 20px 0 0',
+          padding: '11px 0 calc(env(safe-area-inset-bottom) + 14px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.18)',
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m6 15 6-6 6 6" /></svg>
+        <span style={{ font: '600 14px var(--font-body)', color: 'var(--color-text-muted)' }}>More ways to add expense</span>
+      </button>
 
       <BottomSheet open={pickerOpen} onClose={() => setPickerOpen(false)}>
         <div style={{ padding: '10px 8px 24px' }}>
@@ -258,18 +263,18 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
             </span>
-            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Photo</span>
+            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Choose from Photos or Files</span>
           </button>
           <button
             type="button"
-            onClick={() => { setPickerOpen(false); importFileInputRef.current?.click(); }}
+            onClick={() => { setPickerOpen(false); onManual(); }}
             className="pressable"
             style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
           >
             <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
             </span>
-            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>File</span>
+            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Enter details manually</span>
           </button>
         </div>
       </BottomSheet>
