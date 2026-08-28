@@ -176,6 +176,17 @@ function dedupeIds<T extends { id: string | number }>(records: T[], mintId: () =
   });
 }
 
+// The "Insurance" budget bucket was retired — any persisted state that still
+// has one gets its categories folded into "Flexible" and the bucket dropped.
+function migrateBuckets(buckets: SyncPayload['buckets']): SyncPayload['buckets'] {
+  const ins = buckets.find((b) => b.key === 'insurance');
+  if (!ins) return buckets;
+  const rest = buckets.filter((b) => b.key !== 'insurance');
+  return ins.categories.length
+    ? rest.map((b) => (b.key === 'flexible' ? { ...b, categories: [...b.categories, ...ins.categories] } : b))
+    : rest;
+}
+
 export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppState {
   // Both the localStorage boot path (mergePersisted) and the signed-in
   // backend sync (APPLY_REMOTE_STATE) funnel through here -- seeding the
@@ -187,7 +198,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.manual) next.ob = { ...next.ob, manual: { ...next.ob.manual, ...p.manual } };
   if (p.subs) next.ob = { ...next.ob, subs: p.subs };
   if (p.profile) next.ob = { ...next.ob, ...p.profile };
-  if (p.buckets) next.finance = { ...next.finance, buckets: p.buckets };
+  if (p.buckets) next.finance = { ...next.finance, buckets: migrateBuckets(p.buckets) };
   if (p.obDone) next.appStage = 'app';
   if (p.theme) next.theme = p.theme;
   if (p.transactions) next.transactions = dedupeIds(p.transactions, () => 'rcpt-tx-' + uid());

@@ -79,7 +79,6 @@ export function defaultBuckets(): Bucket[] {
     { key: 'fixed', name: 'Fixed', categories: [] },
     { key: 'flexible', name: 'Flexible', categories: [] },
     { key: 'goals', name: 'Goals', categories: [] },
-    { key: 'insurance', name: 'Insurance', categories: [] },
   ];
 }
 

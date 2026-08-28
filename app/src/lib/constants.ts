@@ -358,9 +358,8 @@ export function txDateIso(t: { dateLabel?: string; dateGroup?: string; month: st
 // so both surfaces offer the same suggestions instead of drifting apart.
 export const BUDGET_COMMON_CATEGORIES: Record<string, string[]> = {
   fixed: ['Housing', 'Utilities'],
-  flexible: ['Food & Drink', 'Transport', 'Shopping'],
+  flexible: ['Food & Drink', 'Transport', 'Shopping', 'Insurance', 'Medical Insurance'],
   goals: ['Emergency fund'],
-  insurance: ['Medical Insurance'],
 };
 
 export function chipStyle(active: boolean) {

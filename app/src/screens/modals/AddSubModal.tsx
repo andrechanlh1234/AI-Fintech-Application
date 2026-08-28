@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
+import { formatWithCommas } from '../../lib/format';
+import { AmountKeypadSheet } from '../../components/AmountKeypadSheet';
 
 function CloseIcon() {
   return (
@@ -15,6 +18,8 @@ function CloseIcon() {
 export function AddSubModal() {
   const { state } = useStore();
   const actions = useActions();
+
+  const [amountKeypad, setAmountKeypad] = useState(false);
 
   if (!state.addSubOpen) return null;
   const draft = state.ob.subDraft;
@@ -36,7 +41,16 @@ export function AddSubModal() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Amount (RM)</label>
-          <input className="input" value={draft.amount} onChange={(e) => actions.setSubDraft('amount', e.target.value)} placeholder="0.00" />
+          <button
+            type="button"
+            onClick={() => setAmountKeypad(true)}
+            className="input"
+            style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box' }}
+          >
+            <span style={{ color: draft.amount ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+              {draft.amount ? formatWithCommas(draft.amount) : '0.00'}
+            </span>
+          </button>
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Frequency</label>
@@ -72,6 +86,13 @@ export function AddSubModal() {
       </div>
 
       <button type="button" onClick={actions.addSubscription} className="btn btn-primary btn-lg">Add subscription</button>
+
+      <AmountKeypadSheet
+        open={amountKeypad}
+        value={draft.amount}
+        onClose={() => setAmountKeypad(false)}
+        onSave={(v) => actions.setSubDraft('amount', v)}
+      />
     </div>
   );
 }

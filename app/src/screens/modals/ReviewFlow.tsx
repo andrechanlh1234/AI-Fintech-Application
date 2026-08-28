@@ -1,4 +1,4 @@
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReviewFlow } from '../../store/selectors';
 import { BRAND } from '../../lib/constants';
@@ -14,6 +14,8 @@ export function ReviewFlow() {
   const { state } = useStore();
   const actions = useActions();
 
+  const [fling, setFling] = useState<'left' | 'right' | null>(null);
+
   if (!state.reviewOpen) return null;
 
   const review = selectReviewFlow(state);
@@ -25,6 +27,18 @@ export function ReviewFlow() {
   };
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => actions.reviewMove(e.clientX);
   const onUp = () => actions.reviewUp();
+
+  // Tapping the X / ✓ button flings the card off-screen (left / right) before
+  // the decision commits — the same motion a real swipe would produce.
+  const decide = (dir: 'left' | 'right') => {
+    if (fling) return;
+    setFling(dir);
+    window.setTimeout(() => {
+      if (dir === 'right') actions.acceptCurrent();
+      else actions.rejectCurrent();
+      setFling(null);
+    }, 240);
+  };
 
   const curBadge = curItem ? badgeFor(curItem) : null;
   const nextBadge = nextItem ? badgeFor(nextItem) : null;
@@ -85,8 +99,13 @@ export function ReviewFlow() {
               style={{
                 position: 'absolute', inset: '0 6px', display: 'flex', flexDirection: 'column', padding: 26,
                 boxSizing: 'border-box', cursor: 'grab', touchAction: 'pan-y',
-                transform: `translateX(${dragX}px) rotate(${rotate}deg)`,
-                transition: state.reviewDragging ? 'none' : 'transform .25s ease',
+                transform: fling
+                  ? `translateX(${fling === 'right' ? 140 : -140}%) rotate(${fling === 'right' ? 22 : -22}deg)`
+                  : `translateX(${dragX}px) rotate(${rotate}deg)`,
+                opacity: fling ? 0 : 1,
+                transition: fling
+                  ? 'transform .26s cubic-bezier(.4,0,1,1), opacity .26s ease'
+                  : state.reviewDragging ? 'none' : 'transform .25s ease',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -143,7 +162,7 @@ export function ReviewFlow() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: 22, padding: '20px 0 6px' }}>
             <button
               type="button"
-              onClick={actions.rejectCurrent}
+              onClick={() => decide('left')}
               aria-label="Reject"
               className="pressable"
               style={{
@@ -159,7 +178,7 @@ export function ReviewFlow() {
             </button>
             <button
               type="button"
-              onClick={actions.acceptCurrent}
+              onClick={() => decide('right')}
               aria-label="Accept"
               className="pressable"
               style={{

@@ -58,13 +58,15 @@ export function selectNetWorth(state: AppState) {
   const seedCreditTotal = state.netWorthSeed.creditCards.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
   const seedInvestTotal = state.netWorthSeed.investments.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), 0);
   const obBankTotal = sumOb(state, 'bankAccounts'), obCreditTotal = sumOb(state, 'creditCards');
-  const obPropertyTotal = sumOb(state, 'properties'), obOtherAssetTotal = sumOb(state, 'otherAssets'), obLiabilityTotal = sumOb(state, 'liabilities');
+  const obPropertyTotal = sumOb(state, 'properties');
   const manualInvestTotal = ob.manual.investments.filter((r) => r.name).reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), 0);
 
   const cashTotalVal = seedCashTotal + obBankTotal;
   const investTotalVal = seedInvestTotal + manualInvestTotal;
-  const otherAssetsTotalVal = obPropertyTotal + obOtherAssetTotal;
-  const liabTotalVal = seedCreditTotal + obCreditTotal + obLiabilityTotal;
+  // "Other assets" and free-form "Liabilities" are removed for now — only
+  // properties feed the Other group, only cards feed Liabilities.
+  const otherAssetsTotalVal = obPropertyTotal;
+  const liabTotalVal = seedCreditTotal + obCreditTotal;
 
   const nwSeedRow = (name: string, amount: number, listKey: string, id: string, brand?: string | null): NwRow =>
     ({ name, subLabel: 'Synced · tap to edit', balanceValue: amount, brand, clickable: true, listKey, id, isManual: false });
@@ -82,14 +84,12 @@ export function selectNetWorth(state: AppState) {
       ...state.netWorthSeed.investments.map((r) => nwInvestRow(r, 'seed.investments', false)),
       ...ob.manual.investments.map((r, i) => nwInvestRow({ ...r, id: r.id || 'mi' + i }, 'investments', true, i)),
     ] },
-    { key: 'other', label: 'Other assets', totalVal: otherAssetsTotalVal, rows: [
+    { key: 'other', label: 'Property', totalVal: otherAssetsTotalVal, rows: [
       ...ob.manual.properties.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'properties', r.id, r.amount, r.date)),
-      ...ob.manual.otherAssets.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'otherAssets', r.id, r.amount, r.date)),
     ] },
     { key: 'liab', label: 'Liabilities', totalVal: liabTotalVal, rows: [
       ...state.netWorthSeed.creditCards.map((r) => nwSeedRow(r.name, parseFloat(r.amount) || 0, 'seed.creditCards', r.id, r.brand)),
       ...ob.manual.creditCards.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'creditCards', r.id, r.amount, r.date)),
-      ...ob.manual.liabilities.map((r) => nwManualRow(r.name, parseFloat(r.amount) || 0, 'liabilities', r.id, r.amount, r.date)),
     ] },
   ].map((g) => ({ ...g, icon: NW_GROUP_ICON[g.key], expanded: state.expandedNwGroup === g.key }));
 
@@ -156,8 +156,8 @@ export function computeNetWorthTimeline(state: AppState): { date: string; value:
   const creditSeed = seededHistoryRows(state.netWorthSeed.creditCards);
   const cashManual = state.ob.manual.bankAccounts;
   const creditManual = state.ob.manual.creditCards;
-  const otherManual = [...state.ob.manual.properties, ...state.ob.manual.otherAssets];
-  const liabManual = state.ob.manual.liabilities;
+  const otherManual = state.ob.manual.properties; // "Other assets" removed for now
+  const liabManual: typeof creditManual = []; // free-form "Liabilities" removed for now
 
   const investTotal =
     state.netWorthSeed.investments.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0), 0) +

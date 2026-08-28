@@ -96,7 +96,7 @@ export default function RecordSection() {
           style={{
             all: 'unset', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
             padding: '6px 10px', borderRadius: 'var(--radius-md)', font: '600 11.5px var(--font-body)',
-            border: '1.5px solid var(--color-accent-300)', background: 'var(--color-accent-100)', color: 'var(--color-accent-700)',
+            border: '1.5px solid var(--color-neutral-400)', background: 'var(--color-surface)', color: 'var(--color-accent-700)',
           }}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

@@ -48,10 +48,11 @@ export function FilterPicker({
       </button>
       {open && (
         <div
-          className="material-chrome popover-origin"
+          className="popover-origin"
           style={{
-            position: 'absolute', top: 'calc(100% + 8px)', [align]: 0, zIndex: 30, minWidth: 196, maxHeight: 320, overflowY: 'auto',
-            borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-divider)',
+            position: 'absolute', top: 'calc(100% + 8px)', [align]: 0, zIndex: 30, minWidth: 200, maxHeight: 320, overflowY: 'auto',
+            borderRadius: 14, boxShadow: '0 8px 30px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.12)',
+            border: '1px solid var(--color-divider)', background: 'var(--color-surface)',
             padding: 6, '--pop-origin': `top ${align}`,
           } as CSSProperties}
         >

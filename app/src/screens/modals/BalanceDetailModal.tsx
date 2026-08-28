@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
-import { money } from '../../lib/format';
+import { money, formatWithCommas } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { AmountKeypadSheet } from '../../components/AmountKeypadSheet';
+import { DateField } from './scan/shared';
 import { playSharedMorph } from '../../lib/motion';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
@@ -28,6 +30,7 @@ export function BalanceDetailModal() {
   const actions = useActions();
   const morphRef = useRef<HTMLDivElement>(null);
   useEffect(() => { playSharedMorph(morphRef.current); }, []);
+  const [amountSheetOpen, setAmountSheetOpen] = useState(false);
 
   if (!state.balanceDetailOpen) return null;
   const sep = state.balanceDetailOpen.indexOf(':');
@@ -72,7 +75,7 @@ export function BalanceDetailModal() {
 
       <AnimatedNumber
         className="type-numeric"
-        style={{ fontWeight: 700, fontSize: 26, marginBottom: 20, display: 'block' }}
+        style={{ display: 'block', textAlign: 'center', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 28, letterSpacing: '-0.02em', marginBottom: 20 }}
         value={balanceValue}
         format={money}
         prefix="RM "
@@ -96,17 +99,22 @@ export function BalanceDetailModal() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        {/* Uneven split, not flex:1 each -- a native date input needs more
-            room than a short amount field (day/month/year plus the
-            browser's own calendar-picker icon), so an even 50/50 split left
-            it cramped right up against its own right edge. */}
-        <div className="field" style={{ flex: 4 }}>
+        <div className="field" style={{ flex: 1 }}>
           <label>Amount (RM)</label>
-          <input className="input" value={draft.amount} onChange={(e) => actions.setBalanceDraftField('amount', e.target.value)} placeholder="0.00" />
+          <button
+            type="button"
+            onClick={() => setAmountSheetOpen(true)}
+            className="input"
+            style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box' }}
+          >
+            <span style={{ color: draft.amount ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+              {draft.amount ? formatWithCommas(draft.amount) : '0.00'}
+            </span>
+          </button>
         </div>
-        <div className="field" style={{ flex: 5 }}>
+        <div className="field" style={{ flex: 1 }}>
           <label>Date</label>
-          <input className="input" type="date" value={draft.date} onChange={(e) => actions.setBalanceDraftField('date', e.target.value)} />
+          <DateField value={draft.date} onChange={(iso) => actions.setBalanceDraftField('date', iso)} />
         </div>
       </div>
 
@@ -145,6 +153,13 @@ export function BalanceDetailModal() {
           Remove account
         </button>
       )}
+
+      <AmountKeypadSheet
+        open={amountSheetOpen}
+        value={draft.amount}
+        onClose={() => setAmountSheetOpen(false)}
+        onSave={(v) => actions.setBalanceDraftField('amount', v)}
+      />
     </div>
   );
 }

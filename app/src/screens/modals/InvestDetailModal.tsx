@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
-import { money, sanitizeRaw } from '../../lib/format';
+import { money, formatWithCommas } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { AmountKeypadSheet } from '../../components/AmountKeypadSheet';
 import { playSharedMorph } from '../../lib/motion';
 import type { ManualData } from '../../store/types';
 
@@ -22,6 +23,7 @@ export function InvestDetailModal() {
   const actions = useActions();
   const morphRef = useRef<HTMLDivElement>(null);
   useEffect(() => { playSharedMorph(morphRef.current); }, []);
+  const [keypad, setKeypad] = useState<'qty' | 'buy' | 'cur' | null>(null);
 
   if (!state.investDetailOpen) return null;
   const sep = state.investDetailOpen.indexOf(':');
@@ -81,19 +83,32 @@ export function InvestDetailModal() {
 
       <div className="field" style={{ marginBottom: 12 }}>
         <label>Quantity / units</label>
-        <input className="input" inputMode="decimal" value={rec.qty} onChange={(e) => actions.setInvestDetailField(listKey, id, 'qty', sanitizeRaw(e.target.value))} placeholder="0" />
+        <button type="button" onClick={() => setKeypad('qty')} className="input" style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box' }}>
+          <span style={{ color: rec.qty ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{rec.qty ? formatWithCommas(rec.qty) : '0'}</span>
+        </button>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Buy price (RM)</label>
-          <input className="input" inputMode="decimal" value={rec.buy} onChange={(e) => actions.setInvestDetailField(listKey, id, 'buy', sanitizeRaw(e.target.value))} placeholder="0.00" />
+          <button type="button" onClick={() => setKeypad('buy')} className="input" style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <span style={{ color: rec.buy ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{rec.buy ? formatWithCommas(rec.buy) : '0.00'}</span>
+          </button>
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Current price (RM)</label>
-          <input className="input" inputMode="decimal" value={rec.cur} onChange={(e) => actions.setInvestDetailField(listKey, id, 'cur', sanitizeRaw(e.target.value))} placeholder="0.00" />
+          <button type="button" onClick={() => setKeypad('cur')} className="input" style={{ display: 'flex', alignItems: 'center', textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <span style={{ color: rec.cur ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{rec.cur ? formatWithCommas(rec.cur) : '0.00'}</span>
+          </button>
         </div>
       </div>
+
+      <AmountKeypadSheet
+        open={keypad != null}
+        value={keypad ? rec[keypad] : ''}
+        onClose={() => setKeypad(null)}
+        onSave={(v) => { if (keypad) actions.setInvestDetailField(listKey, id, keypad, v); }}
+      />
 
       {isManual && (
         <button
