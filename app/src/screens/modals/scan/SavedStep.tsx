@@ -8,16 +8,32 @@ export function SavedStep({ onScanAnother }: { onScanAnother: () => void }) {
   const anyDeductible = savedTx.some((t) => t.tax);
 
   return (
-    <div className="screen-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px 24px', boxSizing: 'border-box', textAlign: 'center', minHeight: '100vh' }}>
-      <div className="pop-in" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--color-neutral-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-      </div>
-      <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Saved</div>
-      <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 24, maxWidth: '26ch' }}>
-        {savedTx.length === 1 ? 'Linked to a new transaction in your Finance tab.' : `Split into ${savedTx.length} transactions in your Finance tab.`}
+    <div
+      className="screen-in"
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: 'calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px)',
+        boxSizing: 'border-box', textAlign: 'center', minHeight: '100dvh',
+      }}
+    >
+      {/* Hero (tick + Saved + subtitle) is centred in the space above the
+          transaction list — the tick used to be glued near the top. */}
+      <div style={{ flex: 1, minHeight: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div
+          className="success-ring"
+          style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}
+        >
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-700)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path className="success-check" d="M20 6 9 17l-5-5" />
+          </svg>
+        </div>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Saved</div>
+        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', maxWidth: '26ch' }}>
+          {savedTx.length === 1 ? 'Linked to a new transaction in your Finance tab.' : `Split into ${savedTx.length} transactions in your Finance tab.`}
+        </div>
       </div>
 
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20, marginBottom: 14 }}>
         {savedTx.map((tx) => (
           <div key={tx.id} className="card elev-sm" style={{ width: '100%', boxSizing: 'border-box', textAlign: 'left' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -47,10 +63,10 @@ export function SavedStep({ onScanAnother }: { onScanAnother: () => void }) {
         </button>
       )}
 
-      <div style={{ flex: 1 }} />
-      <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-        <button type="button" onClick={onScanAnother} className="btn btn-secondary" style={{ flex: 1 }}>Scan another</button>
-        <button type="button" onClick={actions.closeScan} className="btn btn-primary" style={{ flex: 1 }}>Done</button>
+      <div style={{ flex: 1, minHeight: 16 }} />
+      <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+        <button type="button" onClick={onScanAnother} className="btn btn-secondary" style={{ flex: 1, padding: '16px 18px', fontSize: 15, borderRadius: 'var(--radius-md)' }}>Scan another</button>
+        <button type="button" onClick={actions.closeScan} className="btn btn-primary" style={{ flex: 1, padding: '16px 18px', fontSize: 15, borderRadius: 'var(--radius-md)' }}>Done</button>
       </div>
     </div>
   );
