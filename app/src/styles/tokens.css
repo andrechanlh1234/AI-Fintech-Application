@@ -156,6 +156,10 @@ figcaption {
 .btn-primary { background: var(--color-accent); color: #fff; }
 .btn-primary:hover { background: var(--color-accent-700); }
 .btn-primary:active { background: var(--color-accent-800); }
+/* A primary action the user can't take yet reads as a flat grey box, not a
+   dimmed green one — so the moment it turns green is an unmistakable "you
+   can continue now" signal. */
+.btn-primary:disabled { background: var(--color-neutral-300); color: var(--color-text-muted); opacity: 1; }
 .btn-secondary { border-color: var(--color-neutral-500); color: var(--color-text); }
 .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
 .btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }

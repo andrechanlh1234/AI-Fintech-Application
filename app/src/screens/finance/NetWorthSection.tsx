@@ -286,14 +286,8 @@ export function NetWorthSection() {
                 <div style={{ display: 'flex', gap: 16, paddingTop: grp.rows.length ? 10 : 0 }}>
                   {grp.key === 'cash' && <AddLink label="Add account" onClick={() => actions.addRecord('bankAccounts')} />}
                   {grp.key === 'invest' && <AddLink label="Add investment" onClick={actions.addInvestmentRow} />}
-                  {grp.key === 'other' && <>
-                    <AddLink label="Add property" onClick={() => actions.addRecord('properties')} />
-                    <AddLink label="Add other asset" onClick={() => actions.addRecord('otherAssets')} />
-                  </>}
-                  {grp.key === 'liab' && <>
-                    <AddLink label="Add card" onClick={() => actions.addRecord('creditCards')} />
-                    <AddLink label="Add liability" onClick={() => actions.addRecord('liabilities')} />
-                  </>}
+                  {grp.key === 'other' && <AddLink label="Add property" onClick={() => actions.addRecord('properties')} />}
+                  {grp.key === 'liab' && <AddLink label="Add card" onClick={() => actions.addRecord('creditCards')} />}
                 </div>
               </div>
             )}

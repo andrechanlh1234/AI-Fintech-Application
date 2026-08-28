@@ -8,7 +8,10 @@ const REAL_CURRENT_YEAR = new Date().getFullYear();
 // Two years back (still filable/relevant for reference) through two years
 // ahead -- so a future assessment year becomes selectable as it rolls
 // around without redesigning this component.
-const TAX_YEAR_OPTIONS = [-2, -1, 0, 1, 2].map((offset) => REAL_CURRENT_YEAR + offset);
+// Past two YAs, the current YA, and the upcoming one. No further out: there
+// are no LHDN relief rules defined for years beyond the next YA, so offering
+// them just produced empty, meaningless screens.
+const TAX_YEAR_OPTIONS = [-2, -1, 0, 1].map((offset) => REAL_CURRENT_YEAR + offset);
 
 // Ported from Cukai v7.dc.html lines 1405-1501 (Tax Center screen).
 // Data comes from selectTaxCenter(state); tax-year switch, relief-group

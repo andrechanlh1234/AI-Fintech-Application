@@ -44,7 +44,13 @@ export function OnboardingFlow() {
   const idx = order.indexOf(state.obStep);
   const visibleOrder = order.filter((k) => k !== 'txDone');
   const visibleIdx = visibleOrder.indexOf(state.obStep);
-  const progress = `Step ${visibleIdx + 1} of ${visibleOrder.length}`;
+  // Denominator is the full path length (every conditional step counted), so
+  // it stays fixed for the whole flow. Previously it was `visibleOrder.length`,
+  // which changed mid-onboarding — "Step 9 of 10" became "Step 10 of 11" the
+  // moment the user chose manual setup. A skipped number reads far better
+  // than a moving total.
+  const totalSteps = OB_ORDER.filter((k) => k !== 'txDone').length;
+  const progress = `Step ${visibleIdx + 1} of ${totalSteps}`;
 
   const goNext = () => {
     if (idx >= 0 && idx < order.length - 1) actions.obNext(order[idx + 1]);
@@ -195,7 +201,22 @@ export function OnboardingFlow() {
                 style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0 }}
               />
               <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--color-text-muted)' }}>
-                I agree to the <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a>
+                I agree to the{' '}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); actions.openLegal('terms'); }}
+                  style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', fontWeight: 600 }}
+                >
+                  Terms &amp; Conditions
+                </button>{' '}
+                and{' '}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); actions.openLegal('privacy'); }}
+                  style={{ all: 'unset', cursor: 'pointer', color: 'var(--color-accent-700)', fontWeight: 600 }}
+                >
+                  Privacy Policy
+                </button>
               </span>
             </label>
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg" disabled={!ob.agreedTerms}>Continue</button>

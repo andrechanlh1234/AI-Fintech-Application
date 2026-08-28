@@ -63,6 +63,14 @@ export function NotifPanel() {
           <CloseIcon />
         </button>
       </div>
+      {NOTIFICATIONS.length === 0 && (
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 4 }}>You're all caught up</div>
+          <div style={{ fontSize: 11.5, lineHeight: 1.5 }}>
+            Budget, tax and account alerts will show up here as they happen.
+          </div>
+        </div>
+      )}
       {NOTIFICATIONS.map((n, i) => {
         const flags = notifIconFlags(n.kind);
         return (

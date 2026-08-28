@@ -42,16 +42,27 @@ export function clamp(v: number, lo: number, hi: number): number {
 // ISO "today" (YYYY-MM-DD) — the default/fallback date for anything a user
 // hasn't explicitly dated yet (a new manual balance row, a balance-history
 // entry). Never used to fabricate a value, only to date one.
-export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+//
+// Built from LOCAL calendar components, not toISOString() (which is UTC):
+// every other date helper here (dateGroupFor, computeAge, deriveTxDate)
+// works in local time, so a UTC "today" made the Record range and day
+// labels off by one for a Malaysia (UTC+8) user before 08:00 local.
+function isoFromLocal(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-// ISO date N days before today, in the same UTC-sliced form as todayIso() —
-// the basis for every "Last N days" quick-filter preset.
+export function todayIso(): string {
+  return isoFromLocal(new Date());
+}
+
+// ISO date N days before today (local), the basis for every "Last N days"
+// quick-filter preset.
 export function daysAgoIso(n: number): string {
   const d = new Date();
-  d.setUTCDate(d.getUTCDate() - n);
-  return d.toISOString().slice(0, 10);
+  d.setDate(d.getDate() - n);
+  return isoFromLocal(d);
 }
 
 export function signedMoney(n: number): string {

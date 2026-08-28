@@ -111,6 +111,7 @@ input[type="checkbox"] { accent-color: var(--color-accent); }
 [data-theme="dark"] .material-chrome { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 [data-theme="dark"] .btn-primary { background: var(--color-accent) !important; color: #fff !important; font-weight: 700; border: none !important; }
 [data-theme="dark"] .btn-primary:hover { background: var(--color-accent-300) !important; }
+[data-theme="dark"] .btn-primary:disabled { background: rgba(255,255,255,0.10) !important; color: var(--color-text-muted) !important; }
 [data-theme="dark"] .btn-secondary { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.16); }
 [data-theme="dark"] .material-chrome { background: rgba(36,36,36,0.97); border-color: rgba(255,255,255,0.14); }
 

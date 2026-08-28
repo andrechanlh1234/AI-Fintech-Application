@@ -221,7 +221,19 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'OB_FINISH':
       // Defensive: nothing set during onboarding should leave a detail
       // overlay auto-open the moment the user lands on the real app shell.
-      return { ...state, appStage: 'app', tab: 'home', budgetItemDetailOpen: null };
+      // Adding an account/card/property/asset during the manual finances
+      // step sets balanceDetailOpen (and investDetailOpen for an invest
+      // row); clear every overlay key, not just the budget one (H1).
+      return {
+        ...state,
+        appStage: 'app',
+        tab: 'home',
+        budgetItemDetailOpen: null,
+        balanceDetailOpen: null,
+        investDetailOpen: null,
+        historyOpen: null,
+        txDetailOpen: null,
+      };
     case 'TOGGLE_AGREED_TERMS':
       return { ...state, ob: { ...state.ob, agreedTerms: !state.ob.agreedTerms } };
     case 'CHOOSE_SETUP_METHOD':

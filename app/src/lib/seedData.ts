@@ -99,13 +99,13 @@ export interface ReviewItem { id: string; merchant: string; amount: number; cat:
 
 export interface NotifItem { kind: string; title: string; sub: string; time: string }
 
-export const NOTIFICATIONS: NotifItem[] = [
-  { kind: 'tax', title: 'Lifestyle relief 87% used', sub: 'RM 320 of your RM 2,500 cap left this year', time: '2h ago' },
-  { kind: 'mail', title: 'Invoice detected from Gmail', sub: 'Astro Invoice — RM 240.00 ready to review', time: '5h ago' },
-  { kind: 'check', title: 'Popular Bookstore tagged deductible', sub: 'Added to your Lifestyle relief automatically', time: 'Yesterday' },
-  { kind: 'trend', title: 'Net worth up 4.2% this month', sub: 'Driven mostly by your investment accounts', time: '2 days ago' },
-  { kind: 'budget', title: 'Dining budget 90% used', sub: 'RM 45 left in your Dining category this month', time: '3 days ago' },
-];
+// No fabricated notifications. The previous fixed sample list rendered for
+// every user regardless of state — a brand-new RM 0 account still saw "RM 45
+// left in your Dining category", "Net worth up 4.2%", etc. as if they were
+// its own data, and the bell always showed an unread dot. There is no real
+// event pipeline yet, so the honest default is an empty list + an empty
+// state (see NotifPanel). Re-populate this from real state when there is one.
+export const NOTIFICATIONS: NotifItem[] = [];
 
 export function notifIconFlags(kind: string) {
   const flags: Record<string, boolean> = { isTax: false, isMail: false, isTrend: false, isCheck: false, isBudget: false };
@@ -134,10 +134,18 @@ export const AI_CHAT_HISTORY: AiHistoryItem[] = [
   ] },
 ];
 
+// Offline fallback used only when the Gemini backend can't be reached (no
+// network, backend down, or the call errored). It must NOT invent figures —
+// a wrong specific ringgit amount in a finance app is worse than no answer —
+// so it points the user at the screen that has their real, live numbers
+// instead of quoting made-up ones.
 export function aiCraftReply(q: string): string {
   const s = q.toLowerCase();
-  if (s.includes('tax') || s.includes('relief')) return "Based on your YA2026 profile, you've captured about 62% of your available reliefs — Lifestyle and EPF & Insurance still have room. Want me to show which receipts could help?";
-  if (s.includes('budget') || s.includes('spend')) return "You've spent RM 6,960 of your RM 8,500 budget this month — about RM 540 left with a week to go. Dining is your fastest-growing category.";
-  if (s.includes('net worth') || s.includes('save') || s.includes('invest')) return 'Your net worth is trending up over the last 12 months, mostly from investment growth outpacing new liabilities. Want a full breakdown?';
-  return "I looked across your linked accounts, receipts and tax profile — your spending is on pace and two receipts from this week look tax-deductible. Ask me about a specific account, category, or relief for more detail.";
+  if (s.includes('tax') || s.includes('relief'))
+    return "I can't reach the assistant right now, so I can't read your live relief figures. Open the Tax Center — it shows, per relief group, how much you've captured and how much room is left. Lifestyle and EPF & Insurance are usually the ones with headroom.";
+  if (s.includes('budget') || s.includes('spend'))
+    return "I can't reach the assistant right now to pull your live numbers. Your Home screen and the Budgets tab show this month's spend against each category's cap — anything close to or over its limit is worth a look.";
+  if (s.includes('net worth') || s.includes('save') || s.includes('invest'))
+    return "I can't reach the assistant right now. Finance › Net worth has your current figure, the trend over time, and the assets-vs-liabilities breakdown.";
+  return "I can't reach the assistant right now — check your connection and try again. In the meantime, the Home, Finance and Tax Center screens all show your up-to-date numbers.";
 }

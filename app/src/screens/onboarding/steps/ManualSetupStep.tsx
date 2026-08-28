@@ -118,7 +118,6 @@ export function ManualSetupStep({
   const m = state.ob.manual;
   const totalCash = sumOb(m.bankAccounts);
   const totalCcOwed = sumOb(m.creditCards);
-  const totalLiabilities = sumOb(m.liabilities);
   const hasAnyInvestment = m.investments.some((r) => r.name);
   const investmentsValue = m.investments.reduce((s, r) => (r.name ? s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0) : s), 0);
   const investmentsGain = m.investments.reduce((s, r) => {
@@ -168,15 +167,6 @@ export function ManualSetupStep({
       <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Properties</div>
       <RecordRows listKey="properties" rows={m.properties} actions={actions} namePlaceholder="e.g. Property 1" amountPlaceholder="0.00" />
       <AddLink onClick={() => actions.addRecord('properties')} label="Add property" marginBottom={14} />
-
-      <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Other assets</div>
-      <RecordRows listKey="otherAssets" rows={m.otherAssets} actions={actions} namePlaceholder="e.g. Car, Gold" amountPlaceholder="0.00" />
-      <AddLink onClick={() => actions.addRecord('otherAssets')} label="Add asset" marginBottom={14} />
-
-      <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Liabilities</div>
-      <RecordRows listKey="liabilities" rows={m.liabilities} actions={actions} namePlaceholder="e.g. Personal loan" amountPlaceholder="0.00" />
-      <AddLink onClick={() => actions.addRecord('liabilities')} label="Add liability" />
-      <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: 8 }}>Total liabilities RM {moneyWhole(totalLiabilities)}</div>
 
       <div style={{ flex: 1, minHeight: 16 }} />
       <button type="button" onClick={onContinue} className="btn btn-primary btn-lg">Continue</button>

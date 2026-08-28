@@ -191,14 +191,19 @@ export function paymentMethodOptions(manual: { bankAccounts: { name: string }[];
   return options;
 }
 
+// Malaysian institutions — this is a Malaysia-only product, so a US-bank
+// list (Chase/Citi) was incongruous and also fed the misleading "6 accounts
+// connected" summary elsewhere.
 export const LINK_TARGETS = {
   banks: [
-    { id: 'chase', name: 'Chase', badge: { bg: '#004C97' } },
-    { id: 'citi', name: 'Citi', badge: { bg: '#003D79' } },
+    { id: 'maybank', name: 'Maybank', badge: { bg: '#FFC200' } },
+    { id: 'cimb', name: 'CIMB Bank', badge: { bg: '#7A1F2B' } },
+    { id: 'publicbank', name: 'Public Bank', badge: { bg: '#C8102E' } },
+    { id: 'rhb', name: 'RHB Bank', badge: { bg: '#004A9F' } },
   ],
   cards: [
-    { id: 'chase_cc', name: 'Chase Freedom Visa', badge: { bg: '#117ACA' } },
-    { id: 'citi_cc', name: 'Citi Double Cash', badge: { bg: '#7A1F2B' } },
+    { id: 'maybank_cc', name: 'Maybank Credit Card', badge: { bg: '#F0A500' } },
+    { id: 'cimb_cc', name: 'CIMB Credit Card', badge: { bg: '#8B2331' } },
   ],
   investing: [
     { id: 'brokerage', name: 'Brokerage / Investment Account', badge: { bg: '#1a1a2e' } },

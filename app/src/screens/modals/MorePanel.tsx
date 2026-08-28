@@ -48,10 +48,21 @@ export function MorePanel() {
   const ob = state.ob;
   const obInitials = ob.name
     ? ob.name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || '').join('')
-    : 'AN';
-  const obDisplayName = ob.name || 'Aina Natasha';
-  const obDisplayEmail = ob.name ? `${ob.name.split(' ')[0].toLowerCase()}@gmail.com` : 'aina.natasha@gmail.com';
-  const obTaxProfileSummary = `${ob.residency || 'Resident'} · ${ob.marital || 'Single'} · ${state.taxYear}`;
+    : 'G';
+  const obDisplayName = ob.name || 'Guest';
+  // Never show a fabricated email for a not-signed-in user (was
+  // "aina.natasha@gmail.com" / "<firstname>@gmail.com").
+  const secondaryLine = state.authUser
+    ? state.authUser.email
+    : 'Local account — not signed in';
+  // Only show tax-profile fields the user has actually chosen, rather than
+  // presenting the defaults ("Resident · Single") as if they were selections.
+  const chosenTaxParts = [ob.residency, ob.marital].filter(Boolean);
+  const obTaxProfileSummary = `${chosenTaxParts.length ? chosenTaxParts.join(' · ') : 'Not set up yet'} · ${state.taxYear}`;
+  const linkedCount = ob.linkedIds.length;
+  const linkedAccountsSummary = linkedCount === 0
+    ? 'No accounts connected yet'
+    : `${linkedCount} account${linkedCount === 1 ? '' : 's'} connected`;
 
   const isPremium = state.subscriptionTier === 'premium';
   const subscriptionTagClass = isPremium ? 'tag-accent' : 'tag-neutral';
@@ -81,7 +92,7 @@ export function MorePanel() {
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>{obDisplayName}</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-            {state.authUser ? state.authUser.email : obDisplayEmail}
+            {secondaryLine}
           </div>
         </div>
       </div>
@@ -102,7 +113,7 @@ export function MorePanel() {
       <button type="button" onClick={() => { actions.goFinance(); actions.goFinanceNetWorth(); }} className="pressable" style={rowButtonStyle}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>Linked accounts</div>
-          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>6 accounts connected</div>
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>{linkedAccountsSummary}</div>
         </div>
         <ChevronIcon />
       </button>
