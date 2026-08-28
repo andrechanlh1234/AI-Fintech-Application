@@ -34,6 +34,12 @@ RECEIPT_PROMPT = (
     '"date" (string, ISO YYYY-MM-DD, or null if no date is legible), '
     '"total" (number, the final grand total actually paid, or null if no total is legible), '
     '"currency" (string, e.g. "MYR", best guess from context), '
+    '"paymentMethod" (string, exactly one of "Cash", "Credit Card", "E-wallet", '
+    '"Transfer", or null if not determinable — infer from the tender/payment '
+    'lines: "CASH"/"TUNAI"/"CHANGE" -> Cash; "VISA"/"MASTERCARD"/"DEBIT"/"CREDIT '
+    'CARD"/"CARD"/"APPROVAL CODE" -> Credit Card; "GRABPAY"/"TNG"/"TOUCH N GO"/'
+    '"BOOST"/"SHOPEEPAY"/"E-WALLET"/"DUITNOW QR" -> E-wallet; "TRANSFER"/"IBG"/'
+    '"DUITNOW" without QR -> Transfer), '
     '"taxAmount" (number, the SST/GST/sales-tax amount printed on its own line '
     "— e.g. a line reading \"SST 6%: RM3.99\" or \"GST: RM2.50\" — or null if no "
     "such line is legible), "

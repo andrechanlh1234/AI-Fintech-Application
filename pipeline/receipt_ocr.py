@@ -176,6 +176,41 @@ _NON_VENDOR_LINE_RE = re.compile(
 )
 
 
+_PAYMENT_METHODS = {"Cash", "Credit Card", "E-wallet", "Transfer"}
+
+
+def _norm_payment(v) -> str | None:
+    """Coerce a model/OCR guess to exactly one of the four app options."""
+    if not v:
+        return None
+    key = str(v).strip().lower().replace("-", "").replace(" ", "")
+    return {
+        "cash": "Cash", "tunai": "Cash",
+        "creditcard": "Credit Card", "debitcard": "Credit Card", "card": "Credit Card",
+        "debit": "Credit Card", "credit": "Credit Card", "visa": "Credit Card", "mastercard": "Credit Card",
+        "ewallet": "E-wallet", "wallet": "E-wallet", "grabpay": "E-wallet", "tng": "E-wallet",
+        "touchngo": "E-wallet", "boost": "E-wallet", "shopeepay": "E-wallet",
+        "transfer": "Transfer", "banktransfer": "Transfer", "ibg": "Transfer", "duitnow": "Transfer",
+    }.get(key)
+
+
+# Tesseract-fallback payment detection — e-wallet / card checked before the
+# broad "cash"/"change" match (a card slip often also prints "CHANGE 0.00").
+_PAYMENT_RE = [
+    (re.compile(r"\b(grab\s*pay|tng|touch\s*.?n.?\s*go|boost|shopee\s*pay|e-?wallet|duitnow\s*qr)\b", re.IGNORECASE), "E-wallet"),
+    (re.compile(r"\b(visa|master\s*card|amex|debit|credit\s*card|approval\s*code|card\s*(no|payment|type))\b", re.IGNORECASE), "Credit Card"),
+    (re.compile(r"\b(bank\s*transfer|inter\s*bank|ibg|duitnow)\b", re.IGNORECASE), "Transfer"),
+    (re.compile(r"\b(cash|tunai)\b|\bchange\b", re.IGNORECASE), "Cash"),
+]
+
+
+def _find_payment_method(text: str) -> str | None:
+    for pattern, label in _PAYMENT_RE:
+        if pattern.search(text):
+            return label
+    return None
+
+
 def _find_vendor(text: str) -> str:
     """First line among the first ~8 that reads like a store name — a store
     name sits at the very top of a receipt. The old approach ('first line
@@ -200,6 +235,8 @@ def parse_receipt_text(text: str, ocr_confidence: float = 1.0) -> Record:
     amount = _find_amount(text) or 0.0
     txn_date = _find_date(text)
     category = categorize(vendor, text)
+    extra = _find_tax_and_service(text)
+    extra["payment_method"] = _find_payment_method(text)
 
     # Extraction confidence combines OCR word confidence with whether we
     # actually found a date/amount at all — a clean scan with no visible
@@ -216,7 +253,7 @@ def parse_receipt_text(text: str, ocr_confidence: float = 1.0) -> Record:
         relief_tag=relief_tag_for(category),
         confidence=confidence,
         raw_text=text,
-        extra=_find_tax_and_service(text),
+        extra=extra,
     )
 
 
@@ -272,6 +309,7 @@ def _receipt_result_from_vision_fields(fields: dict, raw_text: str = "") -> Rece
             "tax_rate": fields.get("taxRate"),
             "service_charge_amount": fields.get("serviceChargeAmount"),
             "service_charge_rate": fields.get("serviceChargeRate"),
+            "payment_method": _norm_payment(fields.get("paymentMethod")),
         },
     )
 

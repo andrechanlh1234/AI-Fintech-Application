@@ -649,8 +649,14 @@ export function reducer(state: AppState, action: Action): AppState {
       // Multi-item receipts keep the per-line editor.
       const mode: 'quick' | 'detailed' = r.lineItems.length <= 1 ? 'quick' : 'detailed';
 
+      // Payment method the scan detected (Cash / Credit Card / E-wallet /
+      // Transfer), if any.
+      const PM_OPTIONS = ['Cash', 'Credit Card', 'E-wallet', 'Transfer'];
+      const scannedPayment = r.paymentMethod && PM_OPTIONS.includes(r.paymentMethod) ? r.paymentMethod : null;
+
       return {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
+        scanPaymentMethod: scannedPayment ?? state.scanPaymentMethod,
         receiptDraft: {
           ...state.receiptDraft,
           // If the scan couldn't read a name, leave the field empty (with its

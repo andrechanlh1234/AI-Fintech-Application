@@ -6,9 +6,11 @@ import { TxIcon } from '../../../components/TransactionRow';
 import { ReceiptLineItemsEditor } from '../../../components/ReceiptLineItemsEditor';
 import { formatWithCommas } from '../../../lib/format';
 import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
-import { DateChips, PaymentChips } from './shared';
+import { DateField } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
 import { RELIEF_INFO } from '../../../lib/taxEngine';
+
+const PAYMENT_METHODS = ['Cash', 'Credit Card', 'E-wallet', 'Transfer'];
 
 export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
   onClose: () => void;
@@ -109,6 +111,23 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
           </div>
         </button>
 
+        <div style={{ display: 'flex', gap: 12, borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
+          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+            <label>Date</label>
+            <DateField value={draft.date} onChange={(iso) => actions.setReceiptDraftField('date', iso)} />
+          </div>
+          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+            <label>Payment method</label>
+            <select
+              className="input"
+              value={PAYMENT_METHODS.includes(state.scanPaymentMethod) ? state.scanPaymentMethod : 'Cash'}
+              onChange={(e) => actions.setScanPaymentMethod(e.target.value)}
+            >
+              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
         <div className="field" style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <label>Expense name</label>
@@ -153,15 +172,6 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
             </span>
           </button>
         )}
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Date</div>
-        <DateChips value={draft.date} onChange={(iso) => actions.setReceiptDraftField('date', iso)} />
-      </div>
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Payment method</div>
-        <PaymentChips manual={state.ob.manual} value={state.scanPaymentMethod} onChange={actions.setScanPaymentMethod} />
       </div>
 
       {/* Quick mode only -- "Add line items" mode has its own per-line

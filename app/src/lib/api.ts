@@ -161,6 +161,9 @@ export interface ScannedReceiptResult {
   taxRate: number | null;
   serviceChargeAmount: number | null;
   serviceChargeRate: number | null;
+  /** One of "Cash" | "Credit Card" | "E-wallet" | "Transfer", or null if the
+   * scan couldn't tell how it was paid. */
+  paymentMethod: string | null;
 }
 
 export async function scanReceiptImage(file: File): Promise<ScannedReceiptResult> {

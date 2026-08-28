@@ -90,4 +90,5 @@ class ReceiptScanResult:
             "taxRate": money_or_none("tax_rate"),
             "serviceChargeAmount": money_or_none("service_charge_amount"),
             "serviceChargeRate": money_or_none("service_charge_rate"),
+            "paymentMethod": self.extra.get("payment_method"),
         }
