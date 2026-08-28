@@ -616,11 +616,16 @@ export function reducer(state: AppState, action: Action): AppState {
         cat: mapOcrCategory(li.category), deductible: li.taxDeductible,
         confidence: li.confidence, touched: false,
       }));
+      const scannedVendor = r.vendor && r.vendor !== 'Unknown vendor' ? r.vendor : '';
       return {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
         receiptDraft: {
           ...state.receiptDraft,
-          merchant: r.vendor, date: r.date || state.receiptDraft.date,
+          merchant: r.vendor,
+          // Also pre-fill the dedicated "Vendor / Merchant" field from the
+          // scan (it was previously left blank for the user to retype).
+          vendor: scannedVendor || state.receiptDraft.vendor,
+          date: r.date || state.receiptDraft.date,
           total: r.total != null ? r.total.toFixed(2) : '',
           mode: 'detailed',
         },
