@@ -7,7 +7,7 @@ import {
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
 import { AuthForm } from '../../components/AuthForm';
 import { googleLoginUrl } from '../../lib/api';
-import { computeAge } from '../../lib/format';
+import { computeAge, sanitizeRaw } from '../../lib/format';
 import { useState } from 'react';
 import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
@@ -350,7 +350,7 @@ export function OnboardingFlow() {
             <ChipRow opts={multiOpts(GOAL_OPTS, ob.goals, (label) => actions.toggleObArray('goals', label))} chipStyleOverride={{ padding: '10px 16px' }} style={{ marginBottom: 20 }} />
             <div className="field" style={{ marginBottom: 18 }}>
               <label>Monthly savings target (optional)</label>
-              <input className="input" value={ob.savingsTarget} onChange={(e) => actions.setOb('savingsTarget', e.target.value)} placeholder="e.g. RM 1,000" />
+              <input className="input" inputMode="decimal" value={ob.savingsTarget} onChange={(e) => actions.setOb('savingsTarget', sanitizeRaw(e.target.value))} placeholder="e.g. 1000" />
             </div>
             <div style={{ flex: 1 }} />
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>

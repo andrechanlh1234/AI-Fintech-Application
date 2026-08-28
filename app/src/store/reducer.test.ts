@@ -232,3 +232,44 @@ describe('SAVE_RECEIPT persists the optional vendor field', () => {
     expect(state.receipts[0].vendor).toBeUndefined();
   });
 });
+
+describe('input validation — budget caps and subscription amounts', () => {
+  it('ADD_BUCKET_CATEGORY / SET_BUCKET_CATEGORY_CAP clamp a negative or absurd cap to a sane range', () => {
+    let state: AppState = {
+      ...buildInitialState(),
+      finance: { buckets: [{ key: 'flexible', name: 'Flexible', categories: [] }] },
+    };
+
+    state = reducer(state, { type: 'ADD_BUCKET_CATEGORY', bucketKey: 'flexible', name: 'Housing', openDetail: false, cap: -9999999999 });
+    expect(state.finance.buckets[0].categories[0].cap).toBe(0);
+
+    const catId = state.finance.buckets[0].categories[0].id;
+    state = reducer(state, { type: 'SET_BUCKET_CATEGORY_CAP', bucketKey: 'flexible', catId, value: -50 });
+    expect(state.finance.buckets[0].categories[0].cap).toBe(0);
+
+    state = reducer(state, { type: 'SET_BUCKET_CATEGORY_CAP', bucketKey: 'flexible', catId, value: 1e15 });
+    expect(state.finance.buckets[0].categories[0].cap).toBe(100_000_000);
+
+    state = reducer(state, { type: 'SET_BUCKET_CATEGORY_CAP', bucketKey: 'flexible', catId, value: 800 });
+    expect(state.finance.buckets[0].categories[0].cap).toBe(800);
+  });
+
+  it('ADD_SUBSCRIPTION rejects a non-positive amount', () => {
+    let state = buildInitialState();
+    const setDraft = (field: string, value: string) => { state = reducer(state, { type: 'SET_SUB_DRAFT_FIELD', field, value }); };
+
+    setDraft('name', 'TestSub');
+    setDraft('amount', '-50');
+    state = reducer(state, { type: 'ADD_SUBSCRIPTION' });
+    expect(state.ob.subs).toHaveLength(0);
+
+    setDraft('amount', '0');
+    state = reducer(state, { type: 'ADD_SUBSCRIPTION' });
+    expect(state.ob.subs).toHaveLength(0);
+
+    setDraft('amount', '12.90');
+    state = reducer(state, { type: 'ADD_SUBSCRIPTION' });
+    expect(state.ob.subs).toHaveLength(1);
+    expect(state.ob.subs[0].amount).toBe('12.90');
+  });
+});

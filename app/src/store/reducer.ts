@@ -24,6 +24,16 @@ function monthFromDateLabel(label: string): string {
   return parseDisplayDate(label)?.month ?? SHORT_MONTHS[new Date().getMonth()];
 }
 
+// A budget cap comes straight from a free-text amount field. Clamp it to a
+// sane non-negative range so a stray "-" or a pasted huge number can't
+// poison every dependent total (Home budget line, Budgets gauge scale).
+const MAX_BUDGET_CAP = 100_000_000;
+function clampCap(n: unknown): number {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v <= 0) return 0;
+  return Math.min(v, MAX_BUDGET_CAP);
+}
+
 type ManualListKey = keyof ManualData;
 
 export type Action =
@@ -312,7 +322,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'TOGGLE_BUCKET':
       return { ...state, expandedBucket: state.expandedBucket === action.key ? null : action.key };
     case 'ADD_BUCKET_CATEGORY': {
-      const cat = mkCategory(action.name ?? 'New category', action.cap ?? 0, action.name ? [] : [mkItem('New item', 0)]);
+      const cat = mkCategory(action.name ?? 'New category', clampCap(action.cap ?? 0), action.name ? [] : [mkItem('New item', 0)]);
       return {
         ...state,
         finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: [...b.categories, cat] }) },
@@ -328,7 +338,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SET_BUCKET_CATEGORY_NAME':
       return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, name: action.value }) }) } };
     case 'SET_BUCKET_CATEGORY_CAP':
-      return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, cap: action.value }) }) } };
+      return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, cap: clampCap(action.value) }) }) } };
     case 'ADD_BUCKET_ITEM':
       return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, items: [...c.items, mkItem('', 0)] }) }) } };
     case 'SET_BUCKET_ITEM_FIELD':
@@ -417,7 +427,10 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case 'ADD_SUBSCRIPTION': {
       const d = state.ob.subDraft;
-      if (!d.name || !d.amount) return state;
+      // Reject a missing name or a non-positive amount — a negative amount
+      // would render as positive (money() abs's it) while quietly subtracting
+      // from the monthly/yearly subscription totals.
+      if (!d.name || !(parseFloat(d.amount) > 0)) return state;
       return {
         ...state,
         ob: { ...state.ob, subs: [...state.ob.subs, d], subDraft: { name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment' } },

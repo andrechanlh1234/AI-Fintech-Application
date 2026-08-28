@@ -1,6 +1,7 @@
 // Ported from Cukai v7.dc.html money()/moneyWhole()/clamp().
 
 export function money(n: number): string {
+  if (!Number.isFinite(n)) n = 0; // never render the literal "NaN" in a money field
   const abs = Math.abs(n);
   const parts = abs.toFixed(2).split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -8,6 +9,7 @@ export function money(n: number): string {
 }
 
 export function moneyWhole(n: number): string {
+  if (!Number.isFinite(n)) n = 0;
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
@@ -93,7 +95,10 @@ export function parseDisplayDate(label: string): { day: number; month: string; y
 export function displayDateToIso(label: string): string {
   const parsed = parseDisplayDate(label);
   if (!parsed) return todayIso();
-  const year = parsed.year ?? new Date().getFullYear();
+  const rawYear = parsed.year ?? new Date().getFullYear();
+  // Guard against an out-of-range year (e.g. a date field that accepted a
+  // 5-digit year) producing a nonsense ISO string downstream.
+  const year = rawYear >= 1900 && rawYear <= 2999 ? rawYear : new Date().getFullYear();
   const month = SHORT_MONTHS.indexOf(parsed.month);
   if (month < 0) return todayIso();
   const mm = String(month + 1).padStart(2, '0');

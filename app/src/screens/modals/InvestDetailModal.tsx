@@ -1,5 +1,5 @@
 import { useStore, useActions } from '../../store/StoreProvider';
-import { money } from '../../lib/format';
+import { money, sanitizeRaw } from '../../lib/format';
 import type { ManualData } from '../../store/types';
 
 interface InvRow { id: string; name: string; qty: string; buy: string; cur: string }
@@ -30,6 +30,9 @@ export function InvestDetailModal() {
   const buy = parseFloat(rec.buy) || 0;
   const cur = parseFloat(rec.cur) || 0;
   const value = qty * cur;
+  // Only show a gain/loss once there's a real buy price — otherwise buy
+  // falls back to 0 and the whole position value reads as "gain".
+  const hasBuyPrice = buy > 0;
   const gain = qty * cur - qty * buy;
   const gainColor = gain >= 0 ? 'var(--color-accent-700)' : 'var(--color-danger-700)';
   const gainSign = gain >= 0 ? '+' : '−';
@@ -61,23 +64,23 @@ export function InvestDetailModal() {
       </div>
 
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 26, marginBottom: 4 }}>RM {money(value)}</div>
-      <div className="type-numeric" style={{ fontSize: 12.5, fontWeight: 600, color: gainColor, marginBottom: 20 }}>
-        {gainSign}RM {money(Math.abs(gain))} gain/loss
+      <div className="type-numeric" style={{ fontSize: 12.5, fontWeight: 600, color: hasBuyPrice ? gainColor : 'var(--color-text-muted)', marginBottom: 20 }}>
+        {hasBuyPrice ? `${gainSign}RM ${money(Math.abs(gain))} gain/loss` : 'Add a buy price to see gain/loss'}
       </div>
 
       <div className="field" style={{ marginBottom: 12 }}>
         <label>Quantity / units</label>
-        <input className="input" value={rec.qty} onChange={(e) => actions.setInvestDetailField(listKey, id, 'qty', e.target.value)} placeholder="0" />
+        <input className="input" inputMode="decimal" value={rec.qty} onChange={(e) => actions.setInvestDetailField(listKey, id, 'qty', sanitizeRaw(e.target.value))} placeholder="0" />
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
         <div className="field" style={{ flex: 1 }}>
           <label>Buy price (RM)</label>
-          <input className="input" value={rec.buy} onChange={(e) => actions.setInvestDetailField(listKey, id, 'buy', e.target.value)} placeholder="0.00" />
+          <input className="input" inputMode="decimal" value={rec.buy} onChange={(e) => actions.setInvestDetailField(listKey, id, 'buy', sanitizeRaw(e.target.value))} placeholder="0.00" />
         </div>
         <div className="field" style={{ flex: 1 }}>
           <label>Current price (RM)</label>
-          <input className="input" value={rec.cur} onChange={(e) => actions.setInvestDetailField(listKey, id, 'cur', e.target.value)} placeholder="0.00" />
+          <input className="input" inputMode="decimal" value={rec.cur} onChange={(e) => actions.setInvestDetailField(listKey, id, 'cur', sanitizeRaw(e.target.value))} placeholder="0.00" />
         </div>
       </div>
 
