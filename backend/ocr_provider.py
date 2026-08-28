@@ -109,20 +109,9 @@ def _call_gemini_vision(prompt: str, file_bytes: bytes, mime_type: str) -> dict:
                 {"text": prompt},
                 {"inline_data": {"mime_type": mime_type, "data": b64}},
             ]}],
-            "generationConfig": {
-                "maxOutputTokens": 4096,
-                "responseMimeType": "application/json",
-                # Same fix as ai_chat: gemini-3.x-flash spends a large hidden
-                # "thinking" budget at the default effort — enough to push a
-                # single receipt extraction past the timeout below, at which
-                # point the whole scan silently drops to the weak Tesseract
-                # fallback (and its first-non-numeric-line vendor guess).
-                # "low" brings a receipt read to ~5-8s with no quality loss
-                # for this structured-extraction task.
-                "thinkingConfig": {"thinkingLevel": "low"},
-            },
+            "generationConfig": {"maxOutputTokens": 4096, "responseMimeType": "application/json"},
         },
-        timeout=60,  # multi-page statement PDFs still need headroom; a receipt is well under this
+        timeout=45,  # PDFs with several pages take longer than a single receipt photo
     )
     res.raise_for_status()
     data = res.json()

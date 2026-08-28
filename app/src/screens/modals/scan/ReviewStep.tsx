@@ -4,14 +4,13 @@ import { selectReceiptReview } from '../../../store/selectors';
 import { iconFlags } from '../../../lib/constants';
 import { TxIcon } from '../../../components/TransactionRow';
 import { ReceiptLineItemsEditor } from '../../../components/ReceiptLineItemsEditor';
-import { formatWithCommas, todayIso } from '../../../lib/format';
+import { formatWithCommas } from '../../../lib/format';
 import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
-import { chipStyle } from './shared';
+import { chipStyle, DateChips, PaymentChips } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
 import { RELIEF_INFO } from '../../../lib/taxEngine';
 
 const EXPENSE_NAME_SUGGESTIONS = ['Lunch', 'Groceries', 'Transport', 'Coffee'];
-const PAYMENT_METHODS = ['Cash', 'Credit Card', 'E-wallet', 'Transfer'];
 
 export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
   onClose: () => void;
@@ -171,27 +170,13 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
         )}
       </div>
 
-      <div className="field" style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
-        <label>Date</label>
-        {/* Pre-filled from the scan (older dates included); tap to correct it
-            in the device's own date picker. */}
-        <input
-          type="date"
-          className="input"
-          value={draft.date}
-          max={todayIso()}
-          onChange={(e) => { if (e.target.value) actions.setReceiptDraftField('date', e.target.value); }}
-        />
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Date</div>
+        <DateChips value={draft.date} onChange={(iso) => actions.setReceiptDraftField('date', iso)} />
       </div>
-      <div className="field" style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)', marginBottom: 18 }}>
-        <label>Payment method</label>
-        <select
-          className="input"
-          value={PAYMENT_METHODS.includes(state.scanPaymentMethod) ? state.scanPaymentMethod : 'Cash'}
-          onChange={(e) => actions.setScanPaymentMethod(e.target.value)}
-        >
-          {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>Payment method</div>
+        <PaymentChips manual={state.ob.manual} value={state.scanPaymentMethod} onChange={actions.setScanPaymentMethod} />
       </div>
 
       {/* Quick mode only -- "Add line items" mode has its own per-line
