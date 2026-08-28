@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { money, sanitizeRaw } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { playSharedMorph } from '../../lib/motion';
 import type { ManualData } from '../../store/types';
 
 interface InvRow { id: string; name: string; qty: string; buy: string; cur: string }
@@ -18,6 +20,8 @@ function resolveRow(state: ReturnType<typeof useStore>['state'], listKey: string
 export function InvestDetailModal() {
   const { state } = useStore();
   const actions = useActions();
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { playSharedMorph(morphRef.current); }, []);
 
   if (!state.investDetailOpen) return null;
   const sep = state.investDetailOpen.indexOf(':');
@@ -39,7 +43,7 @@ export function InvestDetailModal() {
   const gainSign = gain >= 0 ? '+' : '−';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
+    <div ref={morphRef} style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
         <button
           type="button"

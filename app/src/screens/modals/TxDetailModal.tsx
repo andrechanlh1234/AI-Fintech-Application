@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
+import { playSharedMorph } from '../../lib/motion';
 
 // Tap a transaction row in Record to open this: edit every field a scan/
 // manual entry can set, or delete it outright. Saving/deleting writes
@@ -9,6 +11,8 @@ import { CATEGORY_OPTIONS, paymentMethodOptions } from '../../lib/constants';
 export function TxDetailModal() {
   const { state } = useStore();
   const actions = useActions();
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { playSharedMorph(morphRef.current); }, []);
 
   if (!state.txDetailOpen) return null;
   const draft = state.txDraft;
@@ -17,7 +21,7 @@ export function TxDetailModal() {
   const sourceReceipt = tx?.receiptId ? state.receipts.find((r) => r.id === tx.receiptId) : null;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
+    <div ref={morphRef} style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
         <button
           type="button"

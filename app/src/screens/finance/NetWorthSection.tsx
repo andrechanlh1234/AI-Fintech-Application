@@ -4,7 +4,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { animate, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
+import { animate, captureSharedOrigin, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
 import { BRAND, subBadge } from '../../lib/constants';
 import type { AppState } from '../../store/types';
 
@@ -36,7 +36,7 @@ function NwRowView({ row, onOpen }: { row: NwRow; onOpen: () => void }) {
   return (
     <button
       type="button"
-      onClick={row.clickable ? onOpen : undefined}
+      onClick={row.clickable ? (e) => { captureSharedOrigin(e.currentTarget); onOpen(); } : undefined}
       className="pressable"
       style={{
         all: 'unset', cursor: row.clickable ? 'pointer' : 'default', display: 'flex', alignItems: 'center',

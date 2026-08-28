@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { money } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
+import { playSharedMorph } from '../../lib/motion';
 import type { ManualData } from '../../store/types';
 import type { BalanceEntry } from '../../lib/seedData';
 import { HistoryRow } from './HistoryRow';
@@ -24,6 +26,8 @@ function resolveRow(state: ReturnType<typeof useStore>['state'], listKey: string
 export function BalanceDetailModal() {
   const { state } = useStore();
   const actions = useActions();
+  const morphRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { playSharedMorph(morphRef.current); }, []);
 
   if (!state.balanceDetailOpen) return null;
   const sep = state.balanceDetailOpen.indexOf(':');
@@ -41,7 +45,7 @@ export function BalanceDetailModal() {
   const previewHistory = history.slice(0, HISTORY_PREVIEW_COUNT);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
+    <div ref={morphRef} style={{ display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 20px) 20px 24px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
         <button
           type="button"
