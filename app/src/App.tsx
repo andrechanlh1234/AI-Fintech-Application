@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { StoreProvider, useStore, useActions } from './store/StoreProvider';
 import { TabBar } from './components/TabBar';
 import { BottomSheet } from './components/BottomSheet';
@@ -114,9 +115,23 @@ function AppShell() {
   );
 }
 
+/** Mirror the current theme onto <html> so portalled surfaces (BottomSheet,
+ * dropdowns) — which live outside the themed shell div — read the live
+ * `var(--color-*)` values off :root and recolour instantly on a theme
+ * switch, even while a sheet is open (L7). */
+function ThemeSync() {
+  const { state } = useStore();
+  useEffect(() => {
+    document.documentElement.dataset.theme = state.theme;
+    return () => { delete document.documentElement.dataset.theme; };
+  }, [state.theme]);
+  return null;
+}
+
 export default function App() {
   return (
     <StoreProvider>
+      <ThemeSync />
       <AppShell />
     </StoreProvider>
   );
