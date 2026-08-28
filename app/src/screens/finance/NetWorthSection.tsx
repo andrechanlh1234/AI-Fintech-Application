@@ -93,6 +93,26 @@ export function NetWorthSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesSig]);
 
+  // Range switch (1M / 3M / … / ALL): re-flow the line to the new shape with
+  // a quick partial re-trace + a soft fade, so it glides between ranges the
+  // same way the finance panes glide — not an instant redraw. Skips the
+  // first render (that's the full chart-draw above's job).
+  const firstRangeRun = useRef(true);
+  useEffect(() => {
+    if (firstRangeRun.current) { firstRangeRun.current = false; return; }
+    const line = lineRef.current;
+    if (!line || prefersReducedMotion() || typeof line.getTotalLength !== 'function') return;
+    const len = line.getTotalLength();
+    if (!len) return;
+    line.style.strokeDasharray = String(len);
+    line.animate(
+      [{ strokeDashoffset: len * 0.4 }, { strokeDashoffset: 0 }],
+      { duration: 420, easing: EASE_DECEL, fill: 'forwards' },
+    ).addEventListener('finish', () => { line.style.strokeDasharray = ''; });
+    animate(areaRef.current, [{ opacity: 0.25 }, { opacity: 1 }], { duration: 360, easing: 'ease' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.netWorthRange]);
+
   // Robust tooltip positioning: a fixed percentage clamp (the old approach)
   // assumes a tooltip width that never actually matches its rendered width,
   // so at responsive/narrow widths or long labels (e.g. the last point's

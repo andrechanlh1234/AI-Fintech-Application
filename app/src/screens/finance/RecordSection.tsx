@@ -162,22 +162,25 @@ export default function RecordSection() {
             </svg>
           </button>
         </div>
-        <input
-          type="text"
-          placeholder="Search transactions"
-          value={state.txSearch}
-          onChange={(e) => actions.setTxSearch(e.target.value)}
-          className="input"
-        />
-        {/* Own row, directly above the result count/list -- previously
-            shared a row with the date-range pill, which put it visually
-            far from the list it actually filters. */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Search on the left, filter on the right — one row, matched height. */}
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 10 }}>
+          <input
+            type="text"
+            placeholder="Search transactions"
+            value={state.txSearch}
+            onChange={(e) => actions.setTxSearch(e.target.value)}
+            className="input"
+            style={{ flex: 1, minWidth: 0 }}
+          />
           <FilterPicker
             value={state.txFilter}
             options={rec.categoryChips.filter((c) => c !== 'All')}
             onChange={actions.setTxFilter}
             align="right"
+            triggerStyle={{
+              display: 'flex', padding: '0 14px', height: '100%', minHeight: 36, boxSizing: 'border-box',
+              borderRadius: 'var(--radius-md)', font: '500 12px var(--font-body)',
+            }}
           />
         </div>
       </div>

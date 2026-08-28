@@ -9,7 +9,7 @@ import { useDismissOnOutside } from './PeriodPicker';
  * outside tap or Escape. `allLabel` is the "no filter" option (shown first,
  * and what makes the trigger read as inactive again). */
 export function FilterPicker({
-  value, options, onChange, allLabel = 'All', align = 'left',
+  value, options, onChange, allLabel = 'All', align = 'left', triggerStyle,
 }: {
   value: string;
   options: string[];
@@ -18,6 +18,9 @@ export function FilterPicker({
   /** Which edge the popover hangs from -- 'right' keeps it from running off
    * the viewport when the trigger itself sits at the screen's right edge. */
   align?: 'left' | 'right';
+  /** One-off overrides on the trigger button (e.g. to match a sibling
+   * field's height / corner radius when placed inline). */
+  triggerStyle?: CSSProperties;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useDismissOnOutside(open, () => setOpen(false));
@@ -35,6 +38,7 @@ export function FilterPicker({
           border: '1.5px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
           background: active ? 'var(--color-accent-100)' : 'var(--color-surface)',
           color: active ? 'var(--color-accent-700)' : 'var(--color-text)',
+          ...triggerStyle,
         }}
       >
         {active ? value : 'Filter'}

@@ -26,17 +26,17 @@ export function BudgetsSection() {
       <BudgetGauge />
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 16 }} />
       {buckets.map((b) => (
-        <Card key={b.key} style={{ marginBottom: 12 }}>
+        <Card key={b.key} style={{ marginBottom: 8, padding: '11px 13px' }}>
           <button
             type="button"
             onClick={() => actions.toggleBucket(b.key)}
             className="pressable"
-            style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, width: '100%', boxSizing: 'border-box' }}
+            style={{ all: 'unset', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, width: '100%', boxSizing: 'border-box' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15 }}>{b.name}</span>
+              <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 13 }}>{b.name}</span>
               <svg
-                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)"
+                width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)"
                 strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
                 style={{ transform: b.expanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s ease' }}
               >
@@ -44,11 +44,11 @@ export function BudgetsSection() {
               </svg>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <div className="type-numeric" style={{ fontWeight: 700, fontSize: 17 }}>
+              <div className="type-numeric" style={{ fontWeight: 700, fontSize: 14 }}>
                 RM {b.spentLabel}{' '}
-                <span style={{ fontSize: 12.5, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {b.totalLabel}</span>
+                <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--color-text-muted)' }}>/ RM {b.totalLabel}</span>
               </div>
-              <div className="type-numeric" style={{ fontSize: 17, fontWeight: 800, color: b.pct > 100 ? 'var(--color-danger-700)' : 'var(--color-accent-700)', flexShrink: 0 }}>
+              <div className="type-numeric" style={{ fontSize: 13.5, fontWeight: 800, color: b.pct > 100 ? 'var(--color-danger-700)' : 'var(--color-accent-700)', flexShrink: 0 }}>
                 {b.pct}%
               </div>
             </div>

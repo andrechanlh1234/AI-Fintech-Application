@@ -14,17 +14,21 @@ function StatsCategoryDetail() {
     <div
       className="screen-in"
       style={{
+        // This overlay is nested inside the (position:relative) page-transition
+        // wrapper, which already sits below the Finance header + safe area —
+        // so it must NOT re-add env(safe-area-inset-top) or the header ends up
+        // pushed toward the middle of the screen.
         position: 'absolute', inset: 0, zIndex: 47, background: 'var(--color-bg)',
-        display: 'flex', flexDirection: 'column', padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', overflow: 'auto',
+        display: 'flex', flexDirection: 'column', padding: '4px 20px 24px', boxSizing: 'border-box', overflow: 'auto',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <button
           type="button"
           onClick={actions.closeStatsCategoryDetail}
           aria-label="Back"
           className="pressable"
-          style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer', color: 'var(--color-text)' }}
+          style={{ background: 'none', border: 'none', padding: 8, marginLeft: -8, cursor: 'pointer', color: 'var(--color-text)', flexShrink: 0, display: 'flex' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m15 18-6-6 6-6" />
@@ -32,7 +36,7 @@ function StatsCategoryDetail() {
         </button>
         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18 }}>{state.statsCategoryDetail}</span>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16 }}>
+      <div style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '0 0 16px 0' }}>
         {state.statsPeriod} · RM {data.statsCategoryDetailTotal}
       </div>
       {data.statsCategoryDetailTx.map((tx, i) => (
@@ -99,7 +103,8 @@ export default function StatsSection() {
       <div>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, marginBottom: 12 }}>Spend by category</div>
         <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
-          {data.statsPeriodOptions.map((opt) => {
+          {/* "Choose month" first — it's the one people reach for most. */}
+          {['Choose month', ...data.statsPeriodOptions.filter((o) => o !== 'Choose month')].map((opt) => {
             const active = state.statsPeriod === opt;
             return (
               <button

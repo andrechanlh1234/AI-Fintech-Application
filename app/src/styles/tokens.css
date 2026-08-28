@@ -547,6 +547,10 @@ select.input { -webkit-appearance: none; appearance: none; }
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(0, 100%, 0); }
 }
+@keyframes spring-pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.955); }
+}
 @keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scrim-out { from { opacity: 1; } to { opacity: 0; } }
 .sheet-scrim {
@@ -555,13 +559,17 @@ select.input { -webkit-appearance: none; appearance: none; }
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   animation: scrim-in .3s ease both;
 }
-.sheet-scrim.is-closing { animation: scrim-out .26s ease both; }
+.sheet-scrim.is-closing { animation: scrim-out .32s ease both; }
 .sheet-panel {
   background: var(--color-bg); color: var(--color-text);
   animation: sheet-rise .42s cubic-bezier(.22,1,.28,1) both;
   will-change: transform;
 }
-.sheet-panel.is-closing { animation: sheet-fall .26s cubic-bezier(.4,0,1,1) both; }
+/* Dismissal mirrors the entrance and isn't rushed: bottom sheets glide back
+   down on Apple's sheet curve; full-screen "pages" reverse the spring-pop
+   (shrink + fade) rather than snapping out. */
+.sheet-panel.is-closing { animation: sheet-fall .36s cubic-bezier(.32,.72,0,1) both; }
+.sheet-panel.spring-pop.is-closing { animation: spring-pop-out .3s cubic-bezier(.4,0,1,1) both; }
 /* Applied to the app shell root while any sheet is open. */
 .app-scaled-back {
   transition: transform .42s cubic-bezier(.22,1,.28,1), filter .42s ease;

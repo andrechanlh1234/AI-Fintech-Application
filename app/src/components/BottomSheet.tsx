@@ -47,7 +47,7 @@ export function BottomSheet({ open, onClose, children, align = 'bottom' }: {
 
   useEffect(() => {
     if (!closing) return;
-    const ms = prefersReducedMotion() ? 110 : 280;
+    const ms = prefersReducedMotion() ? 120 : 380;
     const t = setTimeout(() => setRendered(false), ms);
     return () => clearTimeout(t);
   }, [closing]);
