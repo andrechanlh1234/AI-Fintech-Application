@@ -623,7 +623,9 @@ export function reducer(state: AppState, action: Action): AppState {
       // name — ignore that so it doesn't become the expense name too.
       const itemNames = r.lineItems
         .map((li) => (li.description || '').trim())
-        .filter((d) => d && d.toLowerCase() !== scannedVendor.toLowerCase());
+        .filter((d) => d
+          && d.toLowerCase() !== scannedVendor.toLowerCase()
+          && d.toLowerCase() !== 'unknown vendor');
       let expenseName = '';
       if (itemNames.length === 1) {
         expenseName = itemNames[0].slice(0, 40);
@@ -651,8 +653,10 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
         receiptDraft: {
           ...state.receiptDraft,
+          // If the scan couldn't read a name, leave the field empty (with its
+          // placeholder) rather than copying junk / a stale prior value.
           merchant: expenseName || scannedVendor,
-          vendor: scannedVendor || state.receiptDraft.vendor,
+          vendor: scannedVendor,
           date: r.date || state.receiptDraft.date,
           total: r.total != null ? r.total.toFixed(2) : '',
           quickCategory: primaryCategory,

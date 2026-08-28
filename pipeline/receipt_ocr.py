@@ -165,11 +165,33 @@ def _find_tax_and_service(text: str) -> dict:
     }
 
 
+# Lines that are almost never the merchant name itself — document headers,
+# registration/contact metadata, or a bare date/receipt number.
+_NON_VENDOR_LINE_RE = re.compile(
+    r"(tax\s*invoice|^invoice\b|^receipt\b|resit|^bill\b|cash\s*sale|"
+    r"gst\s*(no|reg)|sst\s*(no|reg)|(co|reg|business)\.?\s*(no|reg)|"
+    r"\btel\b|\bfax\b|\bno\.?\s*\d|jalan|lorong|persiaran|\bunit\b|"
+    r"\bwww\.|https?:|@)",
+    re.IGNORECASE,
+)
+
+
 def _find_vendor(text: str) -> str:
-    for line in text.splitlines():
-        cleaned = line.strip()
-        if len(cleaned) >= 3 and not cleaned.replace(" ", "").isdigit():
-            return cleaned.title()
+    """First line among the first ~8 that reads like a store name — a store
+    name sits at the very top of a receipt. The old approach ('first line
+    >= 3 chars that isn't all digits') routinely returned 'TAX INVOICE', a
+    GST number, or an address line; this skips those and requires the line
+    to be mostly letters."""
+    for line in text.splitlines()[:8]:
+        cleaned = line.strip(" .:-*|_")
+        if len(cleaned) < 3 or cleaned.replace(" ", "").isdigit():
+            continue
+        if _NON_VENDOR_LINE_RE.search(cleaned):
+            continue
+        letters = sum(c.isalpha() for c in cleaned)
+        if letters < 3 or letters / len(cleaned) < 0.5:
+            continue
+        return cleaned.title()
     return "Unknown vendor"
 
 

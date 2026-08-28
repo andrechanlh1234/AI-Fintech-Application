@@ -6,11 +6,9 @@ import { TxIcon } from '../../../components/TransactionRow';
 import { ReceiptLineItemsEditor } from '../../../components/ReceiptLineItemsEditor';
 import { formatWithCommas } from '../../../lib/format';
 import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
-import { chipStyle, DateChips, PaymentChips } from './shared';
+import { DateChips, PaymentChips } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
 import { RELIEF_INFO } from '../../../lib/taxEngine';
-
-const EXPENSE_NAME_SUGGESTIONS = ['Lunch', 'Groceries', 'Transport', 'Coffee'];
 
 export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
   onClose: () => void;
@@ -123,19 +121,6 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
             value={draft.merchant}
             onChange={(e) => actions.setReceiptDraftField('merchant', e.target.value)}
           />
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-            {EXPENSE_NAME_SUGGESTIONS.map((label) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => actions.setReceiptDraftField('merchant', label)}
-                className="pressable"
-                style={chipStyle(draft.merchant === label)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="field" style={{ borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-2)' }}>
