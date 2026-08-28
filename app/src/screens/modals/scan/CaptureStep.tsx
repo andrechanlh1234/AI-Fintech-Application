@@ -159,23 +159,14 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             opacity: liveCameraReady ? 1 : 0, transition: 'opacity .2s ease',
           }}
         />
-        {/* Ryt-style focus frame: the live camera fills the whole screen; a
-            receipt-shaped window in the middle stays clear while everything
-            around it is dimmed (one div with a massive spread box-shadow is
-            the "hole"). The window and its brackets are only a placement
-            guide — the capture still grabs the full camera frame. */}
-        <div
-          style={{
-            position: 'absolute', top: '7%', bottom: '13%', left: 24, right: 24,
-            borderRadius: 22, pointerEvents: 'none',
-            boxShadow: '0 0 0 100vmax rgba(0,0,0,0.46)',
-          }}
-        />
+        {/* Placement guide only: four rounded corner marks, nothing else — no
+            frame outline, no dim mask. The capture grabs the full camera
+            frame regardless of where these sit. */}
         <div style={{ position: 'absolute', top: '7%', bottom: '13%', left: 24, right: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: -1, left: -1, width: 34, height: 34, borderTop: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '12px 0 0 0' }} />
-          <div style={{ position: 'absolute', top: -1, right: -1, width: 34, height: 34, borderTop: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 12px 0 0' }} />
-          <div style={{ position: 'absolute', bottom: -1, left: -1, width: 34, height: 34, borderBottom: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '0 0 0 12px' }} />
-          <div style={{ position: 'absolute', bottom: -1, right: -1, width: 34, height: 34, borderBottom: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 0 12px 0' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, width: 34, height: 34, borderTop: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '14px 0 0 0' }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: 34, height: 34, borderTop: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 14px 0 0' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 34, height: 34, borderBottom: '3px solid #fff', borderLeft: '3px solid #fff', borderRadius: '0 0 0 14px' }} />
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: 34, height: 34, borderBottom: '3px solid #fff', borderRight: '3px solid #fff', borderRadius: '0 0 14px 0' }} />
           {!liveCameraReady && (
             <span style={{ font: '500 13px var(--font-body)', color: 'rgba(255,255,255,0.7)', position: 'relative', textAlign: 'center', padding: '0 20px' }}>
               Align the receipt within the frame
