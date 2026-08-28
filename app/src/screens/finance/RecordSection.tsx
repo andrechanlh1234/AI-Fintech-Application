@@ -1,10 +1,11 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectRecordPage } from '../../store/selectors';
 import { signedMoney, isoToDisplayDate, todayIso, daysAgoIso } from '../../lib/format';
 import { FilterPicker } from '../../components/FilterPicker';
 import { DateRangeSheet } from '../../components/DateRangeSheet';
 import { TransactionRow } from '../../components/TransactionRow';
+import { prefersReducedMotion, SPRING_SOFT, DUR } from '../../lib/motion';
 
 // Ported from Cukai v7.dc.html lines 1180-1230 ("All transactions" / Record screen).
 // The day-strip calendar + selected-day summary is the source layout; the search
@@ -21,6 +22,53 @@ export default function RecordSection() {
   const statementInputRef = useRef<HTMLInputElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const rec = selectRecordPage(state);
+
+  // Transaction insert + FLIP (spec §8): a row that appears for the first
+  // time flies up from the "Add transaction" button and expands into place;
+  // rows it pushes down glide to their new positions rather than jumping.
+  const listRef = useRef<HTMLDivElement>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+  const prevRects = useRef<Map<string, DOMRect>>(new Map());
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+    const rows = container.querySelectorAll<HTMLElement>('[data-txrow]');
+    const curr = new Map<string, DOMRect>();
+    rows.forEach((el) => curr.set(el.dataset.txrow as string, el.getBoundingClientRect()));
+    const prev = prevRects.current;
+    const hadPrev = prev.size > 0;
+    if (hadPrev && !prefersReducedMotion()) {
+      const newIds: string[] = [];
+      curr.forEach((_r, id) => { if (!prev.has(id)) newIds.push(id); });
+      // A genuine insert adds one or two rows on top of what was there; a
+      // filter/search change swaps out the whole list — only the former
+      // flies up from the "+" button, the latter just FLIP-shifts.
+      const isInsert = newIds.length > 0 && newIds.length <= 2 && curr.size >= prev.size;
+      const btn = addBtnRef.current?.getBoundingClientRect();
+      rows.forEach((el) => {
+        const id = el.dataset.txrow as string;
+        const before = prev.get(id);
+        const after = curr.get(id)!;
+        if (!before) {
+          if (!isInsert) { el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: DUR.pop, easing: 'ease' }); return; }
+          const dy = btn ? btn.top - after.top : -12;
+          el.animate(
+            [{ opacity: 0, transform: `translateY(${dy}px) scale(0.92)` }, { opacity: 1, transform: 'none' }],
+            { duration: DUR.page, easing: SPRING_SOFT },
+          );
+          return;
+        }
+        const shift = before.top - after.top;
+        if (Math.abs(shift) > 0.5) {
+          el.animate(
+            [{ transform: `translateY(${shift}px)` }, { transform: 'none' }],
+            { duration: DUR.page, easing: SPRING_SOFT },
+          );
+        }
+      });
+    }
+    prevRects.current = curr;
+  });
 
   const handleStatementFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,6 +89,7 @@ export default function RecordSection() {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         <button
+          ref={addBtnRef}
           type="button"
           onClick={() => { actions.openScan(); actions.chooseManual(); }}
           className="pressable"
@@ -142,26 +191,29 @@ export default function RecordSection() {
         </span>
       </div>
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 4 }} />
-      {rec.groupedTx.length > 0 ? (
-        rec.groupedTx.map((group) => (
-          <div key={group.iso}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '14px 0 4px' }}>
-              {group.label}
+      <div ref={listRef}>
+        {rec.groupedTx.length > 0 ? (
+          rec.groupedTx.map((group) => (
+            <div key={group.iso}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '14px 0 4px' }}>
+                {group.label}
+              </div>
+              {group.items.map((tx) => (
+                <div key={tx.id} data-txrow={String(tx.id)}>
+                  <TransactionRow
+                    tx={tx}
+                    subtitle={`${tx.catLabel} · ${tx.payment}`}
+                    onOpen={String(tx.id).startsWith('bud-') ? undefined : () => actions.openTxDetail(tx.id)}
+                    showTaxTag
+                  />
+                </div>
+              ))}
             </div>
-            {group.items.map((tx) => (
-              <TransactionRow
-                key={tx.id}
-                tx={tx}
-                subtitle={`${tx.catLabel} · ${tx.payment}`}
-                onOpen={String(tx.id).startsWith('bud-') ? undefined : () => actions.openTxDetail(tx.id)}
-                showTaxTag
-              />
-            ))}
-          </div>
-        ))
-      ) : (
-        <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions in this range.</div>
-      )}
+          ))
+        ) : (
+          <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions in this range.</div>
+        )}
+      </div>
 
       <DateRangeSheet
         open={sheetOpen}
