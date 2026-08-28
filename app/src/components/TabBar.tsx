@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import type { Tab } from '../store/types';
 
 // Ported from Cukai v7.dc.html lines 1573-1599: a floating pill nav bar
@@ -64,18 +64,33 @@ const TABS: { key: Tab; label: string; Icon: () => ReactElement }[] = [
 ];
 
 export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t: Tab) => void; onScan: () => void }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [lens, setLens] = useState<{ x: number; w: number } | null>(null);
+
+  // Measure the active tab button's box within the bar so the glass lens
+  // springs to exactly under it — robust to the mid-bar scan-button gap and
+  // any future layout change, no hardcoded slot maths.
+  useLayoutEffect(() => {
+    const btn = barRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+    if (btn) setLens({ x: btn.offsetLeft + 3, w: btn.offsetWidth - 6 });
+  }, [active]);
+
   return (
     <div style={{
       position: 'fixed', left: 0, right: 0, bottom: 20, display: 'flex', justifyContent: 'center',
       zIndex: 100, pointerEvents: 'none',
     }}>
       <div
+        ref={barRef}
         className="material-chrome"
         style={{
           position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
           borderRadius: 999, boxShadow: 'var(--shadow-lg)', padding: '10px 16px', gap: 2, pointerEvents: 'auto',
         }}
       >
+        {lens && (
+          <div className="tab-lens" style={{ transform: `translate3d(${lens.x}px, 0, 0)`, width: lens.w }} />
+        )}
         {TABS.slice(0, 2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} onSelect={onSelect} />)}
         <div style={{ width: 56, flexShrink: 0 }} />
         {TABS.slice(2).map((t) => <TabButton key={t.key} tab={t} active={active === t.key} onSelect={onSelect} />)}
@@ -101,11 +116,12 @@ export function TabBar({ active, onSelect, onScan }: { active: Tab; onSelect: (t
 }
 
 function TabButton({ tab, active, onSelect }: { tab: typeof TABS[number]; active: boolean; onSelect: (t: Tab) => void }) {
-  const color = active ? 'var(--color-accent-700)' : 'var(--color-text-muted)';
+  const color = active ? 'var(--color-accent-800)' : 'var(--color-text-muted)';
   return (
     <button
       type="button"
       className="tab-btn"
+      data-active={active}
       onClick={() => onSelect(tab.key)}
       style={{
         background: 'none', border: 'none', padding: '8px 0', width: 58, borderRadius: 999,

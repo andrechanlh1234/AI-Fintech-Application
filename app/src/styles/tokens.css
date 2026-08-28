@@ -405,9 +405,28 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 /* Bottom tab bar — smooth color/opacity crossfade between tabs, with a
    small icon "bounce" on tap. */
-.tab-btn { transition: color .28s ease, opacity .28s ease, border-color .28s ease; }
-.tab-btn svg { transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
+.tab-btn { position: relative; z-index: 1; transition: color .28s ease, opacity .28s ease, border-color .28s ease; }
+.tab-btn svg { transition: transform .38s cubic-bezier(.5,1.3,.5,1); }
+.tab-btn[data-active="true"] svg { transform: scale(1.08); }
 .tab-btn:active svg { transform: scale(0.85); }
+
+/* Liquid-glass selection lens (iOS 26 style): a translucent, blurred capsule
+   that springs between tab slots behind the active item, with a bright top
+   rim and a soft ambient shadow. Position + width are measured live in
+   TabBar.tsx so this stays correct if the bar layout changes. */
+.tab-lens {
+  position: absolute; top: 6px; bottom: 6px; left: 0;
+  border-radius: 999px; z-index: 0; pointer-events: none;
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(7px) saturate(150%);
+  backdrop-filter: blur(7px) saturate(150%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.10);
+  transition: transform .42s cubic-bezier(.5, 1.3, .5, 1), width .42s cubic-bezier(.5, 1.3, .5, 1);
+  will-change: transform;
+}
 
 /* — material chrome — the tab bar and input bar float as a translucent
    layer over scrolling content rather than an opaque strip, so content
@@ -451,28 +470,26 @@ textarea.input { min-height: 90px; resize: vertical; }
    block at the very end of this section.
    ========================================================================== */
 
-/* — 1. Fluid Push page navigation — new screen slides in from the leading
-   edge; the outgoing screen (rendered as a ghost layer) scales to 98% and
-   fades. Direction is chosen by the PageTransition wrapper. */
-@keyframes page-push-in-right {
-  from { opacity: 0; transform: translate3d(24px, 0, 0) scale(0.985); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+/* — 1. Pane switch (top tabs + Finance sub-tabs). These are lateral moves
+   between sibling panes, not a drill-in navigation stack — so, like iOS's
+   own tab switches, the outgoing pane is NOT receded or parallaxed (that
+   reads as "big navigation" and the full-screen DOM clone it needed was the
+   source of the frame hitch). The incoming pane just does a short, snappy
+   directional slide + crossfade over the opaque ground. Drill-in ("tap a
+   card → its detail") is handled separately by the shared-element morph. */
+@keyframes page-enter-r {
+  from { opacity: 0; transform: translate3d(14px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-@keyframes page-push-in-left {
-  from { opacity: 0; transform: translate3d(-24px, 0, 0) scale(0.985); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+@keyframes page-enter-l {
+  from { opacity: 0; transform: translate3d(-14px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-@keyframes page-push-out {
-  from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.98); }
+.page-enter-forward { animation: page-enter-r .22s cubic-bezier(.2,.7,.2,1) both; }
+.page-enter-back    { animation: page-enter-l .22s cubic-bezier(.2,.7,.2,1) both; }
+.page-enter-forward, .page-enter-back {
+  position: relative; z-index: 1; will-change: transform, opacity;
 }
-.page-enter-forward { animation: page-push-in-right .4s cubic-bezier(.16,1,.3,1) both; }
-.page-enter-back    { animation: page-push-in-left .4s cubic-bezier(.16,1,.3,1) both; }
-.page-ghost-out {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
-  animation: page-push-out .34s cubic-bezier(.16,1,.3,1) both;
-}
-.page-enter-forward, .page-enter-back { position: relative; z-index: 1; }
 
 /* — 3. Bottom sheets — spring rise, no heavy bounce; the layer behind
    scales down 1–3% and gets a dim + blur veil. */
@@ -560,7 +577,8 @@ textarea.input { min-height: 90px; resize: vertical; }
     animation-duration: 120ms !important;
     animation-timing-function: ease !important;
   }
-  .page-ghost-out, .sheet-scrim.is-closing { animation: none !important; opacity: 0 !important; }
+  .sheet-scrim.is-closing { animation: none !important; opacity: 0 !important; }
+  .tab-lens { transition: none !important; }
   .sheet-scrim { animation-duration: 100ms !important; }
   .chart-line-draw, .chart-area-in, .chart-dots-in, .success-check {
     animation: none !important;
