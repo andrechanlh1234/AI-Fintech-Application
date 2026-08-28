@@ -443,3 +443,129 @@ textarea.input { min-height: 90px; resize: vertical; }
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ============================================================================
+   Premium motion system — see src/lib/motion.ts. Spring-ish curves, physical
+   continuity, transform/opacity only, calm (250–450ms). Everything below
+   collapses to a short opacity fade (or nothing) under reduced-motion via the
+   block at the very end of this section.
+   ========================================================================== */
+
+/* — 1. Fluid Push page navigation — new screen slides in from the leading
+   edge; the outgoing screen (rendered as a ghost layer) scales to 98% and
+   fades. Direction is chosen by the PageTransition wrapper. */
+@keyframes page-push-in-right {
+  from { opacity: 0; transform: translate3d(24px, 0, 0) scale(0.985); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes page-push-in-left {
+  from { opacity: 0; transform: translate3d(-24px, 0, 0) scale(0.985); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes page-push-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.98); }
+}
+.page-enter-forward { animation: page-push-in-right .4s cubic-bezier(.16,1,.3,1) both; }
+.page-enter-back    { animation: page-push-in-left .4s cubic-bezier(.16,1,.3,1) both; }
+.page-ghost-out {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  animation: page-push-out .34s cubic-bezier(.16,1,.3,1) both;
+}
+.page-enter-forward, .page-enter-back { position: relative; z-index: 1; }
+
+/* — 3. Bottom sheets — spring rise, no heavy bounce; the layer behind
+   scales down 1–3% and gets a dim + blur veil. */
+@keyframes sheet-rise {
+  from { transform: translate3d(0, 100%, 0); }
+  60%  { transform: translate3d(0, -0.6%, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes sheet-fall {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, 100%, 0); }
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scrim-out { from { opacity: 1; } to { opacity: 0; } }
+.sheet-scrim {
+  position: fixed; inset: 0; z-index: 200;
+  background: color-mix(in srgb, var(--color-neutral-900) 34%, transparent);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  animation: scrim-in .3s ease both;
+}
+.sheet-scrim.is-closing { animation: scrim-out .26s ease both; }
+.sheet-panel {
+  background: var(--color-bg); color: var(--color-text);
+  animation: sheet-rise .42s cubic-bezier(.22,1,.28,1) both;
+  will-change: transform;
+}
+.sheet-panel.is-closing { animation: sheet-fall .26s cubic-bezier(.4,0,1,1) both; }
+/* Applied to the app shell root while any sheet is open. */
+.app-scaled-back {
+  transition: transform .42s cubic-bezier(.22,1,.28,1), filter .42s ease;
+  transform: scale(0.976); transform-origin: 50% 0;
+  filter: brightness(0.94);
+}
+
+/* — 4. Modal "Spring Pop" — 94–96% + slightly transparent → 100% with a
+   tiny overshoot, then settle. Subtle. Reuses .pop-in call sites via an
+   opt-in class so nothing else changes. */
+@keyframes spring-pop {
+  from { opacity: 0; transform: scale(0.95); }
+  70%  { opacity: 1; transform: scale(1.006); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.spring-pop { animation: spring-pop .3s cubic-bezier(.34,1.4,.5,1) both; }
+
+/* — 5. Contextual popovers / dropdowns — grow from the triggering control,
+   not a centred fade. The wrapper sets transform-origin per alignment. */
+@keyframes popover-grow {
+  from { opacity: 0; transform: scale(0.9) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.popover-origin { animation: popover-grow .22s cubic-bezier(.34,1.4,.5,1) both; transform-origin: var(--pop-origin, top center); }
+
+/* — 7. Chart draw — the line path traces on, then dots fade in. Driven once
+   per mount by NetWorthSection via inline stroke-dashoffset + a class. */
+@keyframes chart-draw { to { stroke-dashoffset: 0; } }
+@keyframes chart-fill-in { from { opacity: 0; } to { opacity: 1; } }
+.chart-line-draw {
+  animation: chart-draw .8s cubic-bezier(.16,1,.3,1) both;
+}
+.chart-area-in { animation: chart-fill-in .5s ease .35s both; }
+.chart-dots-in { animation: chart-fill-in .4s ease .55s both; }
+
+/* — 9. Success state — subtle scale, checkmark draws in, settle. */
+@keyframes success-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes success-check-draw { to { stroke-dashoffset: 0; } }
+.success-ring { animation: success-pop .42s cubic-bezier(.34,1.4,.5,1) both; }
+.success-check {
+  stroke-dasharray: 32; stroke-dashoffset: 32;
+  animation: success-check-draw .34s cubic-bezier(.65,0,.35,1) .22s both;
+}
+
+/* — 6. Financial number morph — the tween itself is JS (rAF), this is just a
+   soft colour transition hook for value-change flashes if a caller wants it. */
+.num-morph { transition: color .2s ease; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-forward, .page-enter-back,
+  .sheet-panel, .sheet-panel.is-closing,
+  .spring-pop, .popover-origin, .success-ring {
+    animation-name: reduced-fade-in !important;
+    animation-duration: 120ms !important;
+    animation-timing-function: ease !important;
+  }
+  .page-ghost-out, .sheet-scrim.is-closing { animation: none !important; opacity: 0 !important; }
+  .sheet-scrim { animation-duration: 100ms !important; }
+  .chart-line-draw, .chart-area-in, .chart-dots-in, .success-check {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+  .app-scaled-back { transition: none !important; transform: none !important; filter: none !important; }
+}
