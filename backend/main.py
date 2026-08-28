@@ -62,6 +62,13 @@ app.add_middleware(
 
 bearer = HTTPBearer(auto_error=False)
 
+# Upload / payload ceilings. A phone receipt photo or a bank-statement PDF is
+# comfortably under 8 MB; a real synced state blob is well under 10 KB. These
+# are guardrails against a scripted client exhausting memory on a small host,
+# not limits a genuine user should ever hit.
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+MAX_STATE_BYTES = 1024 * 1024
+
 
 @app.on_event("startup")
 async def _startup() -> None:
@@ -198,13 +205,16 @@ def get_state(user_id: str = Depends(current_user_id)):
 
 @app.put("/state")
 def put_state(body: StatePayload, user_id: str = Depends(current_user_id)):
+    serialized = json.dumps(body.state)
+    if len(serialized) > MAX_STATE_BYTES:
+        raise HTTPException(413, "State payload too large")
     with get_conn() as conn:
         conn.execute(
             """
             INSERT INTO user_state (user_id, state_json, updated_at) VALUES (?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at
             """,
-            (user_id, json.dumps(body.state), datetime.now(timezone.utc).isoformat()),
+            (user_id, serialized, datetime.now(timezone.utc).isoformat()),
         )
     return {"ok": True}
 
@@ -215,11 +225,14 @@ def put_state(body: StatePayload, user_id: str = Depends(current_user_id)):
 # guests who skipped account creation.
 
 @app.post("/receipts/scan")
-async def scan_receipt(file: UploadFile = File(...)):
+async def scan_receipt(request: Request, file: UploadFile = File(...)):
+    enforce_rate_limit(request, "scan", max_attempts=30, window_seconds=10 * 60)
     suffix = Path(file.filename or "receipt.jpg").suffix or ".jpg"
     data = await file.read()
     if not data:
         raise HTTPException(400, "Empty file")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "Image too large — please use one under 8 MB")
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp:
         tmp.write(data)
         tmp.flush()
@@ -237,12 +250,15 @@ async def scan_receipt(file: UploadFile = File(...)):
 # nothing is written to a real account until the user accepts it.
 
 @app.post("/statements/scan")
-async def scan_statement(file: UploadFile = File(...)):
+async def scan_statement(request: Request, file: UploadFile = File(...)):
+    enforce_rate_limit(request, "scan", max_attempts=30, window_seconds=10 * 60)
     filename = file.filename or "statement"
     suffix = Path(filename).suffix.lower()
     data = await file.read()
     if not data:
         raise HTTPException(400, "Empty file")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "File too large — please use one under 8 MB")
 
     if suffix == ".csv":
         records = parse_csv(data.decode("utf-8", errors="replace"))

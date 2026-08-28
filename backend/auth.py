@@ -53,6 +53,13 @@ def create_token(user_id: str) -> str:
 def decode_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+        # Only a plain session token authenticates a request. A token that
+        # carries a `purpose` claim (currently just the password-reset token,
+        # which is emailed in a link and routinely leaks via server logs,
+        # browser history and Referer headers) must never be accepted here —
+        # otherwise a leaked reset link is a full 60-minute account takeover.
+        if payload.get("purpose"):
+            return None
         return payload.get("sub")
     except jwt.PyJWTError:
         return None
