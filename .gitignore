@@ -8,3 +8,7 @@ backend/cukai.db
 backend/.jwt_secret
 backend/backups/
 backend/.env
+
+# OS / editor / local agent junk
+.DS_Store
+.claude/
