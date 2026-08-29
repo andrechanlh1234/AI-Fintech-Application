@@ -100,15 +100,15 @@ async def google_callback(
 
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM users WHERE email = ? OR google_sub = ?", (email, google_sub)
+            "SELECT id FROM users WHERE email = %s OR google_sub = %s", (email, google_sub)
         ).fetchone()
         if row:
             user_id = row["id"]
-            conn.execute("UPDATE users SET google_sub = ? WHERE id = ?", (google_sub, user_id))
+            conn.execute("UPDATE users SET google_sub = %s WHERE id = %s", (google_sub, user_id))
         else:
             user_id = str(uuid.uuid4())
             conn.execute(
-                "INSERT INTO users (id, email, password_hash, google_sub, created_at) VALUES (?, ?, NULL, ?, ?)",
+                "INSERT INTO users (id, email, password_hash, google_sub, created_at) VALUES (%s, %s, NULL, %s, %s)",
                 (user_id, email, google_sub, datetime.now(timezone.utc).isoformat()),
             )
             background_tasks.add_task(send_welcome_email, email, name)

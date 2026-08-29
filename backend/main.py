@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()  # backend/.env, if present — must run before any module below reads os.environ
 
-import asyncio
 import json
 import tempfile
 import uuid
@@ -29,7 +28,6 @@ from pydantic import BaseModel, EmailStr
 from backend import auth
 from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
-from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
 from backend.email_service import send_password_reset_email, send_welcome_email
 from backend.google_oauth import router as google_oauth_router
@@ -73,8 +71,8 @@ MAX_STATE_BYTES = 1024 * 1024
 @app.on_event("startup")
 async def _startup() -> None:
     init_db()
-    backup_now()  # one immediate backup so a same-day crash never means zero backups
-    asyncio.create_task(backup_loop())
+    # No app-level backup loop — Supabase/Postgres does continuous
+    # point-in-time-recovery backups on its own (see backend/db.py).
 
 
 # ---- schemas ----
@@ -131,12 +129,12 @@ def signup(body: Credentials, background_tasks: BackgroundTasks, request: Reques
     if len(body.password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
     with get_conn() as conn:
-        existing = conn.execute("SELECT id FROM users WHERE email = ?", (body.email,)).fetchone()
+        existing = conn.execute("SELECT id FROM users WHERE email = %s", (body.email,)).fetchone()
         if existing:
             raise HTTPException(409, "An account with this email already exists")
         user_id = str(uuid.uuid4())
         conn.execute(
-            "INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT INTO users (id, email, password_hash, created_at) VALUES (%s, %s, %s, %s)",
             (user_id, body.email, auth.hash_password(body.password), datetime.now(timezone.utc).isoformat()),
         )
     background_tasks.add_task(send_welcome_email, body.email, None)
@@ -147,7 +145,7 @@ def signup(body: Credentials, background_tasks: BackgroundTasks, request: Reques
 def login(body: Credentials, request: Request):
     enforce_rate_limit(request, "login", max_attempts=10, window_seconds=15 * 60)
     with get_conn() as conn:
-        row = conn.execute("SELECT id, password_hash FROM users WHERE email = ?", (body.email,)).fetchone()
+        row = conn.execute("SELECT id, password_hash FROM users WHERE email = %s", (body.email,)).fetchone()
     if not row or not row["password_hash"]:
         raise HTTPException(401, "Incorrect email or password")
     if not auth.verify_password(body.password, row["password_hash"]):
@@ -160,7 +158,7 @@ def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTas
     enforce_rate_limit(request, "forgot-password", max_attempts=3, window_seconds=60 * 60)
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM users WHERE email = ? AND password_hash IS NOT NULL", (body.email,)
+            "SELECT id FROM users WHERE email = %s AND password_hash IS NOT NULL", (body.email,)
         ).fetchone()
     # Always return the same response whether or not the account exists (and
     # whether it's a Google-only account with no password to reset) — telling
@@ -178,14 +176,14 @@ def reset_password(body: ResetPasswordRequest, request: Request):
         raise HTTPException(400, "Password must be at least 8 characters")
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id, email FROM users WHERE email = ? AND password_hash IS NOT NULL", (body.email,)
+            "SELECT id, email FROM users WHERE email = %s AND password_hash IS NOT NULL", (body.email,)
         ).fetchone()
         # Same generic error whether the account is missing or the code is
         # wrong, so this can't be used to probe which emails have accounts.
         if not row or not auth.verify_reset_code(row["id"], body.code):
             raise HTTPException(400, "That code is invalid or has expired")
         conn.execute(
-            "UPDATE users SET password_hash = ? WHERE id = ?",
+            "UPDATE users SET password_hash = %s WHERE id = %s",
             (auth.hash_password(body.new_password), row["id"]),
         )
     # Sign them straight in — they've just proven control of the inbox.
@@ -196,7 +194,7 @@ def reset_password(body: ResetPasswordRequest, request: Request):
 @app.get("/auth/me")
 def me(user_id: str = Depends(current_user_id)):
     with get_conn() as conn:
-        row = conn.execute("SELECT id, email FROM users WHERE id = ?", (user_id,)).fetchone()
+        row = conn.execute("SELECT id, email FROM users WHERE id = %s", (user_id,)).fetchone()
     if not row:
         raise HTTPException(401, "Account no longer exists")
     return {"id": row["id"], "email": row["email"]}
@@ -207,7 +205,7 @@ def me(user_id: str = Depends(current_user_id)):
 @app.get("/state", response_model=StatePayload)
 def get_state(user_id: str = Depends(current_user_id)):
     with get_conn() as conn:
-        row = conn.execute("SELECT state_json FROM user_state WHERE user_id = ?", (user_id,)).fetchone()
+        row = conn.execute("SELECT state_json FROM user_state WHERE user_id = %s", (user_id,)).fetchone()
     return {"state": json.loads(row["state_json"]) if row else None}
 
 
@@ -219,7 +217,7 @@ def put_state(body: StatePayload, user_id: str = Depends(current_user_id)):
     with get_conn() as conn:
         conn.execute(
             """
-            INSERT INTO user_state (user_id, state_json, updated_at) VALUES (?, ?, ?)
+            INSERT INTO user_state (user_id, state_json, updated_at) VALUES (%s, %s, %s)
             ON CONFLICT(user_id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at
             """,
             (user_id, serialized, datetime.now(timezone.utc).isoformat()),
