@@ -170,6 +170,7 @@ export function AiChat() {
 
   return (
     <div
+      data-no-scroll-assist
       style={{
         // Fill the viewport down to just above the floating tab bar; when
         // the keyboard is up, shrink by its height instead so the input

@@ -33,8 +33,9 @@ export function BudgetGauge() {
               <div className="type-numeric" style={{ fontWeight: 800, fontSize: 28 }}>RM {g.budgetRemainingLabel}</div>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 1 }}>left this month</div>
             </div>
-            <div className="type-numeric" style={{ position: 'absolute', left: 40, top: 222, transform: 'translateX(-50%)', fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>RM0</div>
-            <div className="type-numeric" style={{ position: 'absolute', left: 260, top: 222, transform: 'translateX(-50%)', fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>RM {g.budgetPlanTotalLabel}</div>
+            {/* The RM0 / RM<plan> arc-endpoint labels were removed — the
+                spent / per-day / budgeted row below already carries those
+                figures, and the gauge reads cleaner without them. */}
             {/* Badge riding the exact boundary between the filled and
                 unfilled arc -- gaugeMidX/Y is the same point the arc paths
                 themselves are built from, so the badge can never drift out

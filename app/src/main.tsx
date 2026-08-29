@@ -4,6 +4,9 @@ import './styles/tokens.css'
 import './styles/overrides.css'
 import './styles/fonts.css'
 import App from './App.tsx'
+import { initKeyboardScrollAssist } from './lib/keyboardScrollAssist'
+
+initKeyboardScrollAssist()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
