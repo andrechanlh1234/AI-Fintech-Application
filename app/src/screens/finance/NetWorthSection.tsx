@@ -4,7 +4,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { animate, captureSharedOrigin, playSharedMorph, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
+import { animate, captureSharedOrigin, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
 import { BRAND, subBadge } from '../../lib/constants';
 import type { AppState } from '../../store/types';
 
@@ -182,13 +182,8 @@ export function NetWorthSection() {
     else actions.openBalanceDetail(row.listKey, row.id);
   };
 
-  // Shared-element landing: if the user arrived here by tapping Home's
-  // Net worth card, morph that card's frame into this screen's header.
-  const morphRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { playSharedMorph(morphRef.current); }, []);
-
   return (
-    <div ref={morphRef}>
+    <div>
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Net worth</div>
       <AnimatedNumber
         className="type-numeric"
@@ -297,21 +292,18 @@ export function NetWorthSection() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 28, margin: '10px 0 20px' }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Total assets</div>
-          <AnimatedNumber className="type-numeric" style={{ fontWeight: 700, fontSize: 15, display: 'block' }} value={nw.assets} format={moneyWhole} prefix="RM " />
-        </div>
-        <div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Liabilities</div>
-          <AnimatedNumber className="type-numeric" style={{ fontWeight: 700, fontSize: 15, display: 'block' }} value={nw.liabilities} format={moneyWhole} prefix="RM " />
-        </div>
+      <div style={{ margin: '10px 0 20px' }}>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Total assets</div>
+        <AnimatedNumber className="type-numeric" style={{ fontWeight: 700, fontSize: 15, display: 'block' }} value={nw.assets} format={moneyWhole} prefix="RM " />
       </div>
 
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 16 }} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {nw.groups.map((grp) => (
+        {/* Property and Liabilities sections are intentionally hidden for now
+            (kept in selectNetWorth so the headline net-worth math is
+            unchanged — it still nets out credit-card debt). */}
+        {nw.groups.filter((grp) => grp.key === 'cash' || grp.key === 'invest').map((grp) => (
           <div className="card" key={grp.key}>
             <button
               type="button"
@@ -338,8 +330,6 @@ export function NetWorthSection() {
                 <div style={{ display: 'flex', gap: 16, paddingTop: grp.rows.length ? 10 : 0 }}>
                   {grp.key === 'cash' && <AddLink label="Add account" onClick={() => actions.addRecord('bankAccounts')} />}
                   {grp.key === 'invest' && <AddLink label="Add investment" onClick={actions.addInvestmentRow} />}
-                  {grp.key === 'other' && <AddLink label="Add property" onClick={() => actions.addRecord('properties')} />}
-                  {grp.key === 'liab' && <AddLink label="Add card" onClick={() => actions.addRecord('creditCards')} />}
                 </div>
               </div>
             )}
