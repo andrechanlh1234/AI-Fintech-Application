@@ -224,6 +224,16 @@ export function MorePanel() {
         Add subscription
       </button>
 
+      <div style={sectionLabelStyle}>Data</div>
+      <div style={{ borderTop: '1px solid var(--color-divider)' }} />
+      <button type="button" onClick={actions.clearDeviceData} className="pressable" style={rowButtonStyle}>
+        <div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-danger-700)' }}>Clear all data</div>
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>Erases everything saved on this device — transactions, accounts, budgets, subscriptions and your setup — and starts fresh</div>
+        </div>
+        <ChevronIcon />
+      </button>
+
       <div style={sectionLabelStyle}>Developer</div>
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
       <div style={{ padding: '13px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>

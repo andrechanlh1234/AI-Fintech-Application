@@ -137,6 +137,16 @@ export function useActions() {
         clearPersisted();
         window.location.reload();
       },
+      // Full wipe of everything this device has saved (transactions,
+      // accounts, budgets, subscriptions, onboarding profile) — for
+      // testing. Same mechanism as resetOnboarding (clear the localStorage
+      // blob + reload to a clean boot), just behind a confirm and surfaced
+      // as its own "Clear all data" control.
+      clearDeviceData: () => {
+        if (!window.confirm('Clear all data saved on this device? This cannot be undone.')) return;
+        clearPersisted();
+        window.location.reload();
+      },
       loadTrialData: () => dispatch({ type: 'LOAD_TRIAL_DATA' }),
       clearAllData: () => dispatch({ type: 'CLEAR_ALL_DATA' }),
 
