@@ -3,6 +3,7 @@
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
 import type { AppState, ManualData, BalanceDraft, TxDraft } from './types';
 import { mkCategory, mkItem, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
+import { upsertMerchantMemory, lookupMerchantMemory } from '../lib/merchantMemory';
 import {
   blankReceiptDraft, mkLineItemDraft, lineItemIsInvalid, lineItemNeedsReview,
   type Receipt, type ReceiptDraft,
@@ -131,6 +132,8 @@ export type Action =
   | { type: 'REVIEW_MOVE'; clientX: number }
   | { type: 'REVIEW_UP' }
   | { type: 'ADD_PENDING_REVIEW_ITEMS'; items: ReviewItem[] }
+  | { type: 'UPDATE_REVIEW_ITEM'; id: string; patch: Partial<ReviewItem> }
+  | { type: 'UNDO_AUTO_ADDED' }
   | { type: 'SET_STATEMENT_UPLOADING'; value: boolean }
   | { type: 'SET_STATEMENT_UPLOAD_ERROR'; message: string | null }
 
@@ -196,6 +199,49 @@ function reviewPending(items: ReviewItem[], decisions: Record<string, string>): 
   return items.filter((i) => !decisions[i.id]);
 }
 
+// An accepted (or auto-added) ReviewItem, with whatever edits the user made
+// on the card, becomes exactly one Transaction. `merchant` on the tx holds
+// the user-facing expense name (same role it plays for receipt scans);
+// tax/reliefKey come from the item's own taxDeductible flag, and only an
+// expense can be deductible.
+function txFromReviewItem(item: ReviewItem): Transaction {
+  const dateLabel = item.dateIso ? isoToDisplayDate(item.dateIso) : (item.dateLabel || todayDisplayDate());
+  const isExpense = item.amount < 0;
+  const deductible = isExpense && !!item.taxDeductible;
+  const reliefKey = deductible ? (categoryToReliefKey(item.cat) ?? undefined) : undefined;
+  return {
+    id: 'rev-' + item.id,
+    merchant: item.name || item.merchant,
+    cat: item.cat,
+    dateLabel,
+    dateGroup: dateGroupFor(dateLabel),
+    month: monthFromDateLabel(dateLabel),
+    amount: item.amount,
+    tax: deductible,
+    brand: item.brand,
+    payment: item.payment,
+    reliefKey,
+  };
+}
+
+// Overlay a merchantMemory hit onto an incoming review item: remembered
+// category / name / payment / tax flag win, the item is flagged `learned`,
+// and a well-established merchant (confirmed >= 2x) is flagged `autoAdd`.
+function applyMerchantMemory(item: ReviewItem, mem: AppState['merchantMemory']): ReviewItem {
+  const remembered = lookupMerchantMemory(mem, item.merchant);
+  if (!remembered) return item;
+  const next: ReviewItem = {
+    ...item,
+    cat: remembered.category ?? item.cat,
+    name: remembered.name ?? item.name,
+    payment: remembered.payment ?? item.payment,
+    taxDeductible: remembered.taxDeductible ?? item.taxDeductible,
+    learned: true,
+  };
+  if ((remembered.confirmedCount ?? 0) >= 2) next.autoAdd = true;
+  return next;
+}
+
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'HYDRATE':
@@ -254,6 +300,7 @@ export function reducer(state: AppState, action: Action): AppState {
         receipts: [],
         finance: { buckets: trial.buckets },
         pendingReviewItems: trial.pendingReviewItems, reviewDecisions: {},
+        merchantMemory: {}, autoAddedThisImport: [],
       };
     }
     case 'CLEAR_ALL_DATA': {
@@ -265,6 +312,7 @@ export function reducer(state: AppState, action: Action): AppState {
         receipts: [],
         finance: { buckets: empty.buckets },
         pendingReviewItems: [], reviewDecisions: {},
+        merchantMemory: {}, autoAddedThisImport: [],
         netWorthSeed: defaultNetWorthSeed(),
       };
     }
@@ -550,9 +598,53 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'OPEN_REVIEW':
       return { ...state, reviewOpen: true };
     case 'CLOSE_REVIEW':
-      return { ...state, reviewOpen: false };
-    case 'ADD_PENDING_REVIEW_ITEMS':
-      return { ...state, pendingReviewItems: [...state.pendingReviewItems, ...action.items] };
+      // autoAddedThisImport is per-import; drop it so the "N added
+      // automatically" banner doesn't resurface on the next unrelated open.
+      return { ...state, reviewOpen: false, autoAddedThisImport: [] };
+    case 'ADD_PENDING_REVIEW_ITEMS': {
+      const enriched = action.items.map((it) => applyMerchantMemory(it, state.merchantMemory));
+      // Auto-add items never enter the deck: commit them straight to
+      // transactions and mark them 'accept'-decided so selectReviewFlow
+      // skips them. They stay in pendingReviewItems so UNDO_AUTO_ADDED can
+      // push them back as normal cards.
+      const autoItems = enriched.filter((it) => it.autoAdd);
+      let transactions = state.transactions;
+      const decisions = { ...state.reviewDecisions };
+      const autoAddedIds: string[] = [];
+      for (const it of autoItems) {
+        transactions = [...transactions, txFromReviewItem(it)];
+        decisions[it.id] = 'accept';
+        autoAddedIds.push('rev-' + it.id);
+      }
+      return {
+        ...state,
+        pendingReviewItems: [...state.pendingReviewItems, ...enriched],
+        reviewDecisions: decisions,
+        transactions,
+        autoAddedThisImport: [...state.autoAddedThisImport, ...autoAddedIds],
+      };
+    }
+    case 'UPDATE_REVIEW_ITEM':
+      return {
+        ...state,
+        pendingReviewItems: state.pendingReviewItems.map((it) =>
+          it.id === action.id ? { ...it, ...action.patch } : it),
+      };
+    case 'UNDO_AUTO_ADDED': {
+      if (state.autoAddedThisImport.length === 0) return state;
+      const txIds = new Set(state.autoAddedThisImport);
+      const itemIds = new Set(state.autoAddedThisImport.map((t) => t.replace(/^rev-/, '')));
+      const reviewDecisions = { ...state.reviewDecisions };
+      for (const id of itemIds) delete reviewDecisions[id];
+      return {
+        ...state,
+        transactions: state.transactions.filter((t) => !txIds.has(String(t.id))),
+        reviewDecisions,
+        pendingReviewItems: state.pendingReviewItems.map((it) =>
+          itemIds.has(it.id) ? { ...it, autoAdd: false, learned: false } : it),
+        autoAddedThisImport: [],
+      };
+    }
     case 'SET_STATEMENT_UPLOADING':
       return { ...state, statementUploading: action.value };
     case 'SET_STATEMENT_UPLOAD_ERROR':
@@ -562,20 +654,18 @@ export function reducer(state: AppState, action: Action): AppState {
       const item = pending[0];
       if (!item) return state;
       let transactions = state.transactions;
+      let merchantMemory = state.merchantMemory;
       if (action.dir === 'accept') {
-        // Only expenses (negative amount) count toward tax relief — an
-        // income/credit line (e.g. a salary deposit) is never deductible,
-        // regardless of what categorize() guessed its category as.
-        const reliefKey = item.amount < 0 ? categoryToReliefKey(item.cat) ?? undefined : undefined;
-        const dateGroup = dateGroupFor(item.dateLabel);
-        const tx: Transaction = {
-          id: 'rev-' + item.id, merchant: item.merchant, cat: item.cat,
-          dateLabel: item.dateLabel, dateGroup, month: monthFromDateLabel(item.dateLabel),
-          amount: item.amount, tax: !!reliefKey, brand: item.brand, payment: item.payment, reliefKey,
-        };
-        transactions = [...state.transactions, tx];
+        // The transaction is built from the (possibly edited) item — its
+        // final name / date / category / payment / tax flag / signed amount.
+        transactions = [...state.transactions, txFromReviewItem(item)];
+        // Learn this merchant for the next import (per-account memory).
+        merchantMemory = upsertMerchantMemory(merchantMemory, {
+          merchant: item.merchant, cat: item.cat, name: item.name || item.merchant,
+          payment: item.payment, taxDeductible: !!item.taxDeductible,
+        });
       }
-      return { ...state, reviewDecisions: { ...state.reviewDecisions, [item.id]: action.dir }, reviewDragging: false, reviewDragX: 0, transactions };
+      return { ...state, reviewDecisions: { ...state.reviewDecisions, [item.id]: action.dir }, reviewDragging: false, reviewDragX: 0, transactions, merchantMemory };
     }
     case 'REVIEW_DOWN':
       return { ...state, reviewDragging: true, reviewDragStartX: action.clientX, reviewDragX: 0 };
@@ -653,9 +743,14 @@ export function reducer(state: AppState, action: Action): AppState {
       const PM_OPTIONS = ['Cash', 'Credit Card', 'E-wallet', 'Transfer'];
       const scannedPayment = r.paymentMethod && PM_OPTIONS.includes(r.paymentMethod) ? r.paymentMethod : null;
 
+      // If we've seen this vendor before (statement or receipt), let the
+      // remembered category / tax flag / payment method pre-fill the draft.
+      const remembered = lookupMerchantMemory(state.merchantMemory, scannedVendor);
+      const draftCategory = remembered?.category ?? primaryCategory;
+
       return {
         ...state, scanStep: 'review', scanMethod: 'photo', scanError: null,
-        scanPaymentMethod: scannedPayment ?? state.scanPaymentMethod,
+        scanPaymentMethod: remembered?.payment ?? scannedPayment ?? state.scanPaymentMethod,
         receiptDraft: {
           ...state.receiptDraft,
           // If the scan couldn't read a name, leave the field empty (with its
@@ -664,8 +759,8 @@ export function reducer(state: AppState, action: Action): AppState {
           vendor: scannedVendor,
           date: r.date || state.receiptDraft.date,
           total: r.total != null ? r.total.toFixed(2) : '',
-          quickCategory: primaryCategory,
-          tax: categoryToReliefKey(primaryCategory) != null,
+          quickCategory: draftCategory,
+          tax: remembered?.taxDeductible ?? (categoryToReliefKey(draftCategory) != null),
           mode,
         },
         lineItemDrafts,
@@ -750,10 +845,24 @@ export function reducer(state: AppState, action: Action): AppState {
         source: state.scanMethod === 'photo' ? 'scan' : 'manual',
       };
 
+      // Learn this vendor from a Quick-mode save (one name + one category +
+      // one tax decision). Detailed mode is left out on purpose — it has no
+      // single category/tax answer to remember. No-op if there's no vendor.
+      const merchantMemory = draft.mode === 'quick'
+        ? upsertMerchantMemory(state.merchantMemory, {
+            merchant: draft.vendor || draft.merchant,
+            cat: draft.quickCategory,
+            name: draft.merchant,
+            payment: state.scanPaymentMethod,
+            taxDeductible: draft.tax,
+          })
+        : state.merchantMemory;
+
       return {
         ...state, scanStep: 'saved',
         receipts: [...state.receipts, receipt],
         transactions: [...state.transactions, ...newTransactions],
+        merchantMemory,
       };
     }
     case 'SCAN_ANOTHER':

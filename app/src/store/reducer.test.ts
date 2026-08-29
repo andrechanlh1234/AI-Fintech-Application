@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { reducer } from './reducer';
 import { buildInitialState } from './initialState';
 import type { AppState } from './types';
+import type { ReviewItem } from '../lib/seedData';
 
 // These tests exist because this app has no server-side database of
 // record -- state.transactions/state.receipts (and everything derived
@@ -271,5 +272,109 @@ describe('input validation — budget caps and subscription amounts', () => {
     state = reducer(state, { type: 'ADD_SUBSCRIPTION' });
     expect(state.ob.subs).toHaveLength(1);
     expect(state.ob.subs[0].amount).toBe('12.90');
+  });
+});
+
+// ---- Statement-import review flow: editable cards + merchant learning ----
+function mkReviewItem(partial: Partial<ReviewItem> = {}): ReviewItem {
+  return {
+    id: 'stmt-1', merchant: 'SHELL KL', name: 'SHELL KL', amount: -45.2, cat: 'Transport',
+    dateIso: '2026-08-14', dateLabel: '14 Aug 2026', brand: '', payment: 'Bank statement',
+    taxDeductible: false, kind: 'expense', ...partial,
+  };
+}
+
+describe('REVIEW_DECIDE — builds a transaction from the edited item', () => {
+  it('accept uses the item\'s final name / signed amount / date / tax flag', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem()] });
+    state = reducer(state, { type: 'UPDATE_REVIEW_ITEM', id: 'stmt-1', patch: { name: 'Petrol — road trip', taxDeductible: true, cat: 'Medical' } });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+
+    expect(state.transactions).toHaveLength(1);
+    const tx = state.transactions[0];
+    expect(tx.merchant).toBe('Petrol — road trip');
+    expect(tx.amount).toBe(-45.2);
+    expect(tx.cat).toBe('Medical');
+    expect(tx.tax).toBe(true);
+    expect(tx.reliefKey).toBe('med_self'); // Medical maps to a relief key
+    expect(tx.dateLabel).toBe('14 Aug 2026');
+  });
+
+  it('reject creates no transaction', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem()] });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'reject' });
+    expect(state.transactions).toHaveLength(0);
+  });
+});
+
+describe('merchant learning layer', () => {
+  it('accepting a card upserts merchantMemory keyed by normalised merchant', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem()] });
+    state = reducer(state, { type: 'UPDATE_REVIEW_ITEM', id: 'stmt-1', patch: { cat: 'Petrol', payment: 'Maybank' } });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+
+    expect(state.merchantMemory['shell kl']).toEqual({
+      category: 'Petrol', name: 'SHELL KL', payment: 'Maybank', taxDeductible: false, confirmedCount: 1,
+    });
+  });
+
+  it('a later import of the same merchant is pre-filled and flagged learned', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem()] });
+    state = reducer(state, { type: 'UPDATE_REVIEW_ITEM', id: 'stmt-1', patch: { cat: 'Petrol' } });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'stmt-2', cat: 'Other' })] });
+    const item = state.pendingReviewItems.find((i) => i.id === 'stmt-2')!;
+    expect(item.cat).toBe('Petrol');
+    expect(item.learned).toBe(true);
+    expect(item.autoAdd).toBeUndefined(); // only one prior confirmation
+  });
+
+  it('a merchant confirmed >= 2x auto-adds on the next import (never enters the deck)', () => {
+    let state = buildInitialState();
+    // Confirm SHELL KL twice.
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'a' })] });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'b' })] });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+    expect(state.merchantMemory['shell kl'].confirmedCount).toBe(2);
+
+    const txBefore = state.transactions.length;
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'c' }), mkReviewItem({ id: 'd', merchant: 'NEW CAFE', name: 'NEW CAFE' })] });
+
+    // 'c' committed immediately; 'd' stays in the deck.
+    expect(state.transactions).toHaveLength(txBefore + 1);
+    expect(state.autoAddedThisImport).toEqual(['rev-c']);
+    expect(state.reviewDecisions['c']).toBe('accept');
+    expect(state.reviewDecisions['d']).toBeUndefined();
+  });
+
+  it('UNDO_AUTO_ADDED deletes the auto transactions and restores the cards', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'a' })] });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'b' })] });
+    state = reducer(state, { type: 'REVIEW_DECIDE', dir: 'accept' });
+    state = reducer(state, { type: 'ADD_PENDING_REVIEW_ITEMS', items: [mkReviewItem({ id: 'c' })] });
+    expect(state.autoAddedThisImport).toEqual(['rev-c']);
+
+    state = reducer(state, { type: 'UNDO_AUTO_ADDED' });
+    expect(state.autoAddedThisImport).toEqual([]);
+    expect(state.transactions.find((t) => t.id === 'rev-c')).toBeUndefined();
+    expect(state.reviewDecisions['c']).toBeUndefined();
+    const restored = state.pendingReviewItems.find((i) => i.id === 'c')!;
+    expect(restored.autoAdd).toBe(false);
+    expect(restored.learned).toBe(false);
+  });
+
+  it('CLOSE_REVIEW clears autoAddedThisImport', () => {
+    let state = buildInitialState();
+    state = { ...state, autoAddedThisImport: ['rev-x'], reviewOpen: true };
+    state = reducer(state, { type: 'CLOSE_REVIEW' });
+    expect(state.autoAddedThisImport).toEqual([]);
   });
 });

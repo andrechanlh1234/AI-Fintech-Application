@@ -1,7 +1,7 @@
 // Ported from Cukai v7.dc.html state initializer (lines 1967-2021), with
 // every pre-filled example value removed — a fresh user starts at RM0 with
 // no transactions/subscriptions/accounts until they enter their own.
-import { mkInvestRow, defaultNetWorthSeed, defaultBuckets } from '../lib/seedData';
+import { mkInvestRow, defaultNetWorthSeed, defaultBuckets, normalizeReviewItem } from '../lib/seedData';
 import { blankReceiptDraft } from '../lib/receipts';
 import { todayIso, daysAgoIso } from '../lib/format';
 import { seedUidFromPersisted, uid } from '../lib/ids';
@@ -51,6 +51,7 @@ export function buildInitialState(): AppState {
     confirmedIds: {},
     reviewOpen: false, pendingReviewItems: [], reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
     statementUploading: false, statementUploadError: null,
+    merchantMemory: {}, autoAddedThisImport: [],
     scanOpen: false, scanStep: 'capture', scanFrom: 'home', scanMethod: 'manual',
     receiptDraft: blankReceiptDraft(todayIso()),
     lineItemDrafts: [],
@@ -129,6 +130,7 @@ export interface SyncPayload {
   userMode: AppState['userMode'];
   pendingReviewItems: AppState['pendingReviewItems'];
   reviewDecisions: AppState['reviewDecisions'];
+  merchantMemory: AppState['merchantMemory'];
 }
 
 export function buildSyncPayload(state: AppState): SyncPayload {
@@ -152,6 +154,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     userMode: state.userMode,
     pendingReviewItems: state.pendingReviewItems,
     reviewDecisions: state.reviewDecisions,
+    merchantMemory: state.merchantMemory,
   };
 }
 
@@ -206,8 +209,9 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.netWorthSeed) next.netWorthSeed = p.netWorthSeed;
   if (p.netWorthHistory) next.netWorthHistory = p.netWorthHistory;
   if (p.userMode) next.userMode = p.userMode;
-  if (p.pendingReviewItems) next.pendingReviewItems = p.pendingReviewItems;
+  if (p.pendingReviewItems) next.pendingReviewItems = p.pendingReviewItems.map(normalizeReviewItem);
   if (p.reviewDecisions) next.reviewDecisions = p.reviewDecisions;
+  if (p.merchantMemory) next.merchantMemory = p.merchantMemory;
   return next;
 }
 

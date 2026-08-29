@@ -10,6 +10,7 @@ import { TaxCenter } from './screens/tax/TaxCenter';
 import { AiChat } from './screens/ai/AiChat';
 import { ScanFlow } from './screens/modals/ScanFlow';
 import { ReviewFlow } from './screens/modals/ReviewFlow';
+import { StatementImportOverlay } from './screens/modals/StatementImportOverlay';
 import { MorePanel } from './screens/modals/MorePanel';
 import { NotifPanel } from './screens/modals/NotifPanel';
 import { BalanceDetailModal } from './screens/modals/BalanceDetailModal';
@@ -58,6 +59,7 @@ function AppShell() {
             this relative container) — they self-gate on their own state flag. */}
         <ScanFlow />
         <ReviewFlow />
+        <StatementImportOverlay />
         <BudgetItemDetailModal />
         <TaxItemDetailModal />
         <TaxPackModal />

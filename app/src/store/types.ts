@@ -72,6 +72,19 @@ export interface TxDraft {
   payment: string;
 }
 
+/** One learned merchant, keyed by normalizeMerchant(merchant) in
+ * merchantMemory. Every field except confirmedCount is optional so a
+ * partially-known merchant (e.g. only its category was ever confirmed)
+ * still round-trips. */
+export interface MerchantMemoryEntry {
+  category?: string;
+  name?: string;
+  payment?: string;
+  taxDeductible?: boolean;
+  confirmedCount: number;
+}
+export type MerchantMemory = Record<string, MerchantMemoryEntry>;
+
 export type FinanceSection = 'networth' | 'record' | 'budgets' | 'stats' | 'history';
 export type Tab = 'home' | 'finance' | 'tax' | 'ai';
 export type ScanStep = 'capture' | 'preview' | 'processing' | 'unable' | 'review' | 'saved';
@@ -105,6 +118,14 @@ export interface AppState {
   reviewDecisions: Record<string, 'accept' | 'reject'>;
   statementUploading: boolean;
   statementUploadError: string | null;
+  /** Per-account merchant learning — see lib/merchantMemory.ts. Persisted
+   * locally and synced to the account (buildSyncPayload / mergePersisted). */
+  merchantMemory: MerchantMemory;
+  /** Transaction ids committed automatically from merchantMemory during the
+   * import currently being reviewed (confirmedCount >= 2 merchants). Drives
+   * ReviewFlow's "N added automatically" banner; the Undo button rolls them
+   * back. Cleared on CLOSE_REVIEW; deliberately NOT synced. */
+  autoAddedThisImport: string[];
   reviewDragging: boolean;
   reviewDragX: number;
   reviewDragStartX: number;

@@ -327,9 +327,9 @@ export function buildTrialData(): TrialData {
   // to review" has something the moment trial data loads regardless of
   // which real-world day it's loaded on.
   const pendingReviewItems: ReviewItem[] = [
-    { id: 'trial-rv-1', merchant: 'Shopee', amount: -189.9, cat: 'Shopping', dateLabel: isoToDisplayDate(isoDaysAgo(1)), brand: 'shopee', payment: 'Maybank Visa' },
-    { id: 'trial-rv-2', merchant: 'Grab', amount: -24.5, cat: 'Transport', dateLabel: isoToDisplayDate(isoDaysAgo(2)), brand: 'grab', payment: 'GrabPay' },
-    { id: 'trial-rv-3', merchant: 'Tealive', amount: -9.9, cat: 'Food & Drink', dateLabel: isoToDisplayDate(isoDaysAgo(3)), brand: 'tealive', payment: "Touch 'n Go eWallet" },
+    { id: 'trial-rv-1', merchant: 'Shopee', name: 'Shopee', amount: -189.9, cat: 'Shopping', dateIso: isoDaysAgo(1), dateLabel: isoToDisplayDate(isoDaysAgo(1)), brand: 'shopee', payment: 'Maybank Visa', taxDeductible: true, kind: 'expense' },
+    { id: 'trial-rv-2', merchant: 'Grab', name: 'Grab', amount: -24.5, cat: 'Transport', dateIso: isoDaysAgo(2), dateLabel: isoToDisplayDate(isoDaysAgo(2)), brand: 'grab', payment: 'GrabPay', taxDeductible: false, kind: 'expense' },
+    { id: 'trial-rv-3', merchant: 'Tealive', name: 'Tealive', amount: -9.9, cat: 'Food & Drink', dateIso: isoDaysAgo(3), dateLabel: isoToDisplayDate(isoDaysAgo(3)), brand: 'tealive', payment: "Touch 'n Go eWallet", taxDeductible: false, kind: 'expense' },
   ];
 
   return { manual, transactions: backfilled, buckets, subs, pendingReviewItems };

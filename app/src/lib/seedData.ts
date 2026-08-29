@@ -93,8 +93,46 @@ export const MONTH_SUMMARIES: Record<string, { income: number; expenses: number 
  * (state.pendingReviewItems, see StoreProvider's uploadStatement action),
  * never from a fixed sample list. `amount` is signed, same convention as
  * Transaction.amount: negative = expense, positive = income/credit — a
- * statement can contain both (e.g. a salary deposit alongside spending). */
-export interface ReviewItem { id: string; merchant: string; amount: number; cat: string; dateLabel: string; brand: string; payment: string }
+ * statement can contain both (e.g. a salary deposit alongside spending).
+ *
+ * Every field on the front card is editable in ReviewFlow before the swipe
+ * commits, so this carries the full editable set: `name` (the user-facing
+ * expense label, separate from `merchant`/vendor), `dateIso` (ISO source of
+ * truth; `dateLabel` is the derived display string), `taxDeductible`, and
+ * `kind`. `learned`/`autoAdd` are set by the reducer from merchantMemory. */
+export interface ReviewItem {
+  id: string;
+  merchant: string;
+  name: string;
+  amount: number;
+  cat: string;
+  dateLabel: string;
+  dateIso: string | null;
+  brand: string;
+  payment: string;
+  taxDeductible: boolean;
+  kind: 'expense' | 'income';
+  /** Set by ADD_PENDING_REVIEW_ITEMS when merchantMemory had a match for
+   * this merchant — drives the "From your history" pill. */
+  learned?: boolean;
+  /** Set alongside `learned` when the remembered entry has been confirmed
+   * >= 2 times: the item is committed as a transaction immediately and
+   * never enters the swipe deck (see autoAddedThisImport). */
+  autoAdd?: boolean;
+}
+
+/** Fills in any field a ReviewItem persisted before this shape existed is
+ * missing, so old localStorage/synced payloads keep working. */
+export function normalizeReviewItem(it: ReviewItem): ReviewItem {
+  const kind: 'expense' | 'income' = it.kind ?? (it.amount >= 0 ? 'income' : 'expense');
+  return {
+    ...it,
+    name: it.name ?? it.merchant,
+    dateIso: it.dateIso ?? null,
+    taxDeductible: it.taxDeductible ?? false,
+    kind,
+  };
+}
 
 export interface NotifItem { kind: string; title: string; sub: string; time: string }
 

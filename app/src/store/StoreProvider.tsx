@@ -13,6 +13,7 @@ import {
 import { isoToDisplayDate } from '../lib/format';
 import { uid } from '../lib/ids';
 import { mapOcrCategory } from '../lib/constants';
+import { categoryToReliefKey } from '../lib/taxEngine';
 import type { ReviewItem } from '../lib/seedData';
 import type { ReceiptDraft } from '../lib/receipts';
 
@@ -267,6 +268,8 @@ export function useActions() {
       closeReview: () => dispatch({ type: 'CLOSE_REVIEW' }),
       acceptCurrent: () => dispatch({ type: 'REVIEW_DECIDE', dir: 'accept' }),
       rejectCurrent: () => dispatch({ type: 'REVIEW_DECIDE', dir: 'reject' }),
+      updateReviewItem: (id: string, patch: Partial<ReviewItem>) => dispatch({ type: 'UPDATE_REVIEW_ITEM', id, patch }),
+      undoAutoAdded: () => dispatch({ type: 'UNDO_AUTO_ADDED' }),
       reviewDown: (clientX: number) => dispatch({ type: 'REVIEW_DOWN', clientX }),
       reviewMove: (clientX: number) => dispatch({ type: 'REVIEW_MOVE', clientX }),
       reviewUp: () => dispatch({ type: 'REVIEW_UP' }),
@@ -275,14 +278,39 @@ export function useActions() {
         dispatch({ type: 'SET_STATEMENT_UPLOAD_ERROR', message: null });
         uploadStatement(file)
           .then(({ records }) => {
-            const items: ReviewItem[] = records.map((r: ScannedStatementRecord) => ({
-              id: 'stmt-' + uid(), merchant: r.vendor, amount: r.amount, cat: mapOcrCategory(r.category),
-              dateLabel: r.date ? isoToDisplayDate(r.date) : 'Unknown date',
-              brand: '', payment: 'Bank statement',
-            }));
+            let skipped = 0;
+            const items: ReviewItem[] = [];
+            for (const r of records as ScannedStatementRecord[]) {
+              // `kind` may be absent until the backend ships it — fall back
+              // to the sign of the (already-signed) amount.
+              const kind = r.kind ?? (r.amount >= 0 ? 'income' : 'expense');
+              // A card/loan repayment is never a spend or an income line —
+              // drop it entirely rather than let it become a review item.
+              if (kind === 'payment') { skipped++; continue; }
+              const cat = mapOcrCategory(r.category);
+              const magnitude = Math.abs(r.amount);
+              items.push({
+                id: 'stmt-' + uid(),
+                merchant: r.vendor,
+                name: r.vendor,
+                amount: kind === 'income' ? magnitude : -magnitude,
+                cat,
+                dateIso: r.date ?? null,
+                dateLabel: r.date ? isoToDisplayDate(r.date) : 'Unknown date',
+                brand: '',
+                payment: 'Bank statement',
+                taxDeductible: kind === 'expense' && (!!r.relief_tag || categoryToReliefKey(cat) != null),
+                kind,
+              });
+            }
             dispatch({ type: 'SET_STATEMENT_UPLOADING', value: false });
             if (items.length === 0) {
-              dispatch({ type: 'SET_STATEMENT_UPLOAD_ERROR', message: "Couldn't find any transactions in that file." });
+              dispatch({
+                type: 'SET_STATEMENT_UPLOAD_ERROR',
+                message: skipped > 0
+                  ? 'Only card payments in that file — nothing to add.'
+                  : "Couldn't find any transactions in that file.",
+              });
               return;
             }
             dispatch({ type: 'ADD_PENDING_REVIEW_ITEMS', items });

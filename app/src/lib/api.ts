@@ -169,6 +169,11 @@ export interface ScannedStatementRecord {
   vendor: string;
   date: string | null;
   amount: number;
+  /** Whether this row is spending, money in, or a card/loan repayment.
+   * May be absent until the backend ships it — callers fall back to the
+   * sign of `amount` (see StoreProvider.uploadStatementFile). A `payment`
+   * row is dropped entirely: it never becomes a review item. */
+  kind?: 'expense' | 'income' | 'payment';
   category: string;
   relief_tag: string | null;
   confidence: number;
@@ -178,10 +183,10 @@ export interface ScannedStatementRecord {
 // (pipeline/statement_parser.py) — the caller turns these into pending
 // review items (accept/reject), same as a scanned receipt. Nothing is
 // written to the user's real transactions until they accept one.
-export async function uploadStatement(file: File): Promise<{ records: ScannedStatementRecord[] }> {
+export async function uploadStatement(file: File): Promise<{ statementType?: string; records: ScannedStatementRecord[] }> {
   const form = new FormData();
   form.append('file', file);
-  return request<{ records: ScannedStatementRecord[] }>('/statements/scan', { method: 'POST', body: form });
+  return request<{ statementType?: string; records: ScannedStatementRecord[] }>('/statements/scan', { method: 'POST', body: form });
 }
 
 export interface AiChatResponse {
