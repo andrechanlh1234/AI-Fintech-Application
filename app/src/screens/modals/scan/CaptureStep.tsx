@@ -279,13 +279,12 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
           style={{
             overflow: 'hidden',
             maxHeight: pickerOpen ? 200 : 0,
-            opacity: pickerOpen ? 1 : 0,
             // Unhurried, well-damped — matches the app's "premium, calm"
-            // motion spec. Content fades in a beat behind the height so it
-            // reveals rather than appearing pre-formed.
+            // motion spec. The rows inside stagger in a beat behind the
+            // height so the panel reveals rather than appearing pre-formed.
             transition: pickerOpen
-              ? 'max-height .55s cubic-bezier(.22,1,.28,1), opacity .4s ease .12s'
-              : 'max-height .5s cubic-bezier(.22,1,.28,1), opacity .3s ease',
+              ? 'max-height .62s cubic-bezier(.22,1,.28,1)'
+              : 'max-height .5s cubic-bezier(.22,1,.28,1)',
           }}
         >
           <div style={{ padding: '4px 8px 8px' }}>
@@ -293,7 +292,15 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
               type="button"
               onClick={() => { setPickerOpen(false); importFileInputRef.current?.click(); }}
               className="pressable"
-              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
+              style={{
+                all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
+                padding: '12px 16px', width: '100%', boxSizing: 'border-box',
+                opacity: pickerOpen ? 1 : 0,
+                transform: pickerOpen ? 'none' : 'translateY(10px)',
+                transition: pickerOpen
+                  ? 'opacity .5s ease .18s, transform .55s cubic-bezier(.22,1,.28,1) .18s'
+                  : 'opacity .22s ease, transform .22s ease',
+              }}
             >
               <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
@@ -304,7 +311,15 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
               type="button"
               onClick={() => { setPickerOpen(false); onManual(); }}
               className="pressable"
-              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
+              style={{
+                all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14,
+                padding: '12px 16px', width: '100%', boxSizing: 'border-box',
+                opacity: pickerOpen ? 1 : 0,
+                transform: pickerOpen ? 'none' : 'translateY(10px)',
+                transition: pickerOpen
+                  ? 'opacity .5s ease .3s, transform .55s cubic-bezier(.22,1,.28,1) .3s'
+                  : 'opacity .22s ease, transform .22s ease',
+              }}
             >
               <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
