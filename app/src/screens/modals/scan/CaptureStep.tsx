@@ -170,8 +170,9 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         </div>
       )}
 
-      {/* Scope note — kept well above the capture controls. */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: '60%', display: 'flex', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none' }}>
+      {/* Scope note — a banner just under the header, out of the way of the
+          placement guide and every bottom control/animation. */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 'calc(env(safe-area-inset-top) + 46px)', display: 'flex', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none', zIndex: 6 }}>
         <span style={{ background: 'rgba(255,255,255,0.94)', color: '#1a1c1a', font: '600 13px var(--font-body)', padding: '6px 14px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 7, boxShadow: '0 2px 12px rgba(0,0,0,0.22)' }}>
           <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🇲🇾</span>
           Malaysian receipts only
