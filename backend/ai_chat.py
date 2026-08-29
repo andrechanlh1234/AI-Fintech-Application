@@ -20,6 +20,8 @@ import os
 
 import httpx
 
+from backend.my_tax_kb import TAX_KB_PROMPT, looks_tax_related
+
 logger = logging.getLogger("cukai.ai")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
@@ -51,7 +53,13 @@ SYSTEM_PROMPT = (
     "user's actual bank accounts. Cukai does not file taxes on the user's "
     "behalf and is not a licensed financial or tax advisor; for anything "
     "specific to a real filing, suggest verifying with LHDN/HASiL or a "
-    "qualified professional. Stay on topic: personal finance, budgeting, "
+    "qualified professional. When a 'Malaysian tax reference (YA2025)' block "
+    "is included below, you may cite its specific relief caps, tax bands, and "
+    "qualifying conditions directly, but treat it as a general-knowledge "
+    "reference (not a live LHDN confirmation) and never state a tax figure "
+    "that is not in that reference or the data snapshot — if it isn't there, "
+    "say you don't have it and point the user to LHDN/HASiL. "
+    "Stay on topic: personal finance, budgeting, "
     "and Malaysian tax relief. Be concise — a few sentences, not an essay. "
     "If asked about something unrelated, gently redirect to what Cukai can "
     "actually help with. "
@@ -74,10 +82,14 @@ class AiNotConfigured(Exception):
 GeminiNotConfigured = AiNotConfigured
 
 
-def _system_text(context: dict | None) -> str:
+def _system_text(context: dict | None, user_text: str | None = None) -> str:
+    text = SYSTEM_PROMPT
     if context:
-        return SYSTEM_PROMPT + "\n\nReal data snapshot (JSON):\n" + json.dumps(context)
-    return SYSTEM_PROMPT
+        text += "\n\nReal data snapshot (JSON):\n" + json.dumps(context)
+    # Only tax-ish messages pay the token cost of the LHDN reference block.
+    if user_text and looks_tax_related(user_text):
+        text += "\n\n--- Malaysian tax reference (YA2025) ---\n" + TAX_KB_PROMPT
+    return text
 
 
 def _history_pairs(history: list[dict] | None):
@@ -99,7 +111,7 @@ def generate_ai_reply(
     model as ground truth. Raises AiNotConfigured if no provider key is
     set; raises on any other API-call failure. Callers must catch both and
     fall back — this function never returns a placeholder string."""
-    system_text = _system_text(context)
+    system_text = _system_text(context, user_text)
 
     if GROQ_API_KEY:
         return _call_groq(user_text, history, system_text), "groq"
