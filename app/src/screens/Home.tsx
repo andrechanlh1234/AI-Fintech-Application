@@ -3,6 +3,7 @@ import { selectHomeDashboard, selectNetWorth, selectNetWorthChart, selectReviewF
 import { moneyWhole } from '../lib/format';
 import { NOTIFICATIONS } from '../lib/seedData';
 import { NetWorthSparkline } from '../components/NetWorthSparkline';
+import { PageShell } from '../components/PageShell';
 import { TxIcon } from '../components/TransactionRow';
 
 export function Home() {
@@ -17,7 +18,7 @@ export function Home() {
   const isOverBudget = dash.homeBudgetSpent > dash.homeBudgetTotal;
 
   return (
-    <div className="screen-in" style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }}>
+    <PageShell>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="24" height="24" viewBox="0 0 24 24"><path d="M20 4C10 4 4 10 4 20c8 0 16-6 16-16Z" fill="var(--color-accent)" /><path d="M6 18C10 14 14 10 19 5" stroke="var(--color-accent)" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.5" /></svg>
@@ -166,6 +167,6 @@ export function Home() {
       >
         See all →
       </button>
-    </div>
+    </PageShell>
   );
 }

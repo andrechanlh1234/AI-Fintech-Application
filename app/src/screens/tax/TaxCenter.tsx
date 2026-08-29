@@ -1,6 +1,7 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectTaxCenter } from '../../store/selectors';
 import { Card, ProgressBar } from '../../components/primitives';
+import { PageShell } from '../../components/PageShell';
 import { moneyWhole, money } from '../../lib/format';
 import { YearPicker } from '../../components/PeriodPicker';
 
@@ -37,7 +38,7 @@ export function TaxCenter() {
   const taxDeltaArrowRotate = tax.taxDeltaPct >= 0 ? 'rotate(0deg)' : 'rotate(90deg)';
 
   return (
-    <div className="screen-in" style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }}>
+    <PageShell>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 10 }}>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, whiteSpace: 'nowrap', flexShrink: 0, paddingTop: 6 }}>Tax Center</div>
         <YearPicker year={selectedYear} years={TAX_YEAR_OPTIONS} onChange={(y) => actions.setTaxYear('YA' + y)} />
@@ -227,6 +228,6 @@ export function TaxCenter() {
           <span className="tag" style={{ flexShrink: 0, background: 'rgba(255,255,255,0.2)', color: '#fff' }}>Premium</span>
         </button>
       </div>
-    </div>
+    </PageShell>
   );
 }

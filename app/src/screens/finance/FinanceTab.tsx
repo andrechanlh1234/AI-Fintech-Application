@@ -1,5 +1,6 @@
 import { useStore, useActions } from '../../store/StoreProvider';
 import { PageTransition } from '../../components/PageTransition';
+import { PageShell } from '../../components/PageShell';
 import type { FinanceSection } from '../../store/types';
 import { NetWorthSection } from './NetWorthSection';
 import RecordSection from './RecordSection';
@@ -27,7 +28,7 @@ export function FinanceTab() {
   const activeIdx = SECTIONS.findIndex((s) => s.key === state.financeSection);
 
   return (
-    <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 16px 0', boxSizing: 'border-box' }}>
+    <PageShell>
       <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, marginBottom: 12 }}>Finance</div>
       <div className="tab-track" role="tablist" style={{ marginBottom: 8, width: '100%' }}>
         <div
@@ -53,6 +54,6 @@ export function FinanceTab() {
         {state.financeSection === 'budgets' && <BudgetsSection />}
         {state.financeSection === 'stats' && <StatsSection />}
       </PageTransition>
-    </div>
+    </PageShell>
   );
 }

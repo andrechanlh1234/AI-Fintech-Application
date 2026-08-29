@@ -285,6 +285,22 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
       })()}
 
       <div style={{ flex: 1 }} />
+      {state.scanError && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start',
+            background: 'var(--color-danger-100)', border: '1px solid var(--color-danger-700)',
+            color: 'var(--color-danger-700)', borderRadius: 'var(--radius-md)',
+            padding: '10px 12px', marginBottom: 12, font: '600 12px var(--font-body)',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
+          </svg>
+          {state.scanError}
+        </div>
+      )}
       <button
         type="button"
         onClick={actions.saveReceipt}

@@ -3,6 +3,8 @@ import { StoreProvider, useStore, useActions } from './store/StoreProvider';
 import { TabBar } from './components/TabBar';
 import { BottomSheet } from './components/BottomSheet';
 import { PageTransition } from './components/PageTransition';
+import { SwipeablePages } from './components/SwipeablePages';
+import type { Tab } from './store/types';
 import { OnboardingFlow } from './screens/onboarding/OnboardingFlow';
 import { Home } from './screens/Home';
 import { FinanceTab } from './screens/finance/FinanceTab';
@@ -39,6 +41,7 @@ function AppShell() {
   // Ported from the source's `showMainApp` flag: the bottom tab bar hides
   // whenever a full-screen overlay is open, so it never overlaps that
   // overlay's own bottom action button.
+  const TAB_KEYS: Tab[] = ['home', 'finance', 'tax', 'ai'];
   const TAB_ORDER: Record<string, number> = { home: 0, finance: 1, tax: 2, ai: 3 };
 
   const showTabBar = !state.scanOpen && !state.reviewOpen && !state.morePanelOpen
@@ -46,15 +49,29 @@ function AppShell() {
     && !state.addSubOpen && !state.taxItemDetailOpen && !state.donateOpen
     && !state.statsCategoryDetail && !state.statementUploading;
 
+  const selectTab = (t: Tab) => {
+    if (t === 'home') actions.goHome();
+    else if (t === 'finance') actions.goFinance();
+    else if (t === 'tax') actions.goTax();
+    else actions.goAi();
+  };
+
   return (
-    <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 104, minHeight: '100vh', position: 'relative' }}>
-        <PageTransition pageKey={state.tab} order={TAB_ORDER[state.tab] ?? 0}>
-          {state.tab === 'home' && <Home />}
-          {state.tab === 'finance' && <FinanceTab />}
-          {state.tab === 'tax' && <TaxCenter />}
-          {state.tab === 'ai' && <AiChat />}
-        </PageTransition>
+    <div data-theme={state.theme} style={{ minHeight: '100dvh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', paddingBottom: 104, minHeight: '100dvh', position: 'relative' }}>
+        <SwipeablePages
+          index={TAB_ORDER[state.tab] ?? 0}
+          count={TAB_KEYS.length}
+          onNavigate={(i) => selectTab(TAB_KEYS[i])}
+          disabled={!showTabBar}
+        >
+          <PageTransition pageKey={state.tab} order={TAB_ORDER[state.tab] ?? 0}>
+            {state.tab === 'home' && <Home />}
+            {state.tab === 'finance' && <FinanceTab />}
+            {state.tab === 'tax' && <TaxCenter />}
+            {state.tab === 'ai' && <AiChat />}
+          </PageTransition>
+        </SwipeablePages>
 
         {/* Self-positioned full-screen overlays (position:absolute;inset:0 within
             this relative container) — they self-gate on their own state flag. */}
@@ -67,12 +84,7 @@ function AppShell() {
       </div>
 
       {showTabBar && (
-        <TabBar active={state.tab} onSelect={(t) => {
-          if (t === 'home') actions.goHome();
-          else if (t === 'finance') actions.goFinance();
-          else if (t === 'tax') actions.goTax();
-          else actions.goAi();
-        }} onScan={actions.openScan} />
+        <TabBar active={state.tab} onSelect={selectTab} onScan={actions.openScan} />
       )}
 
       {/* Content-only panels — rendered inside the shared BottomSheet overlay. */}

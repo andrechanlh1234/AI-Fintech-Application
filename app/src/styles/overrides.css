@@ -38,6 +38,12 @@
 body { margin: 0; background: var(--color-neutral-200); font-family: var(--font-body); overflow-x: hidden; }
 /* Wide content (chip rows, charts, code) must scroll inside its own
    container — the page body itself never scrolls sideways. */
+
+/* Always reserve room for the vertical scrollbar so the centred 480px
+   column doesn't jump sideways between a tall tab (scrollbar shown) and a
+   short one (scrollbar hidden). No-op on iOS/overlay-scrollbar platforms;
+   matters on desktop + Android where the scrollbar takes layout width. */
+html { scrollbar-gutter: stable; }
 a { color: var(--color-accent-700); text-decoration: none; }
 a:hover { color: var(--color-accent-800); }
 input[type="radio"] { accent-color: var(--color-accent); }

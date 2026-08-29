@@ -220,7 +220,7 @@ export function NetWorthSection() {
         })}
       </div>
 
-      <div ref={chartWrapRef} style={{ position: 'relative' }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}>
+      <div ref={chartWrapRef} data-no-swipe style={{ position: 'relative' }} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}>
         {chart.hasSelection && (
           <div
             ref={tooltipRef}

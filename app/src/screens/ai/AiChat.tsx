@@ -182,7 +182,6 @@ export function AiChat() {
         transition: 'min-height .34s cubic-bezier(0.17, 0.59, 0.4, 1)',
         padding: 'calc(env(safe-area-inset-top) + 16px) 16px 12px',
       }}
-      className="screen-in"
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19 }}>AI Assistant</div>
@@ -281,6 +280,7 @@ export function AiChat() {
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div
             ref={scrollRef}
+            data-no-swipe
             style={{
               flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14,
               overflowY: 'auto', WebkitOverflowScrolling: 'touch',
@@ -324,6 +324,7 @@ export function AiChat() {
           </div>
           {hasNoMessages && (
             <div
+              data-no-swipe
               style={{
                 display: 'flex', gap: 8, overflowX: 'auto', flexShrink: 0, paddingBottom: 10,
                 WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',

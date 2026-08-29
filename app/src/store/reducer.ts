@@ -36,6 +36,28 @@ function clampCap(n: unknown): number {
   return Math.min(v, MAX_BUDGET_CAP);
 }
 
+/** The slice of scan-flow state that must be wiped whenever the receipt
+ * flow starts fresh — opening it (OPEN_SCAN), leaving it (CLOSE_SCAN) or
+ * "Scan another" (SCAN_ANOTHER). Previously each of these reset a different
+ * subset: SCAN_ANOTHER never cleared `scanMethod` / `scanPaymentMethod`, and
+ * CLOSE_SCAN cleared nothing at all, so the just-saved receipt's draft, line
+ * items, entry method and any error banner leaked into the next receipt —
+ * and a stray SAVE_RECEIPT before the new draft was filled re-saved the
+ * previous one. One helper, applied everywhere the flow (re)starts. */
+function freshScanFields(): Pick<
+  AppState,
+  'scanStep' | 'scanError' | 'scanMethod' | 'scanPaymentMethod' | 'receiptDraft' | 'lineItemDrafts'
+> {
+  return {
+    scanStep: 'capture',
+    scanError: null,
+    scanMethod: 'manual',
+    scanPaymentMethod: 'Cash',
+    receiptDraft: blankReceiptDraft(todayIso()),
+    lineItemDrafts: [],
+  };
+}
+
 type ManualListKey = keyof ManualData;
 
 export type Action =
@@ -395,7 +417,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan payment method ----
     case 'SET_SCAN_PAYMENT_METHOD':
-      return { ...state, scanPaymentMethod: action.value };
+      return { ...state, scanPaymentMethod: action.value, scanError: null };
 
     // ---- budgets ----
     case 'TOGGLE_BUCKET':
@@ -737,12 +759,17 @@ export function reducer(state: AppState, action: Action): AppState {
 
     // ---- scan / capture receipt ----
     case 'OPEN_SCAN':
-      return { ...state, scanOpen: true, scanStep: 'capture', scanFrom: state.tab, scanError: null, receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
+      return { ...state, ...freshScanFields(), scanOpen: true, scanFrom: state.tab };
     case 'CLOSE_SCAN':
+      // Leave scanStep / receiptDraft untouched here so the close animation
+      // (ScanFlow keeps the last step mounted for ~300ms) doesn't visibly
+      // swap to a fresh capture screen mid-fade. OPEN_SCAN / SCAN_ANOTHER do
+      // the full reset before the next receipt starts.
       return { ...state, scanOpen: false };
     case 'CHOOSE_MANUAL':
       // True manual entry -- fields stay blank, no simulated OCR result.
-      return { ...state, scanStep: 'review', scanMethod: 'manual', receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
+      // Clears any error left over from a failed scan ("Add custom amount").
+      return { ...state, scanStep: 'review', scanMethod: 'manual', scanError: null, receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
     // A photo has been captured (live camera or Photo/File picker) but not
     // yet sent for OCR -- the file itself stays in local component state
     // (see ScanFlow's pendingPhoto), this just advances the screen so the
@@ -839,7 +866,9 @@ export function reducer(state: AppState, action: Action): AppState {
       // only sets the starting point so switching categories doesn't leave
       // a stale suggestion from the previous one.
       if (action.field === 'quickCategory') next.tax = categoryToReliefKey(action.value as string) != null;
-      return { ...state, receiptDraft: next };
+      // Editing any field clears a "can't save yet" banner from a prior
+      // attempt — the user is acting on it, don't leave it hanging.
+      return { ...state, receiptDraft: next, scanError: null };
     }
     case 'SET_RECEIPT_MODE': {
       if (action.mode === state.receiptDraft.mode) return state;
@@ -849,22 +878,30 @@ export function reducer(state: AppState, action: Action): AppState {
       const lineItemDrafts = action.mode === 'detailed' && state.lineItemDrafts.length === 0 && state.receiptDraft.total
         ? [mkLineItemDraft({ description: state.receiptDraft.merchant || 'Item', amount: state.receiptDraft.total, cat: state.receiptDraft.quickCategory })]
         : state.lineItemDrafts;
-      return { ...state, receiptDraft: { ...state.receiptDraft, mode: action.mode }, lineItemDrafts };
+      return { ...state, receiptDraft: { ...state.receiptDraft, mode: action.mode }, lineItemDrafts, scanError: null };
     }
     case 'ADD_LINE_ITEM_DRAFT':
-      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft()] };
+      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft()], scanError: null };
     case 'SET_LINE_ITEM_DRAFT_FIELD':
       return {
         ...state,
+        scanError: null,
         lineItemDrafts: state.lineItemDrafts.map((it) => it.id !== action.id ? it : { ...it, [action.field]: action.value, touched: true }),
       };
     case 'REMOVE_LINE_ITEM_DRAFT':
-      return { ...state, lineItemDrafts: state.lineItemDrafts.filter((it) => it.id !== action.id) };
+      return { ...state, lineItemDrafts: state.lineItemDrafts.filter((it) => it.id !== action.id), scanError: null };
     case 'ADD_ADJUSTMENT_LINE_ITEM':
-      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft({ description: 'Discount / adjustment', amount: action.amount.toFixed(2), cat: 'Other' })] };
+      return { ...state, lineItemDrafts: [...state.lineItemDrafts, mkLineItemDraft({ description: 'Discount / adjustment', amount: action.amount.toFixed(2), cat: 'Other' })], scanError: null };
     case 'SAVE_RECEIPT': {
+      // Save is only reachable from the review step. Ignoring a dispatch
+      // from any other step (notably 'saved') stops a double-tap or a
+      // re-render from cloning the just-saved receipt off the still-filled
+      // draft — the bug behind "I can't add more than one receipt".
+      if (state.scanStep !== 'review') return state;
       const draft = state.receiptDraft;
-      if (!draft.merchant) return state;
+      if (!draft.merchant.trim()) {
+        return { ...state, scanError: 'Add an expense name before saving.' };
+      }
       const dateLabel = isoToDisplayDate(draft.date) || todayDisplayDate();
       const receiptId = 'rcpt-' + uid();
       let newTransactions: Transaction[];
@@ -872,7 +909,7 @@ export function reducer(state: AppState, action: Action): AppState {
 
       if (draft.mode === 'quick') {
         const amount = parseFloat(draft.total) || 0;
-        if (!amount) return state;
+        if (!amount) return { ...state, scanError: 'Enter the receipt amount before saving.' };
         lineItemsTotal = amount;
         const reliefKey = draft.tax ? categoryToReliefKey(draft.quickCategory) ?? undefined : undefined;
         newTransactions = [{
@@ -882,7 +919,12 @@ export function reducer(state: AppState, action: Action): AppState {
         }];
       } else {
         const items = state.lineItemDrafts;
-        if (items.length === 0 || items.some((it) => lineItemIsInvalid(it) || lineItemNeedsReview(it))) return state;
+        if (items.length === 0) {
+          return { ...state, scanError: 'Add at least one line item before saving.' };
+        }
+        if (items.some((it) => lineItemIsInvalid(it) || lineItemNeedsReview(it))) {
+          return { ...state, scanError: 'Check the highlighted line items — each needs a description and an amount.' };
+        }
         lineItemsTotal = 0;
         newTransactions = items.map((it) => {
           const amount = parseFloat(it.amount) || 0;
@@ -916,7 +958,7 @@ export function reducer(state: AppState, action: Action): AppState {
         : state.merchantMemory;
 
       return {
-        ...state, scanStep: 'saved',
+        ...state, scanStep: 'saved', scanError: null,
         receipts: [...state.receipts, receipt],
         transactions: [...state.transactions, ...newTransactions],
         merchantMemory,
@@ -926,7 +968,7 @@ export function reducer(state: AppState, action: Action): AppState {
       };
     }
     case 'SCAN_ANOTHER':
-      return { ...state, scanStep: 'capture', scanError: null, receiptDraft: blankReceiptDraft(todayIso()), lineItemDrafts: [] };
+      return { ...state, ...freshScanFields() };
     case 'VIEW_IN_TAX':
       return { ...state, scanOpen: false, tab: 'tax' };
 

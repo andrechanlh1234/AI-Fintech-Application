@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type AnimationEvent as ReactAnimationEvent, type ReactNode } from 'react';
 import { hasPendingSharedOrigin } from '../lib/motion';
 
 /**
@@ -37,8 +37,16 @@ export function PageTransition({ pageKey, order, children }: {
       : snap.dir === 'back' ? 'page-enter-back'
         : '';
 
+  // Drop the animation class once the slide finishes so a settled pane
+  // carries no leftover `will-change` / `position` / `z-index` — that
+  // residue promotes the pane to its own layer and can nudge text by a
+  // sub-pixel, which reads as "the layout shifts a little between pages".
+  const settle = (e: ReactAnimationEvent) => {
+    if (e.target === e.currentTarget) setSnap((s) => (s.dir === 'none' ? s : { ...s, dir: 'none' }));
+  };
+
   return (
-    <div key={snap.key} className={cls} style={{ minHeight: '100%' }}>
+    <div key={snap.key} className={cls} style={{ minHeight: '100%' }} onAnimationEnd={settle}>
       {children}
     </div>
   );

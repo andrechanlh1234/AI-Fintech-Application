@@ -234,6 +234,90 @@ describe('SAVE_RECEIPT persists the optional vendor field', () => {
   });
 });
 
+describe('SAVE_RECEIPT — several receipts in one scan session', () => {
+  // Regression: "I can't add more than one receipt — after the first, the
+  // Save button does nothing." Root causes: SAVE_RECEIPT returned state
+  // unchanged (no feedback) whenever a field was missing, SCAN_ANOTHER
+  // never reset scanMethod / scanPaymentMethod, and a second SAVE_RECEIPT
+  // dispatched from the 'saved' step re-cloned the first receipt.
+  function saveQuick(state: AppState, merchant: string, total: string): AppState {
+    let s = reducer(state, { type: 'CHOOSE_MANUAL' });
+    s = reducer(s, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: merchant });
+    s = reducer(s, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: total });
+    return reducer(s, { type: 'SAVE_RECEIPT' });
+  }
+
+  it('a quick receipt and then a detailed receipt both land in state', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+
+    state = saveQuick(state, 'Kopitiam', '8.50');
+    expect(state.scanStep).toBe('saved');
+    expect(state.receipts).toHaveLength(1);
+    expect(state.transactions).toHaveLength(1);
+
+    state = reducer(state, { type: 'SCAN_ANOTHER' });
+    expect(state.scanStep).toBe('capture');
+    expect(state.receiptDraft.merchant).toBe('');
+    expect(state.lineItemDrafts).toHaveLength(0);
+
+    state = reducer(state, { type: 'CHOOSE_MANUAL' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'Village Grocer' });
+    state = reducer(state, { type: 'SET_RECEIPT_MODE', mode: 'detailed' });
+    state = reducer(state, { type: 'ADD_LINE_ITEM_DRAFT' });
+    const id = state.lineItemDrafts[0].id;
+    state = reducer(state, { type: 'SET_LINE_ITEM_DRAFT_FIELD', id, field: 'description', value: 'Rice' });
+    state = reducer(state, { type: 'SET_LINE_ITEM_DRAFT_FIELD', id, field: 'amount', value: '25.00' });
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+
+    expect(state.scanStep).toBe('saved');
+    expect(state.receipts).toHaveLength(2);
+    expect(state.transactions).toHaveLength(2);
+    // the two receipts are distinct records, not the same one twice
+    expect(state.receipts[0].id).not.toBe(state.receipts[1].id);
+    expect(state.receipts[1].merchant).toBe('Village Grocer');
+  });
+
+  it('a missing field leaves an explanatory scanError instead of silently doing nothing', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    state = reducer(state, { type: 'CHOOSE_MANUAL' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'No Amount Store' });
+
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+    expect(state.scanStep).toBe('review');
+    expect(state.receipts).toHaveLength(0);
+    expect(state.scanError).toBeTruthy();
+
+    // fixing the field clears the banner and lets the save through
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: '12.00' });
+    expect(state.scanError).toBeNull();
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+    expect(state.receipts).toHaveLength(1);
+  });
+
+  it('a stray SAVE_RECEIPT from the saved step does not clone the receipt', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    state = saveQuick(state, 'Petronas', '60.00');
+    expect(state.receipts).toHaveLength(1);
+
+    const again = reducer(state, { type: 'SAVE_RECEIPT' });
+    expect(again.receipts).toHaveLength(1);
+    expect(again.transactions).toHaveLength(1);
+  });
+
+  it('SCAN_ANOTHER resets the entry method and payment method, not just the draft', () => {
+    let state = reducer(buildInitialState(), { type: 'OPEN_SCAN' });
+    state = reducer(state, { type: 'CHOOSE_MANUAL' });
+    state = reducer(state, { type: 'SET_SCAN_PAYMENT_METHOD', value: 'E-wallet' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'merchant', value: 'A' });
+    state = reducer(state, { type: 'SET_RECEIPT_DRAFT_FIELD', field: 'total', value: '5.00' });
+    state = reducer(state, { type: 'SAVE_RECEIPT' });
+
+    state = reducer(state, { type: 'SCAN_ANOTHER' });
+    expect(state.scanMethod).toBe('manual');
+    expect(state.scanPaymentMethod).toBe('Cash');
+  });
+});
+
 describe('input validation — budget caps and subscription amounts', () => {
   it('ADD_BUCKET_CATEGORY / SET_BUCKET_CATEGORY_CAP clamp a negative or absurd cap to a sane range', () => {
     let state: AppState = {
