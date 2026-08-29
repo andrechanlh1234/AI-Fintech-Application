@@ -11,7 +11,7 @@ import {
 import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
-import { mapOcrCategory } from '../lib/constants';
+import { mapOcrCategory, CAT_ICON } from '../lib/constants';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
 import type { AuthUser, ScannedReceiptResult } from '../lib/api';
@@ -136,6 +136,8 @@ export type Action =
   | { type: 'UNDO_AUTO_ADDED' }
   | { type: 'SET_STATEMENT_UPLOADING'; value: boolean }
   | { type: 'SET_STATEMENT_UPLOAD_ERROR'; message: string | null }
+  | { type: 'CONFIRM_BUDGET_PROMPT'; cap: number }
+  | { type: 'DISMISS_BUDGET_PROMPT' }
 
   | { type: 'OPEN_SCAN' } | { type: 'CLOSE_SCAN' }
   | { type: 'CHOOSE_MANUAL' }
@@ -222,6 +224,20 @@ function txFromReviewItem(item: ReviewItem): Transaction {
     payment: item.payment,
     reliefKey,
   };
+}
+
+// After logging a spend, decide whether to offer adding its category to
+// the budget: only for a real (budgetable) transaction category — the ones
+// selectBudgets tracks, i.e. CAT_ICON keys — that isn't already a budget
+// category anywhere and hasn't been "not now"-ed this session. Returns the
+// pending prompt, or null to leave state.budgetPrompt as-is.
+function budgetPromptFor(state: AppState, cat: string, amount: number): AppState['budgetPrompt'] {
+  if (state.budgetPrompt) return state.budgetPrompt; // one at a time
+  if (!cat || cat === 'Income' || !CAT_ICON[cat]) return null;
+  if (state.budgetPromptDismissed.includes(cat)) return null;
+  const alreadyBudgeted = state.finance.buckets.some((b) => b.categories.some((c) => c.name === cat));
+  if (alreadyBudgeted) return null;
+  return { cat, amount: Math.round(Math.abs(amount)) };
 }
 
 // Overlay a merchantMemory hit onto an incoming review item: remembered
@@ -649,12 +665,35 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, statementUploading: action.value };
     case 'SET_STATEMENT_UPLOAD_ERROR':
       return { ...state, statementUploadError: action.message };
+    case 'CONFIRM_BUDGET_PROMPT': {
+      if (!state.budgetPrompt) return state;
+      const cat = mkCategory(state.budgetPrompt.cat, clampCap(action.cap), []);
+      return {
+        ...state,
+        finance: {
+          ...state.finance,
+          // Scanned-receipt categories are variable spending — the Flexible bucket.
+          buckets: state.finance.buckets.map((b) => b.key !== 'flexible' ? b : { ...b, categories: [...b.categories, cat] }),
+        },
+        budgetPrompt: null,
+        budgetPromptDismissed: [...state.budgetPromptDismissed, state.budgetPrompt.cat],
+      };
+    }
+    case 'DISMISS_BUDGET_PROMPT':
+      return {
+        ...state,
+        budgetPrompt: null,
+        budgetPromptDismissed: state.budgetPrompt
+          ? [...state.budgetPromptDismissed, state.budgetPrompt.cat]
+          : state.budgetPromptDismissed,
+      };
     case 'REVIEW_DECIDE': {
       const pending = reviewPending(state.pendingReviewItems, state.reviewDecisions);
       const item = pending[0];
       if (!item) return state;
       let transactions = state.transactions;
       let merchantMemory = state.merchantMemory;
+      let budgetPrompt = state.budgetPrompt;
       if (action.dir === 'accept') {
         // The transaction is built from the (possibly edited) item — its
         // final name / date / category / payment / tax flag / signed amount.
@@ -664,8 +703,10 @@ export function reducer(state: AppState, action: Action): AppState {
           merchant: item.merchant, cat: item.cat, name: item.name || item.merchant,
           payment: item.payment, taxDeductible: !!item.taxDeductible,
         });
+        // Offer to budget an expense category that isn't tracked yet.
+        if (item.amount < 0) budgetPrompt = budgetPromptFor(state, item.cat, item.amount);
       }
-      return { ...state, reviewDecisions: { ...state.reviewDecisions, [item.id]: action.dir }, reviewDragging: false, reviewDragX: 0, transactions, merchantMemory };
+      return { ...state, reviewDecisions: { ...state.reviewDecisions, [item.id]: action.dir }, reviewDragging: false, reviewDragX: 0, transactions, merchantMemory, budgetPrompt };
     }
     case 'REVIEW_DOWN':
       return { ...state, reviewDragging: true, reviewDragStartX: action.clientX, reviewDragX: 0 };
@@ -863,6 +904,9 @@ export function reducer(state: AppState, action: Action): AppState {
         receipts: [...state.receipts, receipt],
         transactions: [...state.transactions, ...newTransactions],
         merchantMemory,
+        budgetPrompt: draft.mode === 'quick'
+          ? budgetPromptFor(state, draft.quickCategory, parseFloat(draft.total) || 0)
+          : state.budgetPrompt,
       };
     }
     case 'SCAN_ANOTHER':

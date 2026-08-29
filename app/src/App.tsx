@@ -25,6 +25,7 @@ import { DonateModal } from './screens/modals/DonateModal';
 import { AddSubModal } from './screens/modals/AddSubModal';
 import { TaxProfileModal } from './screens/modals/TaxProfileModal';
 import { AuthPanel } from './screens/modals/AuthPanel';
+import { BudgetPromptSheet } from './screens/modals/BudgetPromptSheet';
 import { LegalDoc } from './screens/legal/LegalDoc';
 
 function AppShell() {
@@ -108,6 +109,7 @@ function AppShell() {
       <BottomSheet open={state.authPanelOpen} onClose={actions.closeAuthPanel}>
         <AuthPanel />
       </BottomSheet>
+      <BudgetPromptSheet />
       <BottomSheet open={!!state.legalOpen} onClose={actions.closeLegal}>
         {state.legalOpen && <LegalDoc doc={state.legalOpen} />}
       </BottomSheet>

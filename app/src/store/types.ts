@@ -119,6 +119,11 @@ export interface AppState {
   reviewDecisions: Record<string, 'accept' | 'reject'>;
   statementUploading: boolean;
   statementUploadError: string | null;
+  /** After saving a receipt / accepting a reviewed line in a budgetable
+   * category that isn't in the budget yet, offer to add it. Transient —
+   * not persisted. `dismissed` remembers "not now" choices for the session. */
+  budgetPrompt: { cat: string; amount: number } | null;
+  budgetPromptDismissed: string[];
   /** Per-account merchant learning — see lib/merchantMemory.ts. Persisted
    * locally and synced to the account (buildSyncPayload / mergePersisted). */
   merchantMemory: MerchantMemory;

@@ -270,6 +270,8 @@ export function useActions() {
       rejectCurrent: () => dispatch({ type: 'REVIEW_DECIDE', dir: 'reject' }),
       updateReviewItem: (id: string, patch: Partial<ReviewItem>) => dispatch({ type: 'UPDATE_REVIEW_ITEM', id, patch }),
       undoAutoAdded: () => dispatch({ type: 'UNDO_AUTO_ADDED' }),
+      confirmBudgetPrompt: (cap: number) => dispatch({ type: 'CONFIRM_BUDGET_PROMPT', cap }),
+      dismissBudgetPrompt: () => dispatch({ type: 'DISMISS_BUDGET_PROMPT' }),
       reviewDown: (clientX: number) => dispatch({ type: 'REVIEW_DOWN', clientX }),
       reviewMove: (clientX: number) => dispatch({ type: 'REVIEW_MOVE', clientX }),
       reviewUp: () => dispatch({ type: 'REVIEW_UP' }),

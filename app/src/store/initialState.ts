@@ -50,6 +50,7 @@ export function buildInitialState(): AppState {
     txFilter: 'All',
     confirmedIds: {},
     reviewOpen: false, pendingReviewItems: [], reviewDecisions: {}, reviewDragging: false, reviewDragX: 0, reviewDragStartX: 0,
+    budgetPrompt: null, budgetPromptDismissed: [],
     statementUploading: false, statementUploadError: null,
     merchantMemory: {}, autoAddedThisImport: [],
     scanOpen: false, scanStep: 'capture', scanFrom: 'home', scanMethod: 'manual',
