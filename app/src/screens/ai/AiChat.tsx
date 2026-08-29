@@ -154,16 +154,12 @@ export function AiChat() {
   // (kb) takes over the instant it arrives.
   const kbInset = kb > 0 ? kb : (inputFocused ? lastKbHeight : 0);
 
-  // Pop the keyboard on entering an empty chat, and keep it up through the
-  // conversation (refocus once a reply lands). Programmatic focus opening
-  // the keyboard is best-effort in an iOS WKWebView -- the tab tap is the
-  // user gesture that lets it through most of the time.
+  // Don't pop the keyboard just for opening the AI page — let the user tap
+  // the field when they're ready. Once a conversation is going, though,
+  // refocus after each reply so they can keep typing without re-tapping.
   useEffect(() => {
-    if (isChat && hasNoMessages) focusInput();
-  }, [isChat, hasNoMessages]);
-  useEffect(() => {
-    if (isChat && !state.aiTyping) focusInput();
-  }, [isChat, state.aiTyping]);
+    if (isChat && !state.aiTyping && state.aiMessages.length > 0) focusInput();
+  }, [isChat, state.aiTyping, state.aiMessages.length]);
 
   // Keep the conversation pinned to the latest line as messages arrive and
   // as the keyboard opens/closes.
@@ -179,7 +175,7 @@ export function AiChat() {
         // the keyboard is up, shrink by its height instead so the input
         // sits just above it (nothing else in the app shifts).
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        minHeight: `calc(100dvh - ${kbInset > 0 ? 16 : 118}px - ${kbInset}px)`,
+        minHeight: `calc(100dvh - ${kbInset > 0 ? 22 : 134}px - ${kbInset}px)`,
         // Track the iOS keyboard's own timing/curve so the input rises
         // with it, not a beat behind.
         transition: 'min-height .34s cubic-bezier(0.17, 0.59, 0.4, 1)',
@@ -390,7 +386,6 @@ export function AiChat() {
               ref={inputRef}
               type="text"
               className="input"
-              autoFocus
               value={state.aiInput}
               onChange={(e) => actions.setAiInput(e.target.value)}
               onFocus={() => setInputFocused(true)}
