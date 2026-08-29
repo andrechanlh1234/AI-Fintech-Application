@@ -1,10 +1,14 @@
+import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { AI_CHAT_HISTORY } from '../../lib/seedData';
 
+// Commonly-asked questions shown as tappable chips just above the input on
+// an empty chat.
 const AI_SUGGESTIONS = [
-  'How much Lifestyle relief do I have left?',
+  'How much tax relief can I still claim?',
   'Am I on track with my budget this month?',
-  "What's my net worth trend look like?",
+  "What's my net worth trend?",
+  'Where am I overspending?',
 ];
 
 // Gemini replies routinely emphasise figures with **bold** markdown; this
@@ -27,7 +31,20 @@ export function AiChat() {
   const isHistory = state.aiView === 'history';
   const hasNoMessages = state.aiMessages.length === 0;
 
+  const inputRef = useRef<HTMLInputElement>(null);
   const send = () => actions.submitAiText(state.aiInput);
+  const focusInput = () => inputRef.current?.focus();
+
+  // Pop the keyboard on entering an empty chat, and keep it up through the
+  // conversation (refocus once a reply lands). Programmatic focus opening
+  // the keyboard is best-effort in an iOS WKWebView -- the tab tap is the
+  // user gesture that lets it through most of the time.
+  useEffect(() => {
+    if (isChat && hasNoMessages) focusInput();
+  }, [isChat, hasNoMessages]);
+  useEffect(() => {
+    if (isChat && !state.aiTyping) focusInput();
+  }, [isChat, state.aiTyping]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', padding: 'calc(env(safe-area-inset-top) + 16px) 16px 24px' }} className="screen-in">
@@ -126,9 +143,14 @@ export function AiChat() {
 
       {isChat && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14 }}>
+          <div
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14,
+              justifyContent: hasNoMessages ? 'center' : 'flex-start',
+            }}
+          >
             {hasNoMessages && (
-              <div style={{ textAlign: 'center', padding: '26px 6px' }}>
+              <div style={{ textAlign: 'center', padding: '0 6px' }}>
                 <div
                   style={{
                     width: 46,
@@ -145,33 +167,9 @@ export function AiChat() {
                     <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
                   </svg>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Ask me anything</div>
-                <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', maxWidth: '28ch', margin: '0 auto 18px', lineHeight: 1.5 }}>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 20, marginBottom: 6 }}>How can I help today?</div>
+                <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', maxWidth: '30ch', margin: '0 auto', lineHeight: 1.5 }}>
                   I can see your accounts, budgets, receipts and tax profile.
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {AI_SUGGESTIONS.map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => actions.submitAiText(label)}
-                      className="pressable"
-                      style={{
-                        all: 'unset',
-                        padding: '11px 14px',
-                        background: 'var(--color-surface)',
-                        border: '1.5px solid var(--color-neutral-300)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: 12.5,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
                 </div>
               </div>
             )}
@@ -203,10 +201,43 @@ export function AiChat() {
               </div>
             )}
           </div>
+          {hasNoMessages && (
+            <div
+              style={{
+                display: 'flex', gap: 8, overflowX: 'auto', flexShrink: 0, paddingBottom: 10,
+                WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+              }}
+            >
+              {AI_SUGGESTIONS.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => { actions.submitAiText(label); focusInput(); }}
+                  className="pressable"
+                  style={{
+                    all: 'unset',
+                    flexShrink: 0,
+                    padding: '9px 14px',
+                    background: 'var(--color-surface)',
+                    border: '1.5px solid var(--color-neutral-300)',
+                    borderRadius: 999,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', borderTop: '1px solid var(--color-divider)', paddingTop: 12, flexShrink: 0 }}>
             <input
+              ref={inputRef}
               type="text"
               className="input"
+              autoFocus
               value={state.aiInput}
               onChange={(e) => actions.setAiInput(e.target.value)}
               onKeyDown={(e) => {
