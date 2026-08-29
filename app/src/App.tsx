@@ -43,7 +43,7 @@ function AppShell() {
   const showTabBar = !state.scanOpen && !state.reviewOpen && !state.morePanelOpen
     && !state.notifPanelOpen && !state.taxPackOpen && !state.budgetItemDetailOpen
     && !state.addSubOpen && !state.taxItemDetailOpen && !state.donateOpen
-    && !state.statsCategoryDetail;
+    && !state.statsCategoryDetail && !state.statementUploading;
 
   return (
     <div data-theme={state.theme} style={{ minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)', fontFamily: 'var(--font-body)' }}>

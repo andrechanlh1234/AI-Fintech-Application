@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectReviewFlow } from '../../store/selectors';
 import { BRAND, paymentMethodOptions } from '../../lib/constants';
@@ -27,21 +27,43 @@ export function ReviewFlow() {
   const [amountSheetOpen, setAmountSheetOpen] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  // Swipe can start ANYWHERE on the card. We wait for a clear horizontal
+  // drag before committing to a swipe (and only then capture the pointer),
+  // so a tap on a field still focuses it and a vertical drag still scrolls
+  // the card — but a sideways drag over any part of it flings the card.
+  const drag = useRef<{ x: number; y: number; mode: 'idle' | 'swipe' | 'other' } | null>(null);
 
   if (!state.reviewOpen) return null;
 
   const review = selectReviewFlow(state);
   const { curItem, nextItem, dragX, rotate, acceptOpacity, rejectOpacity } = review;
 
-  // Only start a swipe when the pointer went down on the card background —
-  // not on an editable field / button (those are marked data-no-swipe).
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-no-swipe]')) return;
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-    actions.reviewDown(e.clientX);
+    drag.current = { x: e.clientX, y: e.clientY, mode: 'idle' };
   };
-  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => actions.reviewMove(e.clientX);
-  const onUp = () => actions.reviewUp();
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    if (d.mode === 'idle') {
+      const dx = e.clientX - d.x;
+      const dy = e.clientY - d.y;
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) > Math.abs(dy) * 1.4) {
+        d.mode = 'swipe';
+        (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+        actions.reviewDown(d.x);
+        actions.reviewMove(e.clientX);
+      } else {
+        d.mode = 'other'; // vertical — leave it for scrolling / the field
+      }
+      return;
+    }
+    if (d.mode === 'swipe') actions.reviewMove(e.clientX);
+  };
+  const onUp = () => {
+    if (drag.current?.mode === 'swipe') actions.reviewUp();
+    drag.current = null;
+  };
 
   const decide = (dir: 'left' | 'right') => {
     if (fling) return;
