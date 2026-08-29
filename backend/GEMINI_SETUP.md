@@ -1,7 +1,11 @@
-# Setting up real AI chat replies (free)
+# Setting up real AI chat replies (free — Gemini)
 
 The code side is done — this is what you need to do to get the AI tab
 answering with a real model instead of its canned/scripted replies.
+
+> **Prefer Groq.** It's faster (~1s vs several seconds) and just as free —
+> see `GROQ_SETUP.md`. Gemini is the fallback: it's used only when
+> `GROQ_API_KEY` is not set. You don't need both.
 
 ## 1. Get a free Gemini API key
 

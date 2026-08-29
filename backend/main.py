@@ -27,7 +27,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
 
 from backend import auth
-from backend.ai_chat import GeminiNotConfigured, generate_ai_reply
+from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
 from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
@@ -287,11 +287,11 @@ async def scan_statement(request: Request, file: UploadFile = File(...)):
 def ai_chat(body: AiChatRequest, request: Request):
     enforce_rate_limit(request, "ai-chat", max_attempts=20, window_seconds=10 * 60)
     try:
-        reply = generate_ai_reply(body.message, body.history, body.context)
-        return {"reply": reply, "source": "gemini"}
-    except GeminiNotConfigured:
-        ai_logger.info("Gemini not configured — falling back to canned replies")
+        reply, source = generate_ai_reply(body.message, body.history, body.context)
+        return {"reply": reply, "source": source}
+    except AiNotConfigured:
+        ai_logger.info("No AI provider configured — falling back to canned replies")
         return {"reply": None, "source": "canned"}
     except Exception:
-        ai_logger.exception("Gemini call failed — falling back to canned replies")
+        ai_logger.exception("AI call failed — falling back to canned replies")
         return {"reply": None, "source": "canned"}

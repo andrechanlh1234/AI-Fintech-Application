@@ -194,19 +194,19 @@ export async function uploadStatement(file: File): Promise<{ records: ScannedSta
 
 export interface AiChatResponse {
   reply: string | null;
-  source: 'gemini' | 'canned';
+  source: 'groq' | 'gemini' | 'canned';
 }
 
-// `source: "canned"` means the backend has no Gemini key configured (or the
-// call failed) — the caller should fall back to the client-side canned
-// reply generator (aiCraftReply in lib/seedData.ts), same as if this
-// request throws outright (network error, backend not running).
+// `source: "canned"` means the backend has no AI provider key configured
+// (or the call failed) — the caller should fall back to the client-side
+// canned reply generator (aiCraftReply in lib/seedData.ts), same as if
+// this request throws outright (network error, backend not running).
 //
 // `history` and `context` ground the reply in what's actually true: history
-// is the prior turns of this conversation (so Gemini has continuity),
+// is the prior turns of this conversation (so the model has continuity),
 // context is a real-data snapshot (net worth, budget, tax, subscriptions —
 // see selectAiContext) so a question like "what's my net worth" gets the
-// real figure instead of Gemini guessing one.
+// real figure instead of the model guessing one.
 export async function requestAiReply(
   message: string,
   history: { from: 'user' | 'ai'; text: string }[] = [],

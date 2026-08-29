@@ -319,9 +319,9 @@ export function useActions() {
         if (!t) return;
         dispatch({ type: 'SUBMIT_AI_TEXT_USER', text: t });
         // A minimum delay keeps the existing typing-indicator pacing even
-        // when a real Gemini reply comes back fast; requestAiReply throwing
+        // when a real model reply comes back fast; requestAiReply throwing
         // (network error, backend down) or returning source:"canned"
-        // (no GEMINI_API_KEY configured, or the call itself failed) both
+        // (no AI provider key configured, or the call itself failed) both
         // fall back to the same client-side canned reply — the chat must
         // never go silent or error out.
         const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
@@ -329,7 +329,7 @@ export function useActions() {
         const context = selectAiContext(stateRef.current);
         Promise.all([requestAiReply(t, history, context).catch(() => null), minDelay])
           .then(([res]) => {
-            const reply = res && res.source === 'gemini' && res.reply ? res.reply : aiCraftReply(t);
+            const reply = res && res.source !== 'canned' && res.reply ? res.reply : aiCraftReply(t);
             dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: reply });
           });
       },

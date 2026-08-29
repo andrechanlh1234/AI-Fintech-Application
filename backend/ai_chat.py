@@ -1,16 +1,17 @@
-"""Real AI chat replies via Google's Gemini API free tier.
+"""Real AI chat replies.
 
-Config via GEMINI_API_KEY (see backend/.env, loaded by main.py via
-python-dotenv before this module is imported). If it's unset, this raises
-GeminiNotConfigured rather than silently returning something — the caller
-(backend/main.py's /ai/chat) turns that into a "source": "canned" response
-so the frontend falls back to its existing client-side canned-reply
-generator (aiCraftReply in app/src/lib/seedData.ts). The same fallback
-happens if the API call itself fails for any other reason; the two are
-kept as distinguishable exceptions only so the failure gets logged
-differently — a chat reply must never come back as an HTTP error.
+Primary provider is Groq (OpenAI-compatible Chat Completions, free tier,
+very low latency — set GROQ_API_KEY). If that isn't configured, this falls
+back to Google's Gemini API (set GEMINI_API_KEY / GEMINI_MODEL). If
+neither is configured it raises AiNotConfigured, which the caller
+(backend/main.py's /ai/chat) turns into a "source": "canned" response so
+the frontend uses its client-side canned-reply generator (aiCraftReply in
+app/src/lib/seedData.ts). The same fallback happens if the API call itself
+fails for any other reason — a chat reply must never come back as an HTTP
+error.
 
-See backend/GEMINI_SETUP.md for how to get a free API key.
+See backend/GROQ_SETUP.md (or backend/GEMINI_SETUP.md) for how to get a
+free key.
 """
 
 import json
@@ -27,9 +28,14 @@ if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
     logger.propagate = False
 
+# Groq — primary. `llama-3.3-70b-versatile` is a strong general model on
+# Groq's free tier and answers a short finance question in ~1s.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+# Gemini — fallback, kept so an existing GEMINI_API_KEY still works with no
+# extra setup. (backend/ocr_provider.py also imports these two names.)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-# Configurable rather than hardcoded so a future Gemini model rename/retire
-# doesn't need a code change — see backend/GEMINI_SETUP.md.
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 # Kept accurate to what the app actually does today (app/README.md) so the
@@ -58,27 +64,81 @@ SYSTEM_PROMPT = (
 )
 
 
-class GeminiNotConfigured(Exception):
-    pass
+class AiNotConfigured(Exception):
+    """No chat provider has an API key set."""
 
 
-def generate_ai_reply(user_text: str, history: list[dict] | None = None, context: dict | None = None) -> str:
-    """history: optional list of {"from": "user"|"ai", "text": str}, oldest
-    first. context: optional real-data snapshot (see selectAiContext on the
-    frontend) — every figure in it is real, so it's safe to hand to Gemini
-    as ground truth. Raises GeminiNotConfigured if no API key is set; raises
-    on any other API-call failure. Callers must catch both and fall back —
-    this function never returns a placeholder string on failure."""
-    if not GEMINI_API_KEY:
-        raise GeminiNotConfigured()
+# Back-compat alias — earlier code (and imports) referred to this name.
+GeminiNotConfigured = AiNotConfigured
 
-    system_text = SYSTEM_PROMPT
+
+def _system_text(context: dict | None) -> str:
     if context:
-        system_text += "\n\nReal data snapshot (JSON):\n" + json.dumps(context)
+        return SYSTEM_PROMPT + "\n\nReal data snapshot (JSON):\n" + json.dumps(context)
+    return SYSTEM_PROMPT
 
+
+def _history_pairs(history: list[dict] | None):
+    """(role, text) for the last 10 turns, oldest first. `from` is
+    "user"|"ai" on the frontend; map "ai" -> assistant/model per provider."""
+    for m in (history or [])[-10:]:
+        yield ("user" if m.get("from") == "user" else "assistant"), m.get("text", "")
+
+
+def generate_ai_reply(
+    user_text: str,
+    history: list[dict] | None = None,
+    context: dict | None = None,
+) -> tuple[str, str]:
+    """Returns (reply_text, provider) where provider is "groq" or "gemini".
+    history: optional list of {"from": "user"|"ai", "text": str}, oldest
+    first. context: optional real-data snapshot (see selectAiContext on the
+    frontend) — every figure in it is real, so it's safe to hand to the
+    model as ground truth. Raises AiNotConfigured if no provider key is
+    set; raises on any other API-call failure. Callers must catch both and
+    fall back — this function never returns a placeholder string."""
+    system_text = _system_text(context)
+
+    if GROQ_API_KEY:
+        return _call_groq(user_text, history, system_text), "groq"
+    if GEMINI_API_KEY:
+        return _call_gemini(user_text, history, system_text), "gemini"
+    raise AiNotConfigured()
+
+
+def _call_groq(user_text: str, history: list[dict] | None, system_text: str) -> str:
+    messages = [{"role": "system", "content": system_text}]
+    for role, text in _history_pairs(history):
+        messages.append({"role": role, "content": text})
+    messages.append({"role": "user", "content": user_text})
+
+    res = httpx.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+        json={
+            "model": GROQ_MODEL,
+            "messages": messages,
+            "temperature": 0.4,
+            "max_tokens": 800,
+            "stream": False,
+        },
+        timeout=20,
+    )
+    res.raise_for_status()
+    data = res.json()
+    choices = data.get("choices") or []
+    if not choices:
+        raise RuntimeError(f"Groq returned no choices: {data}")
+    text = (choices[0].get("message", {}).get("content") or "").strip()
+    if not text:
+        raise RuntimeError("Groq returned an empty reply")
+    return text
+
+
+def _call_gemini(user_text: str, history: list[dict] | None, system_text: str) -> str:
     contents = []
-    for m in (history or [])[-10:]:  # last 10 turns is enough context for a finance chat, keeps free-tier token use low
-        contents.append({"role": "user" if m.get("from") == "user" else "model", "parts": [{"text": m.get("text", "")}]})
+    for role, text in _history_pairs(history):
+        contents.append({"role": "user" if role == "user" else "model", "parts": [{"text": text}]})
     contents.append({"role": "user", "parts": [{"text": user_text}]})
 
     res = httpx.post(
