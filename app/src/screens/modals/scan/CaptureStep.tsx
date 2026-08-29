@@ -240,7 +240,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         style={{
           position: 'absolute', inset: 0, zIndex: 5,
           background: pickerOpen ? 'rgba(0,0,0,0.22)' : 'transparent',
-          transition: 'background .28s ease',
+          transition: 'background .5s ease',
           pointerEvents: pickerOpen ? 'auto' : 'none',
         }}
       />
@@ -268,7 +268,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
           <svg
             width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)"
             strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
-            style={{ transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform .3s cubic-bezier(.22,1,.28,1)' }}
+            style={{ transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform .55s cubic-bezier(.22,1,.28,1)' }}
           >
             <path d="m6 15 6-6 6 6" />
           </svg>
@@ -280,7 +280,12 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
             overflow: 'hidden',
             maxHeight: pickerOpen ? 200 : 0,
             opacity: pickerOpen ? 1 : 0,
-            transition: 'max-height .34s cubic-bezier(.22,1,.28,1), opacity .26s ease',
+            // Unhurried, well-damped — matches the app's "premium, calm"
+            // motion spec. Content fades in a beat behind the height so it
+            // reveals rather than appearing pre-formed.
+            transition: pickerOpen
+              ? 'max-height .55s cubic-bezier(.22,1,.28,1), opacity .4s ease .12s'
+              : 'max-height .5s cubic-bezier(.22,1,.28,1), opacity .3s ease',
           }}
         >
           <div style={{ padding: '4px 8px 8px' }}>
