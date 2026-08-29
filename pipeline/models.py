@@ -16,6 +16,11 @@ class Record:
     relief_tag: str | None = None
     confidence: float = 1.0  # 1.0 for manual entry / clean parse, lower for noisy OCR
     raw_text: str = ""
+    # "expense" | "income" | "payment". Depends on the statement type the row
+    # came from (a "+RM" row is income on a bank statement but a bill payment
+    # on a credit-card one), which a bare Record can't know — so the parser
+    # layer sets this via statement_parser.annotate_kind before serialising.
+    kind: str = "expense"
     extra: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -31,6 +36,7 @@ class Record:
             "category": self.category,
             "relief_tag": self.relief_tag,
             "confidence": round(self.confidence, 2),
+            "kind": self.kind,
             "tax_amount": money_or_none("tax_amount"),
             "tax_rate": money_or_none("tax_rate"),
             "service_charge_amount": money_or_none("service_charge_amount"),

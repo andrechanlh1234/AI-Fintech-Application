@@ -269,19 +269,19 @@ async def scan_statement(request: Request, file: UploadFile = File(...)):
         raise HTTPException(413, "File too large — please use one under 8 MB")
 
     if suffix == ".csv":
-        records = parse_csv(data.decode("utf-8", errors="replace"))
+        records, statement_type = parse_csv(data.decode("utf-8", errors="replace"))
     elif suffix == ".pdf":
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as tmp:
             tmp.write(data)
             tmp.flush()
             try:
-                records = parse_statement_pdf(tmp.name)
+                records, statement_type = parse_statement_pdf(tmp.name)
             except Exception as e:
                 raise HTTPException(422, f"Could not read this statement: {e}") from e
     else:
         raise HTTPException(400, "Only .csv and .pdf statements are supported")
 
-    return {"records": [r.to_dict() for r in records]}
+    return {"statementType": statement_type, "records": [r.to_dict() for r in records]}
 
 
 # ---- AI chat ----

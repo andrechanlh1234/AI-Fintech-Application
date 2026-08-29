@@ -76,6 +76,73 @@ TRANSACTION_MARKERS = {
 }
 
 
+# --- statement-type detection -------------------------------------------------
+# The frontend needs to tell a credit-card statement from a bank/e-wallet one:
+# a "+RM" row is income on a bank statement, but a bill PAYMENT (not spending,
+# not income) on a credit-card one, and a transfer/top-up on an e-wallet one.
+# detect_statement_type() does a case-insensitive keyword sweep over the
+# statement's raw text; the hand-tuned parsers (parse_cimb_pdf -> "bank",
+# parse_tng_pdf -> "ewallet") already know their source and skip it.
+
+# A credit-card statement must carry at least one of these STRONG hints — the
+# weaker ones ("statement of account", "cash advance", "outstanding balance",
+# "statement date", "payment due date") show up on other documents too, so
+# they're not enough on their own.
+_CREDIT_CARD_STRONG_HINTS = ("credit card", "credit limit", "minimum payment")
+
+_BANK_HINTS = (
+    "savings account", "current account", "account statement", "available balance",
+    "opening balance", "closing balance", "ledger balance",
+)
+
+_EWALLET_HINTS = (
+    "e-wallet", "ewallet", "wallet balance", "transaction history", "touch 'n go",
+    "tng ewallet", "grabpay",
+)
+
+
+def detect_statement_type(raw_text: str) -> str:
+    """Classify a statement's raw text as one of "credit_card", "bank",
+    "ewallet" or "unknown". Priority when several would match:
+    credit_card > ewallet > bank > unknown."""
+    text = (raw_text or "").lower()
+    if any(hint in text for hint in _CREDIT_CARD_STRONG_HINTS):
+        return "credit_card"
+    if any(hint in text for hint in _EWALLET_HINTS):
+        return "ewallet"
+    if any(hint in text for hint in _BANK_HINTS):
+        return "bank"
+    return "unknown"
+
+
+def annotate_kind(record: Record, statement_type: str) -> str:
+    """Return "expense" | "income" | "payment" for a Record, given the
+    statement type it came from. Uses the Record's signed `amount`
+    (positive = money in):
+
+    - credit_card: money in is a bill PAYMENT, money out is spending.
+    - ewallet:     money in is a top-up/reload (a transfer, not income),
+                   money out is spending.
+    - bank / unknown: money in is income, money out is spending.
+
+    A zero amount is treated as an expense in every case.
+    """
+    amount = record.amount
+    if statement_type == "credit_card":
+        return "payment" if amount > 0 else "expense"
+    if statement_type == "ewallet":
+        return "payment" if amount > 0 else "expense"
+    return "income" if amount > 0 else "expense"
+
+
+def _tag_kinds(records: list[Record], statement_type: str) -> list[Record]:
+    """Set `record.kind` on every record from the detected statement type,
+    in place, and return the list for chaining."""
+    for record in records:
+        record.kind = annotate_kind(record, statement_type)
+    return records
+
+
 @dataclass
 class _Line:
     top: float
@@ -313,43 +380,75 @@ def _record_from_vision_transaction(t: dict, raw_text: str) -> Record:
     )
 
 
-def parse_statement_pdf(path: str) -> list[Record]:
+def _extract_pdf_text(path: str) -> str:
+    """Flat text dump of every page — only used to feed detect_statement_type
+    on the vision-fallback path, where there's no hand-tuned parser to tell us
+    the statement type."""
+    import pdfplumber
+
+    parts: list[str] = []
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            parts.append(page.extract_text() or "")
+    return "\n".join(parts)
+
+
+def parse_statement_pdf(path: str) -> tuple[list[Record], str]:
     """Tries the hand-tuned layout parsers for banks this module already
     knows (CIMB Clicks, TNG Wallet) first — they're higher-confidence since
     they're built from real column positions, not a model's best guess.
     Falls back to vision-model extraction (backend/ocr_provider.py) for any
     other bank's layout, or if a known parser finds nothing on the page
-    (e.g. the layout drifted). Returns [] rather than raising if nothing
-    could be extracted at all — never fabricates a transaction."""
-    for parser in (parse_cimb_pdf, parse_tng_pdf):
+    (e.g. the layout drifted).
+
+    Returns `(records, statement_type)`. Every record has its `.kind` set
+    from the statement type before returning. Returns `([], <type>)` rather
+    than raising if nothing could be extracted at all — never fabricates a
+    transaction."""
+    # The hand-tuned parsers already know their source layout, so the
+    # statement type is fixed, not sniffed: CIMB Clicks is a bank export,
+    # the TNG Wallet "Transaction History" is an e-wallet export.
+    for parser, statement_type in ((parse_cimb_pdf, "bank"), (parse_tng_pdf, "ewallet")):
         try:
             records = parser(path)
         except Exception:
             records = []
         if records:
-            return records
+            return _tag_kinds(records, statement_type), statement_type
+
+    statement_type = "unknown"
+    try:
+        statement_type = detect_statement_type(_extract_pdf_text(path))
+    except Exception:
+        pass
 
     try:
         from backend.ocr_provider import VisionOCRNotConfigured, extract_statement_transactions
     except ImportError:
-        return []
+        return [], statement_type
     try:
         with open(path, "rb") as f:
             file_bytes = f.read()
         transactions = extract_statement_transactions(file_bytes, "application/pdf")
-        return [_record_from_vision_transaction(t, str(t)) for t in transactions]
+        records = [_record_from_vision_transaction(t, str(t)) for t in transactions]
+        return _tag_kinds(records, statement_type), statement_type
     except VisionOCRNotConfigured:
-        return []
+        return [], statement_type
     except Exception:
         import logging
         logging.getLogger("cukai.ocr").exception("Vision statement extraction failed")
-        return []
+        return [], statement_type
 
 
-def parse_csv(text: str) -> list[Record]:
+def parse_csv(text: str) -> tuple[list[Record], str]:
     """Generic e-wallet/bank CSV parser. Auto-detects date/description/amount
     columns by common header aliases rather than assuming one bank's export
-    format — TnG, GrabPay and card-issuer CSVs all name columns differently."""
+    format — TnG, GrabPay and card-issuer CSVs all name columns differently.
+
+    Returns `(records, statement_type)` — the type is sniffed from the raw
+    CSV text via detect_statement_type (usually "unknown" for a bare export)
+    and every record's `.kind` is set from it before returning."""
+    statement_type = detect_statement_type(text)
     DATE_ALIASES = {"date", "transaction date", "txn date", "posting date"}
     DESC_ALIASES = {"description", "details", "particulars", "transaction details", "merchant"}
     AMOUNT_ALIASES = {"amount", "value"}
@@ -358,7 +457,7 @@ def parse_csv(text: str) -> list[Record]:
 
     reader = csv.DictReader(io.StringIO(text))
     if not reader.fieldnames:
-        return []
+        return [], statement_type
     norm = {f: f.strip().lower() for f in reader.fieldnames}
 
     def find(aliases):
@@ -407,4 +506,4 @@ def parse_csv(text: str) -> list[Record]:
                 raw_text=str(row),
             )
         )
-    return records
+    return _tag_kinds(records, statement_type), statement_type
