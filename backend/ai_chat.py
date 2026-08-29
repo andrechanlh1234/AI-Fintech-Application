@@ -28,10 +28,12 @@ if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
     logger.propagate = False
 
-# Groq — primary. `llama-3.3-70b-versatile` is a strong general model on
-# Groq's free tier and answers a short finance question in ~1s.
+# Groq — primary. `openai/gpt-oss-120b` is a strong general model on Groq's
+# free tier and answers a short finance question in well under a second.
+# Override with GROQ_MODEL; check the current list at
+# https://console.groq.com/docs/models (Groq retires/renames models).
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # Gemini — fallback, kept so an existing GEMINI_API_KEY still works with no
 # extra setup. (backend/ocr_provider.py also imports these two names.)

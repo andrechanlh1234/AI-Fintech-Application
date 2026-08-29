@@ -3,7 +3,7 @@
 The code side is done. This is what you need to do to get the AI tab
 answering with a real model instead of its canned/scripted replies.
 
-Groq runs Llama 3.3 70B on their own inference hardware — it's the
+Groq runs GPT-OSS 120B (OpenAI open-weight) on their own inference hardware — it's the
 fastest free option, usually answering a short finance question in about
 a second.
 
@@ -25,7 +25,7 @@ GROQ_API_KEY=your_key_here
 Optional — pin a different model:
 
 ```
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
 ## 3. Restart the backend
