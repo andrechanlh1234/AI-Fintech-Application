@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { BottomSheet } from '../../../components/BottomSheet';
 
 // `torch` is a real, widely-implemented MediaTrack capability/constraint
 // (Chrome/Android, most non-Safari mobile browsers) but isn't in
@@ -234,53 +233,82 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         )}
       </div>
 
-      {/* "More ways to add expense" — pinned peeking sheet. No `.pressable`
-          here on purpose: a scale(0.97) on a full-bleed left:0/right:0 bar
-          pulls its edges in on tap and flashes a seam down the side. The
-          sheet sliding up is the feedback; a light active fill is enough. */}
-      <button
-        type="button"
-        onClick={() => setPickerOpen(true)}
-        className="sheet-peek-trigger"
+      {/* Faint tap-catcher so tapping the viewfinder collapses the panel.
+          Deliberately light — this is an inline expander, not a modal. */}
+      <div
+        onClick={() => setPickerOpen(false)}
+        style={{
+          position: 'absolute', inset: 0, zIndex: 5,
+          background: pickerOpen ? 'rgba(0,0,0,0.22)' : 'transparent',
+          transition: 'background .28s ease',
+          pointerEvents: pickerOpen ? 'auto' : 'none',
+        }}
+      />
+
+      {/* "More ways to add expense" — an inline panel pinned to the bottom
+          that grows upward to reveal the options, rather than a separate
+          sheet popping in over the screen. */}
+      <div
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 6,
-          background: 'var(--color-bg)', border: 'none', borderRadius: '20px 20px 0 0',
-          padding: '11px 0 calc(env(safe-area-inset-bottom) + 14px)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer',
+          background: 'var(--color-bg)', borderRadius: '20px 20px 0 0',
           boxShadow: '0 -4px 16px rgba(0,0,0,0.18)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
         }}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="m6 15 6-6 6 6" /></svg>
-        <span style={{ font: '600 14px var(--font-body)', color: 'var(--color-text-muted)' }}>More ways to add expense</span>
-      </button>
+        <button
+          type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          className="sheet-peek-trigger"
+          style={{
+            border: 'none', background: 'transparent', width: '100%', cursor: 'pointer',
+            padding: '11px 0 9px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+          }}
+        >
+          <svg
+            width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)"
+            strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform .3s cubic-bezier(.22,1,.28,1)' }}
+          >
+            <path d="m6 15 6-6 6 6" />
+          </svg>
+          <span style={{ font: '600 14px var(--font-body)', color: 'var(--color-text-muted)' }}>More ways to add expense</span>
+        </button>
 
-      <BottomSheet open={pickerOpen} onClose={() => setPickerOpen(false)} recede={false}>
-        <div style={{ padding: '10px 8px 24px' }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--color-neutral-300)', margin: '4px auto 18px' }} />
-          <button
-            type="button"
-            onClick={() => { setPickerOpen(false); importFileInputRef.current?.click(); }}
-            className="pressable"
-            style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
-          >
-            <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
-            </span>
-            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Choose from Photos or Files</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => { setPickerOpen(false); onManual(); }}
-            className="pressable"
-            style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
-          >
-            <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-            </span>
-            <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Enter details manually</span>
-          </button>
+        <div
+          style={{
+            overflow: 'hidden',
+            maxHeight: pickerOpen ? 200 : 0,
+            opacity: pickerOpen ? 1 : 0,
+            transition: 'max-height .34s cubic-bezier(.22,1,.28,1), opacity .26s ease',
+          }}
+        >
+          <div style={{ padding: '4px 8px 8px' }}>
+            <button
+              type="button"
+              onClick={() => { setPickerOpen(false); importFileInputRef.current?.click(); }}
+              className="pressable"
+              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
+            >
+              <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
+              </span>
+              <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Choose from Photos or Files</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setPickerOpen(false); onManual(); }}
+              className="pressable"
+              style={{ all: 'unset', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', width: '100%', boxSizing: 'border-box' }}
+            >
+              <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-accent-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-800)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              </span>
+              <span style={{ font: '600 15px var(--font-body)', color: 'var(--color-text)' }}>Enter details manually</span>
+            </button>
+          </div>
         </div>
-      </BottomSheet>
+      </div>
     </div>
   );
 }
