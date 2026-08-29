@@ -54,14 +54,13 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
         setLiveCameraReady(true);
-        // Some devices open at a modest default and only raise resolution
-        // on a follow-up request — nudge it up once the track is live.
-        const vtrack = stream.getVideoTracks()[0];
-        const s = vtrack?.getSettings?.();
-        if (vtrack && s && (s.width ?? 0) < 1920) {
-          vtrack.applyConstraints({ width: { ideal: 3840 }, height: { ideal: 2160 }, advanced: [{ focusMode: 'continuous' } as FocusConstraintSet] })
-            .catch(() => { /* device won't go higher — keep what we have */ });
-        }
+        // NOTE: deliberately no follow-up applyConstraints() to bump the
+        // resolution here. The initial getUserMedia already asks for
+        // width/height { ideal: 3840/2160 }; firing a second constraint
+        // change right after the stream goes live forces the camera to
+        // renegotiate and drops a black frame just as the viewfinder
+        // appears — the "sudden black screen" glitch on open. Whatever the
+        // sensor gave us on the first request is what we keep.
         // Torch is device/browser-dependent (notably absent on iOS Safari,
         // even inside a PWA) -- only show the flash button where the
         // active track actually reports the capability.
@@ -136,7 +135,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         playsInline
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-          opacity: liveCameraReady ? 1 : 0, transition: 'opacity .25s ease',
+          opacity: liveCameraReady ? 1 : 0, transition: 'opacity .35s ease-out',
         }}
       />
 

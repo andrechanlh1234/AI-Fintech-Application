@@ -406,6 +406,15 @@ select.input { -webkit-appearance: none; appearance: none; }
 .slide-in-right { animation: slide-in-right .38s cubic-bezier(.16,1,.3,1) both; }
 .slide-in-left { animation: slide-in-left .38s cubic-bezier(.16,1,.3,1) both; }
 
+/* Full-screen flow (scan / OCR) leaving: reverse of screen-in — fade out
+   with a small settle downward + scale-in. Placed after .screen-in so its
+   `animation` wins when both classes are on the element during close. */
+@keyframes screen-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(12px) scale(.98); }
+}
+.scan-out { animation: screen-out .3s cubic-bezier(.16,1,.3,1) both; }
+
 /* Progress/relief bars fill smoothly instead of snapping to their width. */
 .bar-fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
 
@@ -497,6 +506,11 @@ select.input { -webkit-appearance: none; appearance: none; }
     animation-duration: 140ms !important;
     animation-timing-function: ease !important;
   }
+  .scan-out {
+    animation-name: reduced-fade-out !important;
+    animation-duration: 120ms !important;
+    animation-timing-function: ease !important;
+  }
   .btn, .pressable, .tab-btn, .tab-btn svg, .btn svg {
     transition-duration: 90ms !important;
   }
@@ -506,6 +520,10 @@ select.input { -webkit-appearance: none; appearance: none; }
 @keyframes reduced-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+@keyframes reduced-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* ============================================================================
