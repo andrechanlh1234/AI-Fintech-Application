@@ -35,8 +35,12 @@ function popShellRecede() {
  * `var(--color-*)` off :root every frame, never a value captured at open
  * time, so a theme switch while the sheet is open recolours it live (L7).
  */
-export function BottomSheet({ open, onClose, children, align = 'bottom' }: {
+export function BottomSheet({ open, onClose, children, align = 'bottom', recede = true }: {
   open: boolean; onClose: () => void; children: ReactNode; align?: 'bottom' | 'full';
+  /** Scale + dim the app shell behind the sheet (default). Pass false when
+   * the sheet opens over a full-bleed surface that shouldn't move — e.g.
+   * the scan camera's "more ways to add expense". */
+  recede?: boolean;
 }) {
   // `rendered` lingers past `open` going false so the exit animation can
   // play. Enter is derived during render (no setState in an effect); exit is
@@ -53,10 +57,10 @@ export function BottomSheet({ open, onClose, children, align = 'bottom' }: {
   }, [closing]);
 
   useEffect(() => {
-    if (!rendered) return;
+    if (!rendered || !recede) return;
     pushShellRecede();
     return () => popShellRecede();
-  }, [rendered]);
+  }, [rendered, recede]);
 
   if (!rendered) return null;
 

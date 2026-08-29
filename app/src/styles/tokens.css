@@ -429,6 +429,12 @@ select.input { -webkit-appearance: none; appearance: none; }
 .pressable:hover { filter: brightness(0.97); }
 .pressable:active { transform: scale(0.97); }
 
+/* Full-bleed bottom trigger (scan camera "more ways to add expense"): a
+   flat active tint instead of a scale, so a left:0/right:0 bar doesn't
+   pull its edges in and flash a seam on tap. */
+.sheet-peek-trigger { transition: background-color .15s ease; -webkit-tap-highlight-color: transparent; }
+.sheet-peek-trigger:active { background: var(--color-neutral-200); }
+
 /* Bottom tab bar — smooth color/opacity crossfade between tabs, with a
    small icon "bounce" on tap. */
 .tab-btn { position: relative; z-index: 1; transition: color .28s ease, opacity .28s ease, border-color .28s ease; }

@@ -171,8 +171,8 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         </div>
       )}
 
-      {/* Scope note, just below the guide. */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: '75%', display: 'flex', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none' }}>
+      {/* Scope note — kept well above the capture controls. */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: '60%', display: 'flex', justifyContent: 'center', padding: '0 20px', pointerEvents: 'none' }}>
         <span style={{ background: 'rgba(255,255,255,0.94)', color: '#1a1c1a', font: '600 13px var(--font-body)', padding: '6px 14px', borderRadius: 999, display: 'inline-flex', alignItems: 'center', gap: 7, boxShadow: '0 2px 12px rgba(0,0,0,0.22)' }}>
           <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🇲🇾</span>
           Malaysian receipts only
@@ -234,11 +234,14 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         )}
       </div>
 
-      {/* "More ways to add expense" — pinned peeking sheet. */}
+      {/* "More ways to add expense" — pinned peeking sheet. No `.pressable`
+          here on purpose: a scale(0.97) on a full-bleed left:0/right:0 bar
+          pulls its edges in on tap and flashes a seam down the side. The
+          sheet sliding up is the feedback; a light active fill is enough. */}
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="pressable"
+        className="sheet-peek-trigger"
         style={{
           position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 6,
           background: 'var(--color-bg)', border: 'none', borderRadius: '20px 20px 0 0',
@@ -251,7 +254,7 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         <span style={{ font: '600 14px var(--font-body)', color: 'var(--color-text-muted)' }}>More ways to add expense</span>
       </button>
 
-      <BottomSheet open={pickerOpen} onClose={() => setPickerOpen(false)}>
+      <BottomSheet open={pickerOpen} onClose={() => setPickerOpen(false)} recede={false}>
         <div style={{ padding: '10px 8px 24px' }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--color-neutral-300)', margin: '4px auto 18px' }} />
           <button
