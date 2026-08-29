@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { AI_CHAT_HISTORY } from '../../lib/seedData';
+import { useKeyboardInset } from '../../lib/useKeyboardInset';
 
 // Commonly-asked questions shown as tappable chips just above the input on
 // an empty chat.
@@ -32,8 +33,15 @@ export function AiChat() {
   const hasNoMessages = state.aiMessages.length === 0;
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const send = () => actions.submitAiText(state.aiInput);
   const focusInput = () => inputRef.current?.focus();
+
+  // How much the keyboard covers. The WebView doesn't resize (Keyboard
+  // `resize: 'none'`), so this screen shrinks its own column by `kb` — the
+  // input rides just above the keyboard, the chat stays visible above the
+  // input, and nothing else in the app moves.
+  const kb = useKeyboardInset();
 
   // Pop the keyboard on entering an empty chat, and keep it up through the
   // conversation (refocus once a reply lands). Programmatic focus opening
@@ -46,14 +54,22 @@ export function AiChat() {
     if (isChat && !state.aiTyping) focusInput();
   }, [isChat, state.aiTyping]);
 
+  // Keep the conversation pinned to the latest line as messages arrive and
+  // as the keyboard opens/closes.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [isChat, kb, state.aiMessages.length, state.aiTyping]);
+
   return (
     <div
       style={{
-        // Fill the viewport down to just above the floating tab bar (the
-        // shell reserves 104px for it) so the empty-state greeting can
-        // actually center and the input pins to the bottom.
-        display: 'flex', flexDirection: 'column',
-        minHeight: 'calc(100dvh - 104px)',
+        // Fill the viewport down to just above the floating tab bar; when
+        // the keyboard is up, shrink by its height instead so the input
+        // sits just above it (nothing else in the app shifts).
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        minHeight: `calc(100dvh - ${kb > 0 ? 16 : 118}px - ${kb}px)`,
+        transition: 'min-height .25s ease-out',
         padding: 'calc(env(safe-area-inset-top) + 16px) 16px 12px',
       }}
       className="screen-in"
@@ -154,9 +170,10 @@ export function AiChat() {
       {isChat && (
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div
+            ref={scrollRef}
             style={{
               flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14,
-              overflowY: 'auto',
+              overflowY: 'auto', WebkitOverflowScrolling: 'touch',
               justifyContent: hasNoMessages ? 'center' : 'flex-start',
             }}
           >
