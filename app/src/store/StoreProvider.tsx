@@ -7,7 +7,7 @@ import { computeNetWorthTimeline, selectAiContext } from './selectors';
 import {
   getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
-  forgotPassword as apiForgotPassword, resetPassword as apiResetPassword, readResetTokenFromUrl,
+  forgotPassword as apiForgotPassword, resetPassword as apiResetPassword,
   requestAiReply, uploadStatement, type ScannedStatementRecord,
 } from '../lib/api';
 import { isoToDisplayDate } from '../lib/format';
@@ -19,10 +19,7 @@ import type { ReceiptDraft } from '../lib/receipts';
 const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, () => ({
-    ...mergePersisted(buildInitialState()),
-    resetToken: readResetTokenFromUrl(), // ?reset_token=... from a password-reset email link
-  }));
+  const [state, dispatch] = useReducer(reducer, undefined, () => mergePersisted(buildInitialState()));
 
   useEffect(() => {
     const t = setTimeout(() => dispatch({ type: 'SET_MOUNTED' }), 60);
@@ -375,12 +372,15 @@ export function useActions() {
       openLegal: (doc: 'privacy' | 'terms') => dispatch({ type: 'OPEN_LEGAL', doc }),
       closeLegal: () => dispatch({ type: 'CLOSE_LEGAL' }),
       requestPasswordReset: (email: string) => apiForgotPassword(email),
-      completePasswordReset: async (newPassword: string) => {
-        if (!stateRef.current.resetToken) throw new Error('Missing reset token');
-        await apiResetPassword(stateRef.current.resetToken, newPassword);
-        dispatch({ type: 'SET_RESET_TOKEN', token: null });
+      // Verifies the emailed code, sets the new password, and (server-side)
+      // signs the user straight in — adopt that session the same way login
+      // does: pull the account's synced state before announcing the user.
+      completePasswordReset: async (email: string, code: string, newPassword: string) => {
+        const user = await apiResetPassword(email.trim(), code.trim(), newPassword);
+        const remote = await fetchRemoteState();
+        dispatch({ type: 'SET_AUTH_USER', user });
+        if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
       },
-      cancelPasswordReset: () => dispatch({ type: 'SET_RESET_TOKEN', token: null }),
       setUserMode: (mode: 'developer' | 'customer') => dispatch({ type: 'SET_USER_MODE', mode }),
     };
     // `dispatch` is stable; every state read now goes through `stateRef`, so

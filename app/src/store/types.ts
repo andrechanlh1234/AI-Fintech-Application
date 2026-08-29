@@ -149,7 +149,6 @@ export interface AppState {
   authPanelOpen: boolean;
   scanError: string | null;
   legalOpen: 'privacy' | 'terms' | null;
-  resetToken: string | null;
   donutExpanded: boolean;
   balanceDetailOpen: string | null;
   balanceDraft: BalanceDraft;

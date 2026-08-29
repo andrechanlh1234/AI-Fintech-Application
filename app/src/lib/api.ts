@@ -85,25 +85,17 @@ export async function forgotPassword(email: string): Promise<void> {
   });
 }
 
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
-  await request('/auth/reset-password', {
+// The password-reset email now carries a 6-digit code (no link), so this
+// works from the installed app with no deep-linking. On success the
+// backend signs the user straight in — same {token,user} shape as login.
+export async function resetPassword(email: string, code: string, newPassword: string): Promise<AuthUser> {
+  const data = await request<{ token: string; user: AuthUser }>('/auth/reset-password', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, new_password: newPassword }),
+    body: JSON.stringify({ email, code, new_password: newPassword }),
   });
-}
-
-// A password-reset email links back with ?reset_token=... in the URL —
-// read it once on mount so the app can show the "set a new password" form
-// instead of the normal login screen, then strip it from the URL.
-export function readResetTokenFromUrl(): string | null {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('reset_token');
-  if (!token) return null;
-  params.delete('reset_token');
-  const query = params.toString();
-  window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash);
-  return token;
+  setToken(data.token);
+  return data.user;
 }
 
 export function googleLoginUrl(): string {

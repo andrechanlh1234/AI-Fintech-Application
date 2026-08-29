@@ -154,7 +154,6 @@ export type Action =
   | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
   | { type: 'OPEN_LEGAL'; doc: 'privacy' | 'terms' } | { type: 'CLOSE_LEGAL' }
-  | { type: 'SET_RESET_TOKEN'; token: string | null }
   | { type: 'SET_NET_WORTH_HISTORY'; history: { date: string; value: number }[] }
   | { type: 'SET_USER_MODE'; mode: 'developer' | 'customer' }
 
@@ -796,8 +795,6 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, legalOpen: action.doc };
     case 'CLOSE_LEGAL':
       return { ...state, legalOpen: null };
-    case 'SET_RESET_TOKEN':
-      return { ...state, resetToken: action.token };
     case 'SET_NET_WORTH_HISTORY': {
       // Recomputed wholesale from the dated balance rows/entries (see
       // computeNetWorthTimeline) every time one of them changes, rather than

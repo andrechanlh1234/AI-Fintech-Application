@@ -31,7 +31,7 @@ from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
 from backend.backup import backup_loop, backup_now
 from backend.db import get_conn, init_db
-from backend.email_service import FRONTEND_URL, send_password_reset_email, send_welcome_email
+from backend.email_service import send_password_reset_email, send_welcome_email
 from backend.google_oauth import router as google_oauth_router
 from backend.rate_limit import enforce_rate_limit
 from pipeline.receipt_ocr import process_receipt_image
@@ -98,7 +98,8 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
+    email: EmailStr
+    code: str
     new_password: str
 
 
@@ -165,24 +166,31 @@ def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTas
     # whether it's a Google-only account with no password to reset) — telling
     # an attacker which emails have accounts is its own information leak.
     if row:
-        reset_link = f"{FRONTEND_URL}/?reset_token={auth.create_reset_token(row['id'])}"
-        background_tasks.add_task(send_password_reset_email, body.email, reset_link)
+        code = auth.create_reset_code(row["id"])
+        background_tasks.add_task(send_password_reset_email, body.email, code)
     return {"ok": True}
 
 
-@app.post("/auth/reset-password")
-def reset_password(body: ResetPasswordRequest):
+@app.post("/auth/reset-password", response_model=AuthResponse)
+def reset_password(body: ResetPasswordRequest, request: Request):
+    enforce_rate_limit(request, "reset-password", max_attempts=10, window_seconds=60 * 60)
     if len(body.new_password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
-    user_id = auth.decode_reset_token(body.token)
-    if not user_id:
-        raise HTTPException(400, "This reset link is invalid or has expired")
     with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id, email FROM users WHERE email = ? AND password_hash IS NOT NULL", (body.email,)
+        ).fetchone()
+        # Same generic error whether the account is missing or the code is
+        # wrong, so this can't be used to probe which emails have accounts.
+        if not row or not auth.verify_reset_code(row["id"], body.code):
+            raise HTTPException(400, "That code is invalid or has expired")
         conn.execute(
             "UPDATE users SET password_hash = ? WHERE id = ?",
-            (auth.hash_password(body.new_password), user_id),
+            (auth.hash_password(body.new_password), row["id"]),
         )
-    return {"ok": True}
+    # Sign them straight in — they've just proven control of the inbox.
+    token = auth.create_token(row["id"])
+    return {"token": token, "user": {"id": row["id"], "email": row["email"]}}
 
 
 @app.get("/auth/me")

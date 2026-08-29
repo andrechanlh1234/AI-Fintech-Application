@@ -7,6 +7,7 @@ dev, where setting an env var every run is friction with no real payoff,
 it falls back to a secret generated once and cached on disk (gitignored).
 """
 
+import hashlib
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -53,11 +54,8 @@ def create_token(user_id: str) -> str:
 def decode_token(token: str) -> str | None:
     try:
         payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
-        # Only a plain session token authenticates a request. A token that
-        # carries a `purpose` claim (currently just the password-reset token,
-        # which is emailed in a link and routinely leaks via server logs,
-        # browser history and Referer headers) must never be accepted here —
-        # otherwise a leaked reset link is a full 60-minute account takeover.
+        # Defence in depth: only a plain session token authenticates a
+        # request. Reject anything carrying a `purpose` claim.
         if payload.get("purpose"):
             return None
         return payload.get("sub")
@@ -65,25 +63,42 @@ def decode_token(token: str) -> str | None:
         return None
 
 
-RESET_TOKEN_TTL_MINUTES = 60
+# ---- password reset: short numeric codes ----
+#
+# A 6-digit code emailed to the user, entered back in the app — no link, so
+# it works from the installed native app with no deep-linking. Codes are
+# held in memory (single-process dev server; a multi-worker deployment would
+# move this to the DB or Redis), hashed, single-use, 15-minute TTL, capped
+# at 5 guesses.
+
+RESET_CODE_TTL_MINUTES = 15
+RESET_CODE_MAX_ATTEMPTS = 5
+_RESET_CODES: dict[str, dict] = {}  # user_id -> {hash, expires, attempts}
 
 
-def create_reset_token(user_id: str) -> str:
-    # A short-lived JWT with its own "purpose" claim, rather than a new DB
-    # table — it's self-verifying (no lookup needed) and expires on its own.
-    payload = {
-        "sub": user_id,
-        "purpose": "reset",
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_TTL_MINUTES),
+def _hash_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def create_reset_code(user_id: str) -> str:
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    _RESET_CODES[user_id] = {
+        "hash": _hash_code(code),
+        "expires": datetime.now(timezone.utc) + timedelta(minutes=RESET_CODE_TTL_MINUTES),
+        "attempts": 0,
     }
-    return jwt.encode(payload, SECRET, algorithm=ALGORITHM)
+    return code
 
 
-def decode_reset_token(token: str) -> str | None:
-    try:
-        payload = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
-        if payload.get("purpose") != "reset":
-            return None
-        return payload.get("sub")
-    except jwt.PyJWTError:
-        return None
+def verify_reset_code(user_id: str, code: str) -> bool:
+    entry = _RESET_CODES.get(user_id)
+    if not entry:
+        return False
+    if datetime.now(timezone.utc) >= entry["expires"] or entry["attempts"] >= RESET_CODE_MAX_ATTEMPTS:
+        _RESET_CODES.pop(user_id, None)
+        return False
+    entry["attempts"] += 1
+    if secrets.compare_digest(entry["hash"], _hash_code((code or "").strip())):
+        _RESET_CODES.pop(user_id, None)  # single use
+        return True
+    return False

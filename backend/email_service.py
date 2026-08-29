@@ -95,7 +95,7 @@ def _welcome_html(name: str | None) -> str:
 """
 
 
-def _reset_html(reset_link: str) -> str:
+def _reset_html(code: str) -> str:
     return f"""\
 <!DOCTYPE html>
 <html>
@@ -112,20 +112,14 @@ def _reset_html(reset_link: str) -> str:
             <tr>
               <td style="padding:32px;">
                 <h1 style="margin:0 0 16px;font-size:22px;color:#1a1a1a;">Reset your password</h1>
-                <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#44403c;">
-                  Someone (hopefully you) asked to reset the password on your Cukai account. This
-                  link works for 1 hour. If you didn't request this, you can safely ignore this
-                  email — your password won't change unless you click through and set a new one.
+                <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44403c;">
+                  Someone (hopefully you) asked to reset the password on your Cukai account.
+                  Enter this code in the app to set a new password. It expires in 15 minutes.
+                  If you didn't request this, you can safely ignore this email.
                 </p>
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:12px;">
-                  <tr>
-                    <td style="border-radius:8px;background:{ACCENT};">
-                      <a href="{reset_link}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">
-                        Reset password
-                      </a>
-                    </td>
-                  </tr>
-                </table>
+                <div style="font-size:34px;font-weight:800;letter-spacing:8px;color:#1a1a1a;background:#f5f5f4;border-radius:10px;padding:18px 0;text-align:center;">
+                  {code}
+                </div>
               </td>
             </tr>
           </table>
@@ -159,5 +153,10 @@ def send_welcome_email(to_email: str, name: str | None) -> None:
     _send(to_email, "Welcome to Cukai", _welcome_html(name), "Welcome email")
 
 
-def send_password_reset_email(to_email: str, reset_link: str) -> None:
-    _send(to_email, "Reset your Cukai password", _reset_html(reset_link), "Password reset email")
+def send_password_reset_email(to_email: str, code: str) -> None:
+    if not RESEND_API_KEY:
+        # Dev affordance: with no email provider configured the code would
+        # otherwise be unreachable. Never logged once RESEND_API_KEY is set
+        # (then it's actually emailed instead).
+        logger.info("Password reset code for %s: %s", to_email, code)
+    _send(to_email, "Your Cukai password reset code", _reset_html(code), "Password reset email")

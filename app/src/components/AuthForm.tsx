@@ -10,7 +10,11 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [resetSent, setResetSent] = useState(false);
+  // Forgot-password is two steps: request a code by email, then enter the
+  // code + a new password. `codeSent` flips between them.
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +22,14 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
     setBusy(true);
     try {
       if (mode === 'forgot') {
-        await actions.requestPasswordReset(email.trim());
-        setResetSent(true);
+        if (!codeSent) {
+          await actions.requestPasswordReset(email.trim());
+          setCodeSent(true);
+        } else {
+          if (password !== confirmPassword) throw new Error("Passwords don't match");
+          await actions.completePasswordReset(email.trim(), code, password);
+          onSuccess();
+        }
       } else if (mode === 'signup') {
         await actions.authSignup(email.trim(), password);
         onSuccess();
@@ -34,17 +44,48 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
+  const leaveForgot = () => {
+    setMode('login'); setCodeSent(false); setError(null);
+    setCode(''); setPassword(''); setConfirmPassword('');
+  };
+
   if (mode === 'forgot') {
     return (
       <form onSubmit={submit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {resetSent ? (
-          <div style={{ fontSize: 13, color: 'var(--color-text-muted)', textAlign: 'center', padding: '8px 0' }}>
-            If an account exists for that email, a reset link is on its way.
-          </div>
+        {codeSent ? (
+          <>
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 2 }}>
+              If an account exists for <strong>{email.trim()}</strong>, we've emailed a 6-digit
+              code. Enter it below with your new password. The code expires in 15 minutes.
+            </div>
+            <input
+              className="input" inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code"
+              value={code} required pattern="[0-9]{6}" maxLength={6}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            />
+            <input
+              className="input" type="password" placeholder="New password (min. 8 characters)" value={password}
+              required minLength={8} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)}
+            />
+            <input
+              className="input" type="password" placeholder="Confirm new password" value={confirmPassword}
+              required minLength={8} autoComplete="new-password" onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
+            <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
+              {busy ? 'Please wait…' : 'Reset password'}
+            </button>
+            <button
+              type="button" onClick={() => { setCodeSent(false); setError(null); }} className="pressable"
+              style={{ all: 'unset', cursor: 'pointer', alignSelf: 'center', color: 'var(--color-text-muted)', font: '600 12.5px var(--font-body)', padding: '4px 0' }}
+            >
+              Use a different email
+            </button>
+          </>
         ) : (
           <>
             <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 2 }}>
-              Enter your email and we'll send a link to reset your password.
+              Enter your email and we'll send a code to reset your password.
             </div>
             <input
               className="input" type="email" placeholder="Email" value={email} required autoComplete="email"
@@ -52,12 +93,12 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
             />
             {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
             <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
-              {busy ? 'Please wait…' : 'Send reset link'}
+              {busy ? 'Please wait…' : 'Send reset code'}
             </button>
           </>
         )}
         <button
-          type="button" onClick={() => { setMode('login'); setResetSent(false); setError(null); }} className="pressable"
+          type="button" onClick={leaveForgot} className="pressable"
           style={{ all: 'unset', cursor: 'pointer', alignSelf: 'center', color: 'var(--color-text-muted)', font: '600 12.5px var(--font-body)', padding: '4px 0' }}
         >
           Back to log in
