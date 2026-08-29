@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { moneyWhole } from '../../lib/format';
 import { KeypadField } from '../../components/AmountKeypadSheet';
+import { Toggle } from '../../components/primitives';
 import { playSharedMorph } from '../../lib/motion';
 
 // Ported from Cukai v7.dc.html lines 713-736 (budgetItemDetailOpen modal).
@@ -70,6 +71,34 @@ export function BudgetItemDetailModal() {
             onSave={(v) => actions.setBucketCategoryCap(bucketKey, catId, parseFloat(v) || 0)}
           />
         </div>
+      </div>
+
+      <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', border: '1px solid var(--color-neutral-300)', marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Repeats every month</div>
+            <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2, lineHeight: 1.4 }}>
+              Auto-adds a RM {moneyWhole(category.cap || spent)} transaction each month so you don’t re-enter it.
+            </div>
+          </div>
+          <Toggle
+            on={!!category.recurring}
+            onToggle={() => actions.setBucketCategoryRecurring(bucketKey, catId, !category.recurring)}
+          />
+        </div>
+        {category.recurring && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--color-neutral-300)' }}>
+            <span style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>On day</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              value={String(category.recurDay ?? 1)}
+              onChange={(e) => actions.setBucketCategoryRecurDay(bucketKey, catId, parseInt(e.target.value.replace(/[^\d]/g, ''), 10) || 1)}
+              style={{ width: 64, textAlign: 'center' }}
+            />
+            <span style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>of the month (1–28)</span>
+          </div>
+        )}
       </div>
 
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>

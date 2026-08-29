@@ -12,6 +12,7 @@ import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
 import { mapOcrCategory, CAT_ICON } from '../lib/constants';
+import { materializeRecurring } from '../lib/recurring';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
 import type { AuthUser, ScannedReceiptResult } from '../lib/api';
@@ -82,6 +83,9 @@ export type Action =
   | { type: 'REMOVE_BUCKET_CATEGORY'; bucketKey: string; catId: string }
   | { type: 'SET_BUCKET_CATEGORY_NAME'; bucketKey: string; catId: string; value: string }
   | { type: 'SET_BUCKET_CATEGORY_CAP'; bucketKey: string; catId: string; value: number }
+  | { type: 'SET_BUCKET_CATEGORY_RECURRING'; bucketKey: string; catId: string; on: boolean }
+  | { type: 'SET_BUCKET_CATEGORY_RECUR_DAY'; bucketKey: string; catId: string; day: number }
+  | { type: 'MATERIALIZE_RECURRING' }
   | { type: 'ADD_BUCKET_ITEM'; bucketKey: string; catId: string }
   | { type: 'SET_BUCKET_ITEM_FIELD'; bucketKey: string; catId: string; itemId: string; field: 'name' | 'amount'; value: string | number }
   | { type: 'REMOVE_BUCKET_ITEM'; bucketKey: string; catId: string; itemId: string }
@@ -316,7 +320,7 @@ export function reducer(state: AppState, action: Action): AppState {
         receipts: [],
         finance: { buckets: trial.buckets },
         pendingReviewItems: trial.pendingReviewItems, reviewDecisions: {},
-        merchantMemory: {}, autoAddedThisImport: [],
+        merchantMemory: {}, autoAddedThisImport: [], recurGeneratedMonths: {},
       };
     }
     case 'CLEAR_ALL_DATA': {
@@ -328,7 +332,7 @@ export function reducer(state: AppState, action: Action): AppState {
         receipts: [],
         finance: { buckets: empty.buckets },
         pendingReviewItems: [], reviewDecisions: {},
-        merchantMemory: {}, autoAddedThisImport: [],
+        merchantMemory: {}, autoAddedThisImport: [], recurGeneratedMonths: {},
         netWorthSeed: defaultNetWorthSeed(),
       };
     }
@@ -397,7 +401,10 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'TOGGLE_BUCKET':
       return { ...state, expandedBucket: state.expandedBucket === action.key ? null : action.key };
     case 'ADD_BUCKET_CATEGORY': {
-      const cat = mkCategory(action.name ?? 'New category', clampCap(action.cap ?? 0), action.name ? [] : [mkItem('New item', 0)]);
+      const base = mkCategory(action.name ?? 'New category', clampCap(action.cap ?? 0), action.name ? [] : [mkItem('New item', 0)]);
+      // Fixed-bucket categories (rent, utilities, loans) repeat every month
+      // by default; everything else is opt-in.
+      const cat = action.bucketKey === 'fixed' ? { ...base, recurring: true, recurDay: 1 } : base;
       return {
         ...state,
         finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: [...b.categories, cat] }) },
@@ -414,6 +421,15 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, name: action.value }) }) } };
     case 'SET_BUCKET_CATEGORY_CAP':
       return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, cap: clampCap(action.value) }) }) } };
+    case 'SET_BUCKET_CATEGORY_RECURRING':
+      return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, recurring: action.on, recurDay: c.recurDay ?? 1 }) }) } };
+    case 'SET_BUCKET_CATEGORY_RECUR_DAY':
+      return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, recurDay: Math.min(28, Math.max(1, Math.round(action.day) || 1)) }) }) } };
+    case 'MATERIALIZE_RECURRING': {
+      const r = materializeRecurring(state);
+      if (!r) return state;
+      return { ...state, transactions: [...state.transactions, ...r.transactions], recurGeneratedMonths: r.generated };
+    }
     case 'ADD_BUCKET_ITEM':
       return { ...state, finance: { ...state.finance, buckets: state.finance.buckets.map((b) => b.key !== action.bucketKey ? b : { ...b, categories: b.categories.map((c) => c.id !== action.catId ? c : { ...c, items: [...c.items, mkItem('', 0)] }) }) } };
     case 'SET_BUCKET_ITEM_FIELD':

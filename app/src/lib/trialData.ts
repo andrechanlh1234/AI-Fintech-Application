@@ -313,7 +313,7 @@ export function buildTrialData(): TrialData {
   };
 
   const buckets = defaultBuckets().map((b) => {
-    if (b.key === 'fixed') return { ...b, categories: [mkCategory('Housing', 1500, [mkItem('Rent', 1500)])] };
+    if (b.key === 'fixed') return { ...b, categories: [{ ...mkCategory('Housing', 1500, [mkItem('Rent', 1500)]), recurring: true, recurDay: 1 }] };
     if (b.key === 'flexible') return { ...b, categories: [mkCategory('Food & Drink', 600, [mkItem('Groceries + dining', 340)])] };
     return b;
   });

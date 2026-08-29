@@ -27,6 +27,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Fill in this month's recurring (Fixed-bucket) budget transactions —
+  // on load, whenever a recurring category is added/toggled, and when the
+  // app is brought back to the foreground (catches a month rollover that
+  // happened while it was backgrounded).
+  useEffect(() => {
+    dispatch({ type: 'MATERIALIZE_RECURRING' });
+    const onVisible = () => { if (document.visibilityState === 'visible') dispatch({ type: 'MATERIALIZE_RECURRING' }); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [state.finance.buckets]);
+
   // Restore a signed-in session on load: validate the saved token, then
   // pull whatever this account last synced (overwriting the local-only
   // state a guest may have accumulated before signing in).
@@ -55,7 +66,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths]);
 
   // Recompute the real net-worth timeline whenever a dated balance row or
   // entry changes — this is what makes the Finance > Net worth chart plot
@@ -79,7 +90,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -199,6 +210,8 @@ export function useActions() {
       removeBucketCategory: (bucketKey: string, catId: string) => dispatch({ type: 'REMOVE_BUCKET_CATEGORY', bucketKey, catId }),
       setBucketCategoryName: (bucketKey: string, catId: string, value: string) => dispatch({ type: 'SET_BUCKET_CATEGORY_NAME', bucketKey, catId, value }),
       setBucketCategoryCap: (bucketKey: string, catId: string, value: number) => dispatch({ type: 'SET_BUCKET_CATEGORY_CAP', bucketKey, catId, value }),
+      setBucketCategoryRecurring: (bucketKey: string, catId: string, on: boolean) => dispatch({ type: 'SET_BUCKET_CATEGORY_RECURRING', bucketKey, catId, on }),
+      setBucketCategoryRecurDay: (bucketKey: string, catId: string, day: number) => dispatch({ type: 'SET_BUCKET_CATEGORY_RECUR_DAY', bucketKey, catId, day }),
       addBucketItem: (bucketKey: string, catId: string) => dispatch({ type: 'ADD_BUCKET_ITEM', bucketKey, catId }),
       setBucketItemField: (bucketKey: string, catId: string, itemId: string, field: 'name' | 'amount', value: string | number) => dispatch({ type: 'SET_BUCKET_ITEM_FIELD', bucketKey, catId, itemId, field, value }),
       removeBucketItem: (bucketKey: string, catId: string, itemId: string) => dispatch({ type: 'REMOVE_BUCKET_ITEM', bucketKey, catId, itemId }),

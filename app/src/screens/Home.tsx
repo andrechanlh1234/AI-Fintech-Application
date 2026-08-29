@@ -153,6 +153,7 @@ export function Home() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13.5, fontWeight: 600 }}>{tx.merchant}</div>
           </div>
+          {tx.auto && <span className="tag tag-neutral" style={{ flexShrink: 0 }}>Auto</span>}
           {tx.tax && <span className="tag tag-tax" style={{ flexShrink: 0 }}>Tax</span>}
           <div className="type-numeric" style={{ fontWeight: 600, fontSize: 13.5, flexShrink: 0, color: tx.amountColor }}>{tx.amountLabel}</div>
         </div>

@@ -79,6 +79,7 @@ export function buildInitialState(): AppState {
     netWorthSeed: defaultNetWorthSeed(),
     netWorthHistory: [],
     finance: { buckets: defaultBuckets() },
+    recurGeneratedMonths: {},
   };
 }
 
@@ -133,6 +134,7 @@ export interface SyncPayload {
   pendingReviewItems: AppState['pendingReviewItems'];
   reviewDecisions: AppState['reviewDecisions'];
   merchantMemory: AppState['merchantMemory'];
+  recurGeneratedMonths: AppState['recurGeneratedMonths'];
 }
 
 export function buildSyncPayload(state: AppState): SyncPayload {
@@ -157,6 +159,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
     pendingReviewItems: state.pendingReviewItems,
     reviewDecisions: state.reviewDecisions,
     merchantMemory: state.merchantMemory,
+    recurGeneratedMonths: state.recurGeneratedMonths,
   };
 }
 
@@ -214,6 +217,7 @@ export function applySyncPayload(base: AppState, p: Partial<SyncPayload>): AppSt
   if (p.pendingReviewItems) next.pendingReviewItems = p.pendingReviewItems.map(normalizeReviewItem);
   if (p.reviewDecisions) next.reviewDecisions = p.reviewDecisions;
   if (p.merchantMemory) next.merchantMemory = p.merchantMemory;
+  if (p.recurGeneratedMonths) next.recurGeneratedMonths = p.recurGeneratedMonths;
   return next;
 }
 

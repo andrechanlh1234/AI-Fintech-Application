@@ -190,6 +190,10 @@ export interface AppState {
    * the chart only shows real movement once real days of usage exist. */
   netWorthHistory: { date: string; value: number }[];
   finance: { buckets: Bucket[] };
+  /** Per recurring budget category, the YYYY-MM months an auto transaction
+   * has already been generated for — so a month is never doubled and a
+   * deleted auto transaction stays deleted. See lib/recurring.ts. */
+  recurGeneratedMonths: Record<string, string[]>;
   /** Real transactions the user has added — via a saved scan or an accepted
    * review-import item. Starts empty; nothing here unless the user put it
    * there. Budget line items and REVIEW_ITEMS are derived/overlaid on top

@@ -378,3 +378,50 @@ describe('merchant learning layer', () => {
     expect(state.autoAddedThisImport).toEqual([]);
   });
 });
+
+describe('recurring budget categories (MATERIALIZE_RECURRING)', () => {
+  const currentMonName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][new Date().getMonth()];
+
+  it('generates one auto transaction this month for a recurring category, once', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_BUCKET_CATEGORY', bucketKey: 'fixed', name: 'Rent', cap: 1500, openDetail: false });
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    const autos = state.transactions.filter((t) => t.auto);
+    expect(autos).toHaveLength(1);
+    expect(autos[0].cat).toBe('Rent');
+    expect(autos[0].amount).toBe(-1500);
+    expect(autos[0].month).toBe(currentMonName);
+    // Running it again does nothing.
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    expect(state.transactions.filter((t) => t.auto)).toHaveLength(1);
+  });
+
+  it('does not regenerate a month after the auto transaction is deleted', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_BUCKET_CATEGORY', bucketKey: 'fixed', name: 'Utilities', cap: 300, openDetail: false });
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    const autoId = state.transactions.find((t) => t.auto)!.id;
+    state = { ...state, transactions: state.transactions.filter((t) => t.id !== autoId) };
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    expect(state.transactions.filter((t) => t.auto)).toHaveLength(0);
+  });
+
+  it('a Flexible-bucket category is not recurring by default', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_BUCKET_CATEGORY', bucketKey: 'flexible', name: 'Shopping', cap: 400, openDetail: false });
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    expect(state.transactions.filter((t) => t.auto)).toHaveLength(0);
+  });
+
+  it('toggling recurring off stops future generation but keeps existing autos', () => {
+    let state = buildInitialState();
+    state = reducer(state, { type: 'ADD_BUCKET_CATEGORY', bucketKey: 'fixed', name: 'Loan', cap: 800, openDetail: false });
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    const catId = state.finance.buckets.find((b) => b.key === 'fixed')!.categories[0].id;
+    state = reducer(state, { type: 'SET_BUCKET_CATEGORY_RECURRING', bucketKey: 'fixed', catId, on: false });
+    expect(state.transactions.filter((t) => t.auto)).toHaveLength(1); // existing kept
+    state = { ...state, recurGeneratedMonths: {} }; // pretend a new month
+    state = reducer(state, { type: 'MATERIALIZE_RECURRING' });
+    expect(state.transactions.filter((t) => t.auto)).toHaveLength(1); // no new one
+  });
+});

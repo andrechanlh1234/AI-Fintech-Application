@@ -41,6 +41,7 @@ export interface RowLike extends RowIconProps {
   amountLabel: string;
   amountColor: string;
   tax?: boolean;
+  auto?: boolean;
 }
 
 /** One transaction/receipt-line-item row, shared by Record's full list and
@@ -70,6 +71,7 @@ export function TransactionRow({
         <div style={{ fontSize: 13.5, fontWeight: 600 }}>{tx.merchant}</div>
         <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 1 }}>{subtitle}</div>
       </div>
+      {tx.auto && <span className="tag tag-neutral" style={{ flexShrink: 0 }}>Auto</span>}
       {showTaxTag && tx.tax && <span className="tag tag-tax" style={{ flexShrink: 0 }}>Tax</span>}
       <div className="type-numeric" style={{ fontWeight: 700, fontSize: 13.5, flexShrink: 0, color: tx.amountColor }}>{tx.amountLabel}</div>
     </button>

@@ -22,6 +22,15 @@ export interface Transaction {
    * itself is display-only; editing/deleting this transaction never
    * touches the receipt record (see lib/receipts.ts's Receipt doc comment). */
   receiptId?: string;
+  /** True for a transaction auto-generated from a recurring budget
+   * category (lib/recurring.ts) — shown with an "Auto" tag, editable and
+   * deletable per month like any other. */
+  auto?: boolean;
+  /** The recurring BudgetCategory id and the YYYY-MM this auto transaction
+   * covers — so a month is never generated twice, even after the user
+   * deletes the generated transaction. */
+  recurCatId?: string;
+  recurMonth?: string;
 }
 
 export interface BalanceEntry { id: string; amount: number; desc: string; date: string }
@@ -61,7 +70,15 @@ export function defaultNetWorthSeed(): NetWorthSeed {
 }
 
 export interface BudgetItem { id: string; name: string; amount: number | string }
-export interface BudgetCategory { id: string; name: string; cap: number; items: BudgetItem[] }
+export interface BudgetCategory {
+  id: string; name: string; cap: number; items: BudgetItem[];
+  /** When true, one transaction is auto-created every month for this
+   * category's planned amount (see lib/recurring.ts). Defaults on for
+   * Fixed-bucket categories, off elsewhere. */
+  recurring?: boolean;
+  /** Day of month (1–28) the auto transaction is dated. Default 1. */
+  recurDay?: number;
+}
 export interface Bucket { key: string; name: string; categories: BudgetCategory[] }
 
 export function mkItem(name: string, amount: number): BudgetItem {
