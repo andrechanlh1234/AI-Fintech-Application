@@ -33,37 +33,37 @@ export const TAX_GROUPS_META = [
 
 // TAX ACCURACY REVIEW (2026-08-20): these caps were checked against
 // Claude's general knowledge of LHDN's individual relief structure — not
-// a live LHDN lookup, and not a licensed tax advisor's sign-off. High
-// confidence on all except:
-//  - child_disabled (RM8,000, "Unmarried Child with Disabilities"): may
-//    conflate the base disabled-child relief (commonly cited as RM6,000)
-//    with the additional relief for a disabled child in higher education
-//    (commonly cited as RM8,000) — these may be two separate line items,
-//    not one combined RM8,000 relief.
-//  - life_ev (RM2,500, EV charging equipment / food-waste composting
-//    machine): bundling these two into a single relief item is unverified.
-// Get a licensed tax professional (or a direct LHDN source check) to
-// confirm every figure here before treating any of it as authoritative
-// for a real filing — see the disclaimer already shown in the Tax Center.
+// a live LHDN lookup, and not a licensed tax advisor's sign-off. Figures
+// are set for YA2025 (filed 2026), including the Budget 2025 disability
+// relief increases (disabled individual RM6,000 -> RM7,000, disabled
+// spouse RM5,000 -> RM6,000, disabled child base RM6,000 -> RM8,000).
+// Still worth a direct LHDN check before a real filing:
+//  - child_disabled (RM8,000): the *base* disabled-child relief. There is
+//    a further RM8,000 for an unmarried disabled child aged 18+ in
+//    full-time higher education — not modelled as a separate line here.
+//  - life_ev (RM2,500): the app keeps EV charging equipment and the
+//    domestic food-waste composting machine as one line; LHDN treats them
+//    as two separate RM2,500 reliefs.
+// See the disclaimer already shown in the Tax Center.
 export const TAX_ITEMS_META: Record<string, TaxItemMeta[]> = {
   individual: [
     { key: 'indiv_self', label: 'Individual & Dependent Relatives', cap: 9000, automatic: true },
-    { key: 'indiv_disabled', label: 'Disabled Individual', cap: 6000 },
-    { key: 'indiv_education', label: 'Education Fees', cap: 7000 },
+    { key: 'indiv_disabled', label: 'Disabled Individual', cap: 7000, note: 'Additional relief for a taxpayer certified OKU by the Department of Social Welfare (JKM). Raised from RM6,000 in Budget 2025.' },
+    { key: 'indiv_education', label: 'Education Fees', cap: 7000, note: 'Own further education: Masters/PhD in any field, or a diploma/degree in law, accounting, Islamic finance, technical, vocational, industrial, scientific or technological. Within this, up to RM2,000 covers upskilling / self-enhancement courses recognised by the Department of Skills Development (tracked separately below).' },
     { key: 'indiv_skills', label: 'Skills Enhancement / Personal Development', cap: 2000 },
     { key: 'indiv_housing', label: 'Interest on Housing Loan – First Home', cap: 7000, note: 'First residential home only. Relief on the loan interest is tiered by the property’s purchase price: up to RM7,000/year if RM500,000 or below, up to RM5,000/year if RM500,001–RM750,000, and not available above RM750,000. Claimable for 3 consecutive years of assessment from the first claim.' },
     { key: 'indiv_spouse', label: 'Husband/Wife/Alimony', cap: 4000 },
-    { key: 'indiv_disabled_spouse', label: 'Disabled Husband/Wife', cap: 5000 },
+    { key: 'indiv_disabled_spouse', label: 'Disabled Husband/Wife', cap: 6000, note: 'For a spouse certified OKU by JKM. Raised from RM5,000 in Budget 2025.' },
   ],
   medical: [
-    { key: 'med_self', label: 'Self/Spouse/Child Medical', cap: 10000 },
-    { key: 'med_parents', label: 'Parents & Grandparents Medical', cap: 8000 },
+    { key: 'med_self', label: 'Self/Spouse/Child Medical', cap: 10000, note: 'Serious diseases, fertility treatment, and for a child under 18 the assessment/diagnosis and early-intervention/rehab of a learning disability (up to RM4,000). Within the RM10,000: up to RM1,000 for vaccination; up to RM1,000 for dental examination and treatment; up to RM1,000 combined for a full medical check-up, COVID-19 test, and mental-health examination or consultation.' },
+    { key: 'med_parents', label: 'Parents & Grandparents Medical', cap: 8000, note: 'Medical treatment, special needs, and carer expenses for parents, with a doctor’s certification that treatment/care was needed. The older no-receipt “parental care” relief (RM1,500 per parent) ended after YA2020.' },
     { key: 'med_equipment', label: 'Disabled Individual Support Equipment', cap: 6000 },
   ],
   lifestyle: [
-    { key: 'life_general', label: 'Lifestyle', cap: 2500 },
-    { key: 'life_additional', label: 'Additional Lifestyle Relief', cap: 1000 },
-    { key: 'life_ev', label: 'EV Charging Equipment / Domestic Food Waste Composting Machine', cap: 2500 },
+    { key: 'life_general', label: 'Lifestyle', cap: 2500, note: 'Books/journals, a personal computer/smartphone/tablet (not for business), internet subscription, and skill-improvement or self-development courses.' },
+    { key: 'life_additional', label: 'Additional Lifestyle Relief – Sport', cap: 1000, note: 'Sports equipment, entry/rental fees for sports facilities, registration fees for sports competitions, and gym membership.' },
+    { key: 'life_ev', label: 'EV Charging Equipment / Domestic Food Waste Composting Machine', cap: 2500, note: 'LHDN treats these as two separate RM2,500 reliefs (EV charging facility, not for business; and a domestic food-waste composting machine, once every 3 YAs). Cukai tracks them as one line — split your claim if you have both.' },
   ],
   epf: [
     { key: 'epf_life', label: 'Life Insurance & EPF', cap: 7000 },
@@ -75,7 +75,7 @@ export const TAX_ITEMS_META: Record<string, TaxItemMeta[]> = {
   child: [
     { key: 'child_under18', label: 'Child below 18', cap: 2000 },
     { key: 'child_edu', label: 'Child 18+ in Education', cap: 8000 },
-    { key: 'child_disabled', label: 'Unmarried Child with Disabilities', cap: 8000 },
+    { key: 'child_disabled', label: 'Unmarried Child with Disabilities', cap: 8000, note: 'Base relief per unmarried disabled child (raised from RM6,000 in Budget 2025). A further RM8,000 applies if that child is 18 or older and in full-time higher education — claim it in addition.' },
     { key: 'child_care', label: 'Registered Childcare / Kindergarten', cap: 3000 },
     { key: 'child_breastfeed', label: 'Breastfeeding Equipment', cap: 1000 },
   ],

@@ -100,11 +100,11 @@ RELIEFS: dict[str, list[dict]] = {
         {
             "key": "indiv_disabled",
             "name": "Disabled individual (OKU)",
-            "cap": 6_000,
+            "cap": 7_000,
             "text": (
                 "Additional relief on top of the self relief. Must be a Malaysian "
                 "resident registered as OKU with JKM (Department of Social Welfare). "
-                "[Budget 2025 announced an increase to RM7,000 for YA2025 - verify.]"
+                "Raised from RM6,000 to RM7,000 in Budget 2025, effective YA2025."
             ),
         },
         {
@@ -147,11 +147,11 @@ RELIEFS: dict[str, list[dict]] = {
         {
             "key": "indiv_disabled_spouse",
             "name": "Disabled spouse",
-            "cap": 5_000,
+            "cap": 6_000,
             "text": (
                 "Additional relief on top of the RM4,000 spouse relief where the "
-                "spouse is a registered OKU. [Budget 2025 announced an increase to "
-                "RM6,000 for YA2025 - verify.]"
+                "spouse is a registered OKU. Raised from RM5,000 to RM6,000 in "
+                "Budget 2025, effective YA2025."
             ),
         },
     ],
@@ -225,10 +225,19 @@ RELIEFS: dict[str, list[dict]] = {
             "cap": 2_500,
             "text": (
                 "Purchase, installation, rental, hire-purchase or subscription of EV "
-                "charging equipment for your own vehicle; not for business use. (The "
-                "Cukai app bundles this line with a domestic food-waste composting "
-                "machine relief of about RM2,500 for YA2025-2026 - treat that as a "
-                "separate item and verify.)"
+                "charging equipment for your own vehicle; not for business use."
+            ),
+        },
+        {
+            "key": "life_compost",
+            "name": "Domestic food-waste composting machine",
+            "cap": 2_500,
+            "text": (
+                "A separate RM2,500 relief for buying a domestic food-waste "
+                "composting machine for own household use, claimable once every "
+                "three years of assessment. The Cukai app currently tracks this on "
+                "the same line as EV charging equipment - split your claim if you "
+                "have both."
             ),
         },
     ],
@@ -295,13 +304,13 @@ RELIEFS: dict[str, list[dict]] = {
         {
             "key": "child_disabled",
             "name": "Disabled child",
-            "cap": "RM6,000 base (+ RM8,000 if in higher education)",
+            "cap": "RM8,000 base (+ RM8,000 if in higher education)",
             "text": (
-                "RM6,000 for each unmarried disabled (OKU) child, plus an additional "
-                "RM8,000 if that child is 18+ and in full-time higher education "
-                "(diploma or higher in Malaysia / degree or higher overseas) at a "
-                "recognised institution. [Budget 2025 announced raising the RM6,000 "
-                "base to RM8,000 for YA2025 - verify.]"
+                "RM8,000 for each unmarried disabled (OKU) child (base raised from "
+                "RM6,000 in Budget 2025, effective YA2025), plus a further RM8,000 "
+                "if that child is 18+ and in full-time higher education (diploma or "
+                "higher in Malaysia / degree or higher overseas) at a recognised "
+                "institution."
             ),
         },
         {
@@ -374,15 +383,17 @@ FILING_BASICS = [
     "elect for it.",
 ]
 
-# Items flagged as lower-confidence / changed by Budget 2025.
+# Items still worth a direct LHDN check before relying on them for a filing.
 LOW_CONFIDENCE_NOTES = [
-    "Disabled individual relief shown as RM6,000; Budget 2025 announced RM7,000 for YA2025.",
-    "Disabled spouse relief shown as RM5,000; Budget 2025 announced RM6,000 for YA2025.",
-    "Disabled child base relief shown as RM6,000; Budget 2025 announced RM8,000 for YA2025.",
-    "EV charging relief vs a separate domestic food-waste composting machine relief - "
-    "the pairing and the composting-machine amount/years are unverified.",
+    "Disability reliefs use the Budget 2025 amounts (individual RM7,000, spouse "
+    "RM6,000, child base RM8,000), stated as effective YA2025 - confirm against the "
+    "final Finance Act / LHDN relief list.",
+    "The domestic food-waste composting machine relief (RM2,500, once every 3 YAs) "
+    "is listed separately from EV charging; confirm the amount and the claim cycle.",
     "Medical relief sub-limits (RM1,000 vaccination / RM1,000 dental / RM1,000 "
-    "check-up / RM4,000 child learning-disability) - amounts believed current but verify.",
+    "check-up bundle / RM4,000 child learning-disability) are believed current for "
+    "YA2025 - verify the exact figures.",
+    "Education-fees upskilling sub-limit (RM2,000 within RM7,000) - verify the amount.",
 ]
 
 
