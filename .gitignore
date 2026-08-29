@@ -9,6 +9,9 @@ backend/.jwt_secret
 backend/backups/
 backend/.env
 
+# Xcode DerivedData from `xcodebuild -derivedDataPath build/DD`
+/build/
+
 # OS / editor / local agent junk
 .DS_Store
 .claude/

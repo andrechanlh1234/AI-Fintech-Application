@@ -10,11 +10,14 @@ export default defineConfig({
     allowedHosts: ['.trycloudflare.com'],
   },
   server: {
-    // Same as above, for `vite dev` -- lets a trycloudflare.com quick
-    // tunnel reach the dev server too (e.g. testing live-camera behaviour
-    // on a phone, which needs HTTPS or localhost and a plain LAN IP over
-    // http:// doesn't qualify).
-    allowedHosts: ['.trycloudflare.com'],
+    // Bind 0.0.0.0 so a phone on the same WiFi can reach the dev server
+    // directly for Capacitor live-reload (see app/capacitor.config.ts).
+    host: true,
+    // `.trycloudflare.com` for HTTPS tunnel demos; `.local` + the LAN IP
+    // for the phone hitting this Mac's dev server over plain WiFi. If the
+    // Mac's DHCP address changes often, prefer the `.local` hostname (it
+    // follows the machine) or set this to `true` to accept any host.
+    allowedHosts: ['.trycloudflare.com', '.local', '192.168.0.15'],
     // iOS Safari (especially an installed standalone PWA) caches module
     // responses hard and revalidates unreliably, so edits didn't show up
     // on the phone during tunnel demos. Force every dev response to be
