@@ -1,7 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
-import { AI_CHAT_HISTORY } from '../../lib/seedData';
+import { AI_CHAT_HISTORY, type AiMessage } from '../../lib/seedData';
 import { useKeyboardInset } from '../../lib/useKeyboardInset';
+import { prefersReducedMotion } from '../../lib/motion';
+
+// Remembered across mounts so the *first* focus in a session can still open
+// with a good guess. iOS keyboard is ~291pt bare / ~336pt with the
+// predictive bar; 300 is a safe middle until the real height lands.
+let lastKbHeight = 300;
 
 // Commonly-asked questions shown as tappable chips just above the input on
 // an empty chat.
@@ -24,6 +30,96 @@ function renderChatText(text: string) {
   );
 }
 
+function ReplyGlyph({ color }: { color: string }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 17 4 12 9 7" />
+      <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+    </svg>
+  );
+}
+
+// One chat bubble. Drag it toward its own side's edge — an AI bubble to the
+// right, your own bubble to the left — past a short threshold to reply to
+// it. `touch-action: pan-y` leaves vertical list scrolling to the browser.
+function MessageBubble({ m, onReply }: { m: AiMessage; onReply: (q: { from: 'user' | 'ai'; text: string }) => void }) {
+  const isUser = m.from === 'user';
+  const dir = isUser ? -1 : 1; // user swipes left, AI swipes right
+  const THRESH = 46;
+  const MAX = 68;
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const engaged = useRef(false);
+  const [offset, setOffset] = useState(0);
+  const reduce = prefersReducedMotion();
+
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    start.current = { x: e.clientX, y: e.clientY };
+    engaged.current = false;
+  };
+  const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!start.current) return;
+    const dx = e.clientX - start.current.x;
+    const dy = e.clientY - start.current.y;
+    if (!engaged.current) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.3) { start.current = null; return; } // vertical scroll — let it go
+      engaged.current = true;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* not supported */ }
+    }
+    const along = dx * dir; // > 0 when dragged toward the reply side
+    setOffset(along > 0 ? Math.min(along, MAX) * dir : 0);
+  };
+  const onUp = () => {
+    if (engaged.current && Math.abs(offset) >= THRESH) onReply({ from: m.from, text: m.text });
+    start.current = null;
+    engaged.current = false;
+    setOffset(0);
+  };
+
+  const revealed = Math.min(1, Math.abs(offset) / THRESH);
+  return (
+    <div style={{ position: 'relative', display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', top: 0, bottom: 0, [isUser ? 'right' : 'left']: 4,
+          display: 'flex', alignItems: 'center', opacity: revealed, transform: `scale(${0.7 + revealed * 0.3})`,
+          pointerEvents: 'none',
+        }}
+      >
+        <ReplyGlyph color="var(--color-text-muted)" />
+      </div>
+      <div
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        style={{
+          maxWidth: '80%', padding: '10px 14px', borderRadius: 16, fontSize: 13, lineHeight: 1.5,
+          background: isUser ? 'var(--color-accent)' : 'var(--color-neutral-200)',
+          color: isUser ? '#fff' : 'var(--color-text)',
+          transform: `translateX(${offset}px)`,
+          transition: offset === 0 && !reduce ? 'transform .22s cubic-bezier(.22,1,.28,1)' : 'none',
+          touchAction: 'pan-y',
+        }}
+      >
+        {m.replyTo && (
+          <div
+            style={{
+              borderLeft: `2px solid ${isUser ? 'rgba(255,255,255,0.5)' : 'var(--color-neutral-400)'}`,
+              paddingLeft: 8, marginBottom: 6, fontSize: 11.5, lineHeight: 1.4, opacity: 0.85,
+              maxHeight: 32, overflow: 'hidden',
+            }}
+          >
+            {m.replyTo.text}
+          </div>
+        )}
+        {renderChatText(m.text)}
+      </div>
+    </div>
+  );
+}
+
 export function AiChat() {
   const { state } = useStore();
   const actions = useActions();
@@ -34,14 +130,29 @@ export function AiChat() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const send = () => actions.submitAiText(state.aiInput);
+  const [replyTo, setReplyTo] = useState<{ from: 'user' | 'ai'; text: string } | null>(null);
   const focusInput = () => inputRef.current?.focus();
+  const send = () => {
+    actions.submitAiText(state.aiInput, replyTo ?? undefined);
+    setReplyTo(null);
+  };
+  const startReply = (q: { from: 'user' | 'ai'; text: string }) => {
+    setReplyTo(q);
+    focusInput();
+  };
 
   // How much the keyboard covers. The WebView doesn't resize (Keyboard
-  // `resize: 'none'`), so this screen shrinks its own column by `kb` — the
+  // `resize: 'none'`), so this screen shrinks its own column by this — the
   // input rides just above the keyboard, the chat stays visible above the
   // input, and nothing else in the app moves.
   const kb = useKeyboardInset();
+  const [inputFocused, setInputFocused] = useState(false);
+  useEffect(() => { if (kb > 0) lastKbHeight = kb; }, [kb]);
+  // `keyboardWillShow` lands a frame or two after focus, which makes the
+  // input visibly lag the keyboard sliding up. Start the shift on focus
+  // with the remembered height so the two move together; the real value
+  // (kb) takes over the instant it arrives.
+  const kbInset = kb > 0 ? kb : (inputFocused ? lastKbHeight : 0);
 
   // Pop the keyboard on entering an empty chat, and keep it up through the
   // conversation (refocus once a reply lands). Programmatic focus opening
@@ -59,7 +170,7 @@ export function AiChat() {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [isChat, kb, state.aiMessages.length, state.aiTyping]);
+  }, [isChat, kbInset, state.aiMessages.length, state.aiTyping]);
 
   return (
     <div
@@ -68,8 +179,10 @@ export function AiChat() {
         // the keyboard is up, shrink by its height instead so the input
         // sits just above it (nothing else in the app shifts).
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        minHeight: `calc(100dvh - ${kb > 0 ? 16 : 118}px - ${kb}px)`,
-        transition: 'min-height .25s ease-out',
+        minHeight: `calc(100dvh - ${kbInset > 0 ? 16 : 118}px - ${kbInset}px)`,
+        // Track the iOS keyboard's own timing/curve so the input rises
+        // with it, not a beat behind.
+        transition: 'min-height .34s cubic-bezier(0.17, 0.59, 0.4, 1)',
         padding: 'calc(env(safe-area-inset-top) + 16px) 16px 12px',
       }}
       className="screen-in"
@@ -201,26 +314,9 @@ export function AiChat() {
                 </div>
               </div>
             )}
-            {state.aiMessages.map((m, i) => {
-              const isUser = m.from === 'user';
-              return (
-                <div key={i} style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-                  <div
-                    style={{
-                      maxWidth: '80%',
-                      padding: '10px 14px',
-                      borderRadius: 16,
-                      fontSize: 13,
-                      lineHeight: 1.5,
-                      background: isUser ? 'var(--color-accent)' : 'var(--color-neutral-200)',
-                      color: isUser ? '#fff' : 'var(--color-text)',
-                    }}
-                  >
-                    {renderChatText(m.text)}
-                  </div>
-                </div>
-              );
-            })}
+            {state.aiMessages.map((m, i) => (
+              <MessageBubble key={i} m={m} onReply={startReply} />
+            ))}
             {state.aiTyping && (
               <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <div style={{ padding: '10px 14px', borderRadius: 16, background: 'var(--color-neutral-200)', color: 'var(--color-text-muted)', fontSize: 13 }}>
@@ -260,6 +356,35 @@ export function AiChat() {
               ))}
             </div>
           )}
+          {replyTo && (
+            <div
+              className="pop-in"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+                padding: '8px 10px', marginBottom: 8, borderRadius: 8,
+                background: 'var(--color-surface)', border: '1px solid var(--color-neutral-300)',
+                borderLeft: '3px solid var(--color-accent)',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ font: '700 10px var(--font-body)', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-accent-700)', marginBottom: 1 }}>
+                  Replying to {replyTo.from === 'user' ? 'you' : 'assistant'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {replyTo.text}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                aria-label="Cancel reply"
+                className="pressable"
+                style={{ all: 'unset', cursor: 'pointer', flexShrink: 0, display: 'flex', padding: 4, color: 'var(--color-text-muted)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              </button>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', borderTop: '1px solid var(--color-divider)', paddingTop: 12, flexShrink: 0 }}>
             <input
               ref={inputRef}
@@ -268,6 +393,8 @@ export function AiChat() {
               autoFocus
               value={state.aiInput}
               onChange={(e) => actions.setAiInput(e.target.value)}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();

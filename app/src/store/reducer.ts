@@ -161,7 +161,7 @@ export type Action =
   | { type: 'START_NEW_AI_CHAT' }
   | { type: 'OPEN_AI_HISTORY_CHAT'; messages: AppState['aiMessages'] }
   | { type: 'SET_AI_INPUT'; value: string }
-  | { type: 'SUBMIT_AI_TEXT_USER'; text: string }
+  | { type: 'SUBMIT_AI_TEXT_USER'; text: string; replyTo?: { from: 'user' | 'ai'; text: string } }
   | { type: 'SUBMIT_AI_TEXT_REPLY'; text: string }
 
   | { type: 'SET_MOUNTED' }
@@ -771,7 +771,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SET_AI_INPUT':
       return { ...state, aiInput: action.value };
     case 'SUBMIT_AI_TEXT_USER':
-      return { ...state, aiMessages: [...state.aiMessages, { from: 'user', text: action.text }], aiInput: '', aiTyping: true };
+      return { ...state, aiMessages: [...state.aiMessages, { from: 'user', text: action.text, ...(action.replyTo ? { replyTo: action.replyTo } : {}) }], aiInput: '', aiTyping: true };
     case 'SUBMIT_AI_TEXT_REPLY':
       return { ...state, aiMessages: [...state.aiMessages, { from: 'ai', text: action.text }], aiTyping: false };
 

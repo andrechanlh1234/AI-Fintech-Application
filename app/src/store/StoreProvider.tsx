@@ -321,10 +321,10 @@ export function useActions() {
       startNewAiChat: () => dispatch({ type: 'START_NEW_AI_CHAT' }),
       openAiHistoryChat: (messages: AppState['aiMessages']) => dispatch({ type: 'OPEN_AI_HISTORY_CHAT', messages }),
       setAiInput: (value: string) => dispatch({ type: 'SET_AI_INPUT', value }),
-      submitAiText: (text: string) => {
+      submitAiText: (text: string, replyTo?: { from: 'user' | 'ai'; text: string }) => {
         const t = (text || '').trim();
         if (!t) return;
-        dispatch({ type: 'SUBMIT_AI_TEXT_USER', text: t });
+        dispatch({ type: 'SUBMIT_AI_TEXT_USER', text: t, replyTo });
         // A minimum delay keeps the existing typing-indicator pacing even
         // when a real model reply comes back fast; requestAiReply throwing
         // (network error, backend down) or returning source:"canned"
@@ -334,7 +334,12 @@ export function useActions() {
         const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
         const history = stateRef.current.aiMessages; // prior turns, before this user message is appended above
         const context = selectAiContext(stateRef.current);
-        Promise.all([requestAiReply(t, history, context).catch(() => null), minDelay])
+        // When the user swiped to reply to a specific earlier line, tell the
+        // model which one so its answer stays on that thread.
+        const forModel = replyTo
+          ? `(replying to ${replyTo.from === 'user' ? 'my earlier message' : 'your earlier message'}: "${replyTo.text.slice(0, 280)}")\n\n${t}`
+          : t;
+        Promise.all([requestAiReply(forModel, history, context).catch(() => null), minDelay])
           .then(([res]) => {
             const reply = res && res.source !== 'canned' && res.reply ? res.reply : aiCraftReply(t);
             dispatch({ type: 'SUBMIT_AI_TEXT_REPLY', text: reply });

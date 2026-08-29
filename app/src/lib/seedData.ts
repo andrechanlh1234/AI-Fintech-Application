@@ -115,7 +115,12 @@ export function notifIconFlags(kind: string) {
   return { ...flags, bg: bgMap[kind], color: colorMap[kind] };
 }
 
-export interface AiMessage { from: 'user' | 'ai'; text: string }
+export interface AiMessage {
+  from: 'user' | 'ai';
+  text: string;
+  /** Set when the user swiped a bubble to reply to it — the quoted line. */
+  replyTo?: { from: 'user' | 'ai'; text: string };
+}
 export interface AiHistoryItem { id: string; title: string; date: string; preview: string; messages: AiMessage[] }
 
 export const AI_CHAT_HISTORY: AiHistoryItem[] = [
