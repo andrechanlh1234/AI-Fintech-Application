@@ -22,7 +22,7 @@ export function buildInitialState(): AppState {
     ob: {
       name: '', dob: '', country: 'Malaysia', occupation: '', income: '', source: null,
       residency: null, marital: null, dependants: null, employment: null, employer: '',
-      hasDisability: null, hasHousingLoan: null,
+      hasDisability: null, hasHousingLoan: null, housingPrice: '',
       approxIncome: '', multipleIncome: null, incomeTypes: [], reliefs: [], otherText: {}, agreedTerms: false,
       setupMethod: null, linkedIds: [], connectingId: null,
       manual: {
@@ -108,6 +108,7 @@ export interface SyncProfile {
   employer: AppState['ob']['employer'];
   hasDisability: AppState['ob']['hasDisability'];
   hasHousingLoan: AppState['ob']['hasHousingLoan'];
+  housingPrice: AppState['ob']['housingPrice'];
   approxIncome: AppState['ob']['approxIncome'];
   multipleIncome: AppState['ob']['multipleIncome'];
   incomeTypes: AppState['ob']['incomeTypes'];
@@ -141,7 +142,7 @@ export function buildSyncPayload(state: AppState): SyncPayload {
       name: state.ob.name, dob: state.ob.dob, country: state.ob.country, occupation: state.ob.occupation,
       income: state.ob.income, residency: state.ob.residency, marital: state.ob.marital, dependants: state.ob.dependants,
       employment: state.ob.employment, employer: state.ob.employer, hasDisability: state.ob.hasDisability,
-      hasHousingLoan: state.ob.hasHousingLoan, approxIncome: state.ob.approxIncome, multipleIncome: state.ob.multipleIncome,
+      hasHousingLoan: state.ob.hasHousingLoan, housingPrice: state.ob.housingPrice, approxIncome: state.ob.approxIncome, multipleIncome: state.ob.multipleIncome,
       incomeTypes: state.ob.incomeTypes, reliefs: state.ob.reliefs, goals: state.ob.goals, savingsTarget: state.ob.savingsTarget,
     },
     buckets: state.finance.buckets,

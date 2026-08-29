@@ -38,6 +38,7 @@ export interface OnboardingState {
   employer: string;
   hasDisability: string | null;
   hasHousingLoan: string | null;
+  housingPrice: string;
   approxIncome: string;
   multipleIncome: string | null;
   incomeTypes: string[];

@@ -54,12 +54,17 @@ export function TaxItemDetailModal() {
       <div style={{ marginBottom: 8 }}>
         <ProgressBar pct={item.pct} height={8} />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: 20, gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: 'var(--color-text-muted)', marginBottom: item.note ? 12 : 20, gap: 8 }}>
         <span>RM {moneyWhole(item.remaining)} remaining</span>
         {item.remaining > 0 && (
           <span style={{ color: 'var(--color-accent-700)', fontWeight: 600 }}>~RM {moneyWhole(item.potentialBenefit)} potential benefit</span>
         )}
       </div>
+      {item.note && (
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.5, background: 'var(--color-surface)', border: '1px solid var(--color-neutral-300)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', marginBottom: 20 }}>
+          {item.note}
+        </div>
+      )}
       <div style={{ font: '600 11px var(--font-body)', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: 8 }}>
         Receipts
       </div>

@@ -82,7 +82,22 @@ export function TaxProfileModal() {
       <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasDisability, (label) => actions.setOb('hasDisability', label))} chipStyleOverride={{ padding: '9px 16px' }} style={{ marginBottom: 20 }} />
 
       <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have a housing loan on your first home?</div>
-      <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasHousingLoan, (label) => actions.setOb('hasHousingLoan', label))} chipStyleOverride={{ padding: '9px 16px' }} style={{ marginBottom: 24 }} />
+      <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasHousingLoan, (label) => actions.setOb('hasHousingLoan', label))} chipStyleOverride={{ padding: '9px 16px' }} style={{ marginBottom: ob.hasHousingLoan === 'Yes' ? 12 : 24 }} />
+      {ob.hasHousingLoan === 'Yes' && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ font: '600 12px var(--font-body)', marginBottom: 6 }}>What was the home’s purchase price? (RM)</div>
+          <input
+            className="input"
+            inputMode="numeric"
+            value={ob.housingPrice}
+            onChange={(e) => actions.setOb('housingPrice', e.target.value.replace(/[^\d]/g, ''))}
+            placeholder="e.g. 480000"
+          />
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+            Sets your housing-loan interest relief: up to RM7,000/year at RM500,000 or below, RM5,000/year from RM500,001–RM750,000, none above RM750,000.
+          </div>
+        </div>
+      )}
 
       <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 20 }} />
       <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Which of these apply to you?</div>

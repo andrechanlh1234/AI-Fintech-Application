@@ -7,6 +7,20 @@ export interface TaxItemMeta {
   label: string;
   cap: number;
   automatic?: boolean;
+  /** Extra eligibility/condition text shown on the relief's detail screen. */
+  note?: string;
+}
+
+// Interest-on-housing-loan relief is tiered by the home's purchase price
+// (first residential home): <= RM500k -> RM7,000/YA; RM500,001-750,000 ->
+// RM5,000/YA; above RM750k -> not eligible. Claimable for 3 consecutive
+// years of assessment. `price` is the entered purchase price, or null if
+// the user hasn't said yet (assume the top RM7,000 tier until they do).
+export function housingLoanCap(price: number | null | undefined): number {
+  if (price == null) return 7000;
+  if (price <= 500_000) return 7000;
+  if (price <= 750_000) return 5000;
+  return 0;
 }
 
 export const TAX_GROUPS_META = [
@@ -37,7 +51,7 @@ export const TAX_ITEMS_META: Record<string, TaxItemMeta[]> = {
     { key: 'indiv_disabled', label: 'Disabled Individual', cap: 6000 },
     { key: 'indiv_education', label: 'Education Fees', cap: 7000 },
     { key: 'indiv_skills', label: 'Skills Enhancement / Personal Development', cap: 2000 },
-    { key: 'indiv_housing', label: 'Interest on Housing Loan – First Home', cap: 7000 },
+    { key: 'indiv_housing', label: 'Interest on Housing Loan – First Home', cap: 7000, note: 'First residential home only. Relief on the loan interest is tiered by the property’s purchase price: up to RM7,000/year if RM500,000 or below, up to RM5,000/year if RM500,001–RM750,000, and not available above RM750,000. Claimable for 3 consecutive years of assessment from the first claim.' },
     { key: 'indiv_spouse', label: 'Husband/Wife/Alimony', cap: 4000 },
     { key: 'indiv_disabled_spouse', label: 'Disabled Husband/Wife', cap: 5000 },
   ],
@@ -134,13 +148,16 @@ export interface TaxProfile {
   reliefs: string[];
   hasDisability: string | null;
   hasHousingLoan: string | null;
+  /** First-home purchase price, RM — drives the housing-loan relief tier. */
+  housingPrice: number | null;
 }
 
 const TAX_RELEVANCE_RULES: Record<string, (p: TaxProfile) => boolean> = {
   indiv_disabled: (p) => p.hasDisability === 'Yes',
   indiv_education: (p) => p.reliefs.includes('Education'),
   indiv_skills: (p) => p.reliefs.includes('Education'),
-  indiv_housing: (p) => p.hasHousingLoan === 'Yes',
+  // Not eligible at all above the RM750k price ceiling.
+  indiv_housing: (p) => p.hasHousingLoan === 'Yes' && housingLoanCap(p.housingPrice) > 0,
   indiv_spouse: (p) => p.marital === 'Married',
   indiv_disabled_spouse: (p) => p.marital === 'Married' && p.hasDisability === 'Yes',
   med_parents: (p) => p.reliefs.includes('Parents / dependants'),
@@ -168,7 +185,7 @@ export interface TaxModelItem {
   // cap is a real (if unusual) case; the % Complete badge must show it,
   // not silently read back as 100%.
   key: string; label: string; cap: number; captured: number; pct: number; barPct: number; remaining: number;
-  potentialBenefit: number; status: string;
+  potentialBenefit: number; status: string; note?: string;
   receipts: { merchant: string; amount: number; dateLabel: string; isOther: boolean }[];
   rawReceipts: TaxReceipt[];
 }
@@ -193,8 +210,11 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
         // Relatives relief) are a standard entitlement every resident
         // taxpayer gets with no receipts required — always fully captured,
         // unlike everything else here which only counts real transactions.
-        const d = im.automatic ? { captured: im.cap, receipts: [] } : (itemData[im.key] || { captured: 0, receipts: [] });
-        const captured = d.captured, cap = im.cap;
+        // The housing-loan relief cap is tiered by the entered property
+        // price; everything else uses its fixed meta cap.
+        const cap = im.key === 'indiv_housing' ? housingLoanCap(profile?.housingPrice) : im.cap;
+        const d = im.automatic ? { captured: cap, receipts: [] } : (itemData[im.key] || { captured: 0, receipts: [] });
+        const captured = d.captured;
         const receiptsSum = d.receipts.reduce((s, x) => s + x.amount, 0);
         const otherAmount = Math.max(0, captured - receiptsSum);
         const receipts = d.receipts.map((x) => ({ merchant: x.merchant, amount: x.amount, dateLabel: x.dateLabel, isOther: false }));
@@ -203,7 +223,7 @@ export function buildTaxModel(profile: TaxProfile | null, capturedData: Record<s
         const remaining = Math.max(0, cap - captured);
         const potentialBenefit = Math.round(remaining * r);
         const status = im.automatic ? 'Automatic' : pct >= 85 ? 'Optimised' : captured > 0 ? 'In progress' : 'Available';
-        return { key: im.key, label: im.label, cap, captured, pct, barPct: Math.min(100, pct), remaining, potentialBenefit, status, receipts, rawReceipts: d.receipts };
+        return { key: im.key, label: im.label, cap, captured, pct, barPct: Math.min(100, pct), remaining, potentialBenefit, status, note: im.note, receipts, rawReceipts: d.receipts };
       });
     // Group / total aggregates clamp each item to its own cap: tagging more
     // than a relief's cap to one bucket must not inflate the group total,

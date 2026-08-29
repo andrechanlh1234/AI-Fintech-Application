@@ -412,7 +412,11 @@ export function selectReviewFlow(state: AppState) {
 
 export function selectTaxCenter(state: AppState) {
   const ob = state.ob;
-  const profile: TaxProfile = { marital: ob.marital, dependants: ob.dependants, reliefs: ob.reliefs, hasDisability: ob.hasDisability, hasHousingLoan: ob.hasHousingLoan };
+  const profile: TaxProfile = {
+    marital: ob.marital, dependants: ob.dependants, reliefs: ob.reliefs,
+    hasDisability: ob.hasDisability, hasHousingLoan: ob.hasHousingLoan,
+    housingPrice: (() => { const n = parseFloat(String(ob.housingPrice).replace(/[, ]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; })(),
+  };
   const grossAnnualIncome = estimateAnnualIncome(ob.approxIncome || ob.income);
   const capturedData = buildCapturedData(state.transactions, state.taxYear);
   const rawTaxModel = buildTaxModel(profile, capturedData);

@@ -358,6 +358,21 @@ export function OnboardingFlow() {
             <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasDisability, (label) => actions.setOb('hasDisability', label))} chipStyleOverride={{ padding: '9px 16px' }} style={{ marginBottom: 20 }} />
             <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have a housing loan on your first home?</div>
             <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasHousingLoan, (label) => actions.setOb('hasHousingLoan', label))} chipStyleOverride={{ padding: '9px 16px' }} />
+            {ob.hasHousingLoan === 'Yes' && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ font: '600 12px var(--font-body)', marginBottom: 6 }}>What was the home’s purchase price? (RM)</div>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={ob.housingPrice}
+                  onChange={(e) => actions.setOb('housingPrice', e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="e.g. 480000"
+                />
+                <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.45 }}>
+                  Sets your housing-loan interest relief tier (RM7,000 / RM5,000 / none by price).
+                </div>
+              </div>
+            )}
             <div style={{ flex: 1 }} />
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
           </div>
