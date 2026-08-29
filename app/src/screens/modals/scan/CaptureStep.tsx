@@ -9,14 +9,17 @@ interface TorchCapabilities extends MediaTrackCapabilities { torch?: boolean }
 interface TorchConstraintSet extends MediaTrackConstraintSet { torch?: boolean }
 interface FocusConstraintSet extends MediaTrackConstraintSet { focusMode?: string }
 
-// Ask for the back camera at the highest resolution the sensor offers, with
-// continuous autofocus. `ideal` (not `exact`) so a device that can't hit
-// these still returns its best stream rather than failing; `advanced` is
-// best-effort and never causes a rejection.
+// Back camera at 1080p with continuous autofocus. Deliberately NOT 4K:
+// asking the sensor for 3840x2160 makes the stream take noticeably longer
+// to start on a phone (the camera renegotiates a high-res pipeline), which
+// is the lag/"glitch" when the viewfinder opens. 1080p starts fast and is
+// still well past what receipt OCR needs. `ideal` (not `exact`) so a
+// device that can't hit these still returns its best stream rather than
+// failing; `advanced` is best-effort and never causes a rejection.
 const HD_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   facingMode: { ideal: 'environment' },
-  width: { ideal: 3840 },
-  height: { ideal: 2160 },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
   frameRate: { ideal: 30 },
   advanced: [{ focusMode: 'continuous' } as FocusConstraintSet],
 };
@@ -53,14 +56,11 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         }
         streamRef.current = stream;
         if (videoRef.current) videoRef.current.srcObject = stream;
-        setLiveCameraReady(true);
-        // NOTE: deliberately no follow-up applyConstraints() to bump the
-        // resolution here. The initial getUserMedia already asks for
-        // width/height { ideal: 3840/2160 }; firing a second constraint
-        // change right after the stream goes live forces the camera to
-        // renegotiate and drops a black frame just as the viewfinder
-        // appears — the "sudden black screen" glitch on open. Whatever the
-        // sensor gave us on the first request is what we keep.
+        // `liveCameraReady` is flipped by the <video>'s own onPlaying
+        // handler, not here — so the fade-in reveals an actual first
+        // frame instead of cross-fading black-to-black and then popping.
+        // (No follow-up applyConstraints() either: renegotiating the
+        // stream right after it goes live drops a black frame.)
         // Torch is device/browser-dependent (notably absent on iOS Safari,
         // even inside a PWA) -- only show the flash button where the
         // active track actually reports the capability.
@@ -133,9 +133,10 @@ export function CaptureStep({ onClose, onManual, onCaptured }: {
         autoPlay
         muted
         playsInline
+        onPlaying={() => setLiveCameraReady(true)}
         style={{
           position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-          opacity: liveCameraReady ? 1 : 0, transition: 'opacity .35s ease-out',
+          opacity: liveCameraReady ? 1 : 0, transition: 'opacity .3s ease-out',
         }}
       />
 
