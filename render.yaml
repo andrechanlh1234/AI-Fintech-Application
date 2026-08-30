@@ -21,7 +21,7 @@ services:
     dockerContext: .
     region: singapore          # closest Render region to Malaysia + the Sydney Supabase DB
     plan: free                 # free = spins down after ~15 min idle; bump to "starter" ($7/mo) to keep warm
-    branch: fix/qa-findings-2026-08-28   # TODO: switch to `main` once the Postgres work is merged
+    branch: main
     healthCheckPath: /docs
     autoDeployTrigger: commit
     envVars:
@@ -54,7 +54,7 @@ services:
     runtime: static
     buildCommand: cd app && npm ci && npm run build
     staticPublishPath: app/dist
-    branch: fix/qa-findings-2026-08-28
+    branch: main
     autoDeployTrigger: commit
     envVars:
       - key: VITE_API_BASE         # https://cukai-api.onrender.com — baked in at build time
