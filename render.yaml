@@ -1,0 +1,65 @@
+# Render Blueprint — defines the whole deployment so it can be recreated from
+# one file instead of clicking through the dashboard.
+#
+# How to apply: Render dashboard -> New -> Blueprint -> pick this repo/branch.
+# Render reads this file, shows the two services below, and prompts once for
+# every env var marked `sync: false` (the secrets — paste them from
+# backend/.env). `generateValue` / non-secret values are filled automatically.
+#
+# Three-way link Shoumil asked for:
+#   GitHub  <-> Render : the connection that lets this Blueprint see the repo
+#   Render  <-> Supabase : the DATABASE_URL secret on cukai-api (below)
+#   the app <-> Supabase : backend/db.py, already on this branch
+services:
+  # ---------------------------------------------------------------------------
+  # Backend API — FastAPI + receipt OCR, containerised via backend/Dockerfile
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: cukai-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    region: singapore          # closest Render region to Malaysia + the Sydney Supabase DB
+    plan: free                 # free = spins down after ~15 min idle; bump to "starter" ($7/mo) to keep warm
+    branch: fix/qa-findings-2026-08-28   # TODO: switch to `main` once the Postgres work is merged
+    healthCheckPath: /docs
+    autoDeployTrigger: commit
+    envVars:
+      - key: CUKAI_JWT_SECRET       # session-signing secret — Render generates & stores one
+        generateValue: true
+      - key: DATABASE_URL           # Supabase session-pooler URI (postgresql://postgres.<ref>:<pw>@...pooler.supabase.com:5432/postgres)
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI    # https://cukai-api.onrender.com/auth/google/callback (also register in Google Cloud Console)
+        sync: false
+      - key: FRONTEND_URL           # https://cukai-web.onrender.com (fill after first deploy)
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Vite/React PWA, served as a static site (always free on Render)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: cukai-web
+    runtime: static
+    buildCommand: cd app && npm ci && npm run build
+    staticPublishPath: app/dist
+    branch: fix/qa-findings-2026-08-28
+    autoDeployTrigger: commit
+    envVars:
+      - key: VITE_API_BASE         # https://cukai-api.onrender.com — baked in at build time
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

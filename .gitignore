@@ -3,3 +3,15 @@ __pycache__/
 .pytest_cache/
 pipeline/tests/fixtures/
 .venv/
+backend/.venv/
+backend/cukai.db
+backend/.jwt_secret
+backend/backups/
+backend/.env
+
+# Xcode DerivedData from `xcodebuild -derivedDataPath build/DD`
+/build/
+
+# OS / editor / local agent junk
+.DS_Store
+.claude/

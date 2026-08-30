@@ -1,0 +1,25 @@
+# Keep the build context small and free of local/dev-only cruft.
+.git/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+
+# Python virtualenvs (host-specific, huge)
+.venv/
+backend/.venv/
+
+# Local dev data / secrets — never bake these into an image
+backend/.env
+backend/.jwt_secret
+backend/cukai.db
+backend/backups/
+
+# Frontend build artefacts / deps (backend image doesn't need them)
+app/node_modules/
+app/dist/
+app/ios/
+
+# Editor / OS junk
+.DS_Store
+.claude/
+build/

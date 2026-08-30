@@ -1,4 +1,8 @@
-from pipeline.receipt_ocr import parse_receipt_text, process_receipt_image
+from pipeline.receipt_ocr import (
+    _receipt_result_from_vision_fields,
+    parse_receipt_text,
+    process_receipt_image,
+)
 from pipeline.tests.generate_sample_receipt import generate
 
 
@@ -12,10 +16,57 @@ def test_parse_receipt_text_extracts_core_fields():
     assert record.relief_tag == "Medical relief — RM10,000 cap"
 
 
-def test_process_receipt_image_end_to_end():
+def test_process_receipt_image_tesseract_fallback_returns_single_line_item():
+    # No GEMINI_API_KEY in the test environment -- process_receipt_image
+    # falls back to the local Tesseract path, which has no way to separate
+    # individual items, so it must surface exactly one line item for the
+    # whole receipt rather than pretending it found several.
     path = generate()
-    record = process_receipt_image(path)
-    assert "guardian" in record.vendor.lower()
-    assert record.amount == 66.40
-    assert record.category == "Medical"
-    assert record.confidence > 0
+    result = process_receipt_image(path)
+    assert "guardian" in result.vendor.lower()
+    assert result.total == 66.40
+    assert len(result.line_items) == 1
+    assert result.line_items[0].amount == 66.40
+    assert result.line_items[0].category == "Medical"
+    assert result.confidence > 0
+
+
+def test_receipt_result_from_vision_fields_maps_line_items():
+    fields = {
+        "vendor": "AEON",
+        "date": "2026-08-25",
+        "total": 43.0,
+        "lineItems": [
+            {"description": "Milk", "amount": 8.0, "category": "Groceries", "taxDeductible": False, "confidence": 0.95},
+            {"description": "Notebook", "amount": 10.0, "category": "Lifestyle", "taxDeductible": True, "confidence": 0.4},
+        ],
+    }
+    result = _receipt_result_from_vision_fields(fields)
+    assert result.vendor == "AEON"
+    assert result.total == 43.0
+    assert len(result.line_items) == 2
+    assert result.line_items[0].description == "Milk"
+    assert result.line_items[0].tax_deductible is False
+    assert result.line_items[1].tax_deductible is True
+    # Overall confidence tracks the weakest item, not an average -- one
+    # badly-read item should make the whole scan read as "look closely",
+    # not get diluted by clean items sitting alongside it.
+    assert result.confidence == 0.4
+
+
+def test_receipt_result_from_vision_fields_drops_items_missing_amount_or_description():
+    fields = {
+        "vendor": "AEON", "date": None, "total": 10.0,
+        "lineItems": [{"description": "", "amount": 5.0}, {"description": "Item", "amount": None}],
+    }
+    result = _receipt_result_from_vision_fields(fields)
+    assert result.line_items == []
+
+
+def test_receipt_result_from_vision_fields_falls_back_to_keyword_category():
+    fields = {
+        "vendor": "AEON", "date": "2026-08-25", "total": 8.0,
+        "lineItems": [{"description": "Milk", "amount": 8.0, "category": "NotARealCategory", "taxDeductible": False, "confidence": 0.9}],
+    }
+    result = _receipt_result_from_vision_fields(fields)
+    assert result.line_items[0].category == "Groceries"  # categorize("Milk", "AEON") keyword match

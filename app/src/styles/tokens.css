@@ -1,0 +1,666 @@
+/* Cukai — design-system tokens and component classes. Plain native-platform
+   look: single green accent, true neutral grays, system font. Source of
+   truth for the system's look. */
+
+:root {
+  --color-bg: #f7f8f7;
+  --color-surface: #ffffff;
+  --color-text: #1a1c1a;
+  --color-text-muted: #6b6f6c;
+  --color-accent: #2e7d32;
+  --color-danger: #d93025;
+  --color-divider: color-mix(in srgb, #1a1c1a 14%, transparent);
+
+  /* Tonal ramp — true neutral gray, standard native surface hierarchy. */
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #f1f2f1;
+  --color-neutral-300: #e2e3e2;
+  --color-neutral-400: #c7c9c7;
+  --color-neutral-500: #a5a8a5;
+  --color-neutral-600: #7d817e;
+  --color-neutral-700: #5c605d;
+  --color-neutral-800: #3c3e3c;
+  --color-neutral-900: #212221;
+
+  /* Single brand accent — green, on the same neutral ramp. */
+  --color-accent-100: #e6f4e8;
+  --color-accent-200: #c2e5c6;
+  --color-accent-300: #96d19d;
+  --color-accent-400: #63b96e;
+  --color-accent-500: #439c4c;
+  --color-accent-600: #2e7d32;
+  --color-accent-700: #246428;
+  --color-accent-800: #1b4b1e;
+  --color-accent-900: #113213;
+
+  /* Semantic danger red — for destructive/flagged states only, not a brand
+     hue. Native apps reserve red for this; nothing else should use it. */
+  --color-danger-100: #fce8e6;
+  --color-danger-700: #a3241a;
+
+  /* Tax accent — a third, distinct warm gold voice reserved for the Tax
+     Center and tax-related tags/badges, so tax reads as its own "mode"
+     against the green money-management brand. Not used for buttons
+     outside Tax. */
+  --color-tax: #b7791f;
+  --color-tax-100: #fbf0dc;
+  --color-tax-200: #f6dfb0;
+  --color-tax-300: #edc47a;
+  --color-tax-400: #dea34a;
+  --color-tax-500: #c8862c;
+  --color-tax-600: #b7791f;
+  --color-tax-700: #935f18;
+  --color-tax-800: #6e4712;
+  --color-tax-900: #4a300c;
+
+  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading-weight: 600;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --space-1: 4.0px;
+  --space-2: 8.0px;
+  --space-3: 12.0px;
+  --space-4: 16.0px;
+  --space-6: 24.0px;
+  --space-8: 32.0px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Elevation — derived from the ground: soft ink-tinted shadows on a
+     light theme, a hairline edge + ambient darkness on a dark one. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+
+.grayscale{filter:grayscale(1) contrast(1.08)}
+
+/* In-app background — same flat ground as the outer showcase wrapper
+   (var(--color-neutral-200)), so the phone's screens read as a continuation
+   of the same canvas, not a different surface. */
+.rainforest-canvas {
+  background-color: var(--color-neutral-200);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Components — built with the tokens above. Plain CSS
+   on plain HTML: no JavaScript, no build step. Each class is documented in
+   readme.md and demonstrated in foundations/ and components/.
+   ══════════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-size: 15px; line-height: 1.55; font-weight: 400; }
+/* Tracking and leading are size-specific, not one fixed value applied
+   everywhere — large display text wants tight leading and negative
+   tracking (letters read too far apart as they grow); small text wants
+   looser leading and near-zero-to-positive tracking for legibility. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  margin: 0 0 var(--space-2);
+}
+h1 { font-size: 42px; line-height: 1.05; letter-spacing: -0.02em; }
+h2 { font-size: 32px; line-height: 1.08; letter-spacing: -0.018em; }
+h3 { font-size: 25px; line-height: 1.1; letter-spacing: -0.014em; }
+h4 { font-size: 20px; line-height: 1.15; letter-spacing: -0.01em; }
+h5 { font-size: 16px; line-height: 1.2; letter-spacing: -0.004em; }
+h6 { font-size: 13px; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; }
+.type-numeric { font-variant-numeric: tabular-nums; }
+p { margin: 0 0 var(--space-3); }
+a { color: var(--color-accent); text-underline-offset: 3px; }
+img { display: block; max-width: 100%; }
+figure { margin: 0; }
+figcaption {
+  font-size: 11px; margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+.text-muted { color: var(--color-text-muted); }
+:focus { outline: none; }
+/* Neutral ink-toned focus ring, not the brand green -- a coloured focus box
+   on every tap reads as an accessibility outline firing by accident rather
+   than deliberate polish. Ink-at-low-alpha adapts to both themes (white on
+   dark, near-black on light) and stays quiet. */
+:focus-visible { outline: 2px solid color-mix(in srgb, var(--color-text) 38%, transparent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — rules — */
+.hr {
+  height: 2px; border: 0; margin: var(--space-4) 0;
+  background: var(--color-divider);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease,
+    transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+}
+.btn svg { display: block; transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:not(:disabled):hover { box-shadow: var(--shadow-sm); }
+.btn:not(:disabled):active { transform: scale(0.96); }
+.btn-primary { background: var(--color-accent); color: #fff; }
+.btn-primary:hover { background: var(--color-accent-700); }
+.btn-primary:active { background: var(--color-accent-800); }
+/* A primary action the user can't take yet reads as a flat grey box, not a
+   dimmed green one — so the moment it turns green is an unmistakable "you
+   can continue now" signal. */
+.btn-primary:disabled { background: var(--color-neutral-300); color: var(--color-text-muted); opacity: 1; }
+.btn-secondary { border-color: var(--color-neutral-500); color: var(--color-text); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent); padding-inline: var(--space-1); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 36px; height: 36px; padding: 0; }
+.btn-block { width: 100%; margin-top: var(--space-2); justify-content: flex-start; text-align: left; }
+.btn-lg { width: 100%; padding: 16px 20px; font-size: 16px; }
+
+/* — forms — */
+/* The label reads as the bigger, more prominent element -- its field's
+   actual content (typed value or placeholder) stays visually secondary at
+   12px, smaller than iOS Safari's usual 16px auto-zoom-on-focus threshold.
+   That's a deliberate, accepted tradeoff, not an oversight: index.html's
+   viewport meta already pins `maximum-scale=1.0, user-scalable=no` app-wide
+   (so nobody could pinch-zoom this app even before this change), which is
+   also what keeps a sub-16px input from triggering that auto-zoom in the
+   first place -- but the same viewport lock is also the whole reason no
+   one can zoom in on small text either way, including this. Standalone/
+   installed-PWA mode on iOS is the one context where maximum-scale
+   enforcement has historically been less consistent than in a plain
+   browser tab -- worth a real device check on the installed app, not just
+   Safari, if the auto-zoom glitch ever resurfaces.
+   Descendant selector, not just direct-child: a label wrapped in an extra
+   layout div (e.g. paired with a character counter on the same row) would
+   otherwise silently fall out of this rule -- exactly what happened to
+   ReviewStep's "Expense name" label before this was widened to catch it
+   regardless of nesting. */
+/* min-width:0 overrides the flex-item default of min-width:auto, which
+   caps shrinking at the content's intrinsic width. Every call site puts
+   .field in a `flex: 1` row next to a sibling field -- harmless outside a
+   flex row, but without this, WebKit's wide intrinsic rendering of
+   `<input type="date">` (Safari/WKWebView only; Chromium shrinks it fine)
+   refuses to shrink to fit and overlaps the sibling field instead. */
+.field { min-width: 0; }
+.field label {
+  display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%; min-width: 0; min-height: 36px; padding: 6px 10px; font: inherit;
+  font-size: 12px; color: var(--color-text); caret-color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+/* Premium focus: the border firms up to an ink tone and a faint ink halo
+   lifts the field off the surface -- no brand-green box. min-width:0 (above)
+   also lets WebKit's wide native <input type="date"> shrink inside a
+   `flex: 1` column instead of overlapping its neighbour. */
+.input:focus-visible {
+  border-color: color-mix(in srgb, var(--color-text) 52%, transparent);
+  outline-offset: 0;
+  box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--color-text) 6%, transparent), var(--shadow-sm);
+}
+textarea.input { min-height: 90px; resize: vertical; }
+
+/* "Picker" fields (the receipt review Date + Payment method row): strip the
+   native <select> chrome so it's the exact same box as the date field, give
+   both a shared chevron, and a small press response — the OS picker's own
+   open animation is all iOS surfaces. */
+select.input { -webkit-appearance: none; appearance: none; }
+.input.picker-field {
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f8c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+.input.picker-field:active { transform: scale(0.985); transition: transform .09s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .input.picker-field:active { transform: none; }
+}
+.radio { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+.radio input, .seg-opt input {
+  position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.radio .dot {
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  border: 1.5px solid var(--color-divider);
+}
+.radio:hover .dot { border-color: var(--color-accent); }
+.radio input:checked + .dot {
+  border-color: var(--color-accent); background: var(--color-accent);
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.radio input:focus-visible + .dot { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.seg {
+  display: inline-flex; overflow: hidden;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; font-size: 13px; cursor: pointer;
+  transition: background-color .22s ease, color .22s ease;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt:has(input:checked) { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt:not(:has(input:checked)):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+
+/* Sliding pill tab-switch (Finance sub-tabs): unlike .seg above, the active
+   state is one indicator div sliding to a `left` offset rather than each
+   option's own background flipping -- gives the transition between tabs
+   instead of a snap. */
+.tab-track {
+  position: relative; display: flex;
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  background: var(--color-surface); padding: 3px; box-sizing: border-box;
+}
+.tab-indicator {
+  position: absolute; top: 3px; bottom: 3px;
+  background: var(--color-accent); border-radius: calc(var(--radius-md) - 3px);
+  transition: left .34s cubic-bezier(.4,0,.2,1);
+  z-index: 0;
+}
+.tab-track button {
+  position: relative; z-index: 1; flex: 1;
+  background: none; border: none; cursor: pointer;
+  padding: 10px 4px; font: 600 11.5px var(--font-body);
+  color: var(--color-text-muted); transition: color .32s ease;
+}
+.tab-track button[aria-selected="true"] { color: #fff; }
+
+/* — cards — */
+.card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3); border-radius: var(--radius-lg); background: var(--color-surface);
+  border: 1.5px solid var(--color-neutral-400);
+}
+.card-kicker { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+.card-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 17px; line-height: 1.2;
+}
+.card-body { margin: 0; font-size: 13px; color: var(--color-text-muted); flex: 1; }
+.card-meta {
+  display: flex; align-items: center; gap: 6px; font-size: 11px;
+  color: var(--color-text-muted);
+}
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+
+/* — tags — */
+.tag {
+  display: inline-flex; align-items: center; font-size: 11px;
+  letter-spacing: 0.02em; padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-danger { background: var(--color-danger-100); color: var(--color-danger-700); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); }
+.tag-tax { background: var(--color-tax-100); color: var(--color-tax-800); }
+
+/* — navigation — */
+.nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-divider);
+}
+.nav-brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; margin-right: auto;
+}
+.nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: var(--space-2); border-bottom: 2px solid var(--color-divider);
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* — dialog — */
+.dialog-backdrop {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%); display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-4); border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body { font-size: 14px; opacity: 0.85; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* — motion — screens fade/rise in on mount for free: sc-if swaps content by
+   unmounting/remounting fresh DOM nodes, and a CSS `animation` on the new
+   node's first paint fires automatically, no JS transition library needed. */
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* Directional page slides — forward navigation (drilling into a screen)
+   enters from the right, back navigation enters from the left, same as
+   native iOS/Android push transitions. Which one plays is decided in the
+   component's navDir state and bound via {{navClass}}, not by CSS alone. */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+/* One shared pace for every "new screen/panel/sheet enters" moment --
+   deliberately slower and calmer than a typical snappy mobile-web default,
+   matching the Finance > Net worth tab switch specifically (the one
+   explicitly called out as the reference feel: unhurried, not fast). All
+   four used to run at different speeds (.22s/.26s/.36s/.38s) with two
+   different easing philosophies (a calm decelerate curve on three of them,
+   a bouncy overshoot spring on the modal pop) -- that mismatch, not any
+   single number, was what read as inconsistent. Now one duration, one
+   curve, everywhere navigation happens.
+   (Earlier history: .screen-in was once trimmed down to .18s/.22s
+   specifically because onboarding fires it on every Continue/Skip/Back tap
+   across ~10 steps and the delay compounded. That tradeoff is deliberately
+   overridden here per explicit direction to prioritize a premium, unhurried
+   feel over onboarding tap-through speed -- worth revisiting only if
+   stepping through onboarding starts to feel like it's dragging.) */
+.screen-in { animation: screen-in .38s cubic-bezier(.16,1,.3,1) both; }
+.pop-in { animation: pop-in .38s cubic-bezier(.16,1,.3,1) both; }
+.tab-panel-in { animation: screen-in .38s cubic-bezier(.16,1,.3,1) both; }
+.slide-in-right { animation: slide-in-right .38s cubic-bezier(.16,1,.3,1) both; }
+.slide-in-left { animation: slide-in-left .38s cubic-bezier(.16,1,.3,1) both; }
+
+/* Full-screen flow (scan / OCR) leaving: reverse of screen-in — fade out
+   with a small settle downward + scale-in. Placed after .screen-in so its
+   `animation` wins when both classes are on the element during close. */
+@keyframes screen-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(12px) scale(.98); }
+}
+.scan-out { animation: screen-out .3s cubic-bezier(.16,1,.3,1) both; }
+
+/* Progress/relief bars fill smoothly instead of snapping to their width. */
+.bar-fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
+
+/* Shared press-feedback for the raw (non-.btn) buttons and touch-target
+   cards throughout the app — quick-action tiles, onboarding options,
+   capture choice cards, icon buttons. */
+.pressable {
+  cursor: pointer;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease,
+    filter .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.pressable:hover { filter: brightness(0.97); }
+.pressable:active { transform: scale(0.97); }
+
+/* Full-bleed bottom trigger (scan camera "more ways to add expense"): a
+   flat active tint instead of a scale, so a left:0/right:0 bar doesn't
+   pull its edges in and flash a seam on tap. */
+.sheet-peek-trigger { transition: background-color .15s ease; -webkit-tap-highlight-color: transparent; }
+.sheet-peek-trigger:active { background: var(--color-neutral-200); }
+
+/* Bottom tab bar — smooth color/opacity crossfade between tabs, with a
+   small icon "bounce" on tap. */
+.tab-btn { position: relative; z-index: 1; transition: color .28s ease, opacity .28s ease, border-color .28s ease; }
+.tab-btn svg { transition: transform .38s cubic-bezier(.5,1.3,.5,1); }
+.tab-btn[data-active="true"] svg { transform: scale(1.08); }
+.tab-btn:active svg { transform: scale(0.85); }
+
+/* Liquid-glass selection lens (iOS 26 style): a translucent, blurred
+   rounded-rect that springs between tab slots behind the active item — a
+   soft squircle sized to the stacked icon+label, not a flat ellipse. Bright
+   top rim + faint vertical sheen so it reads as glass, with a whisper of
+   accent tint tying it to the green active glyph. Position + width are
+   measured live in TabBar.tsx. */
+.tab-lens {
+  position: absolute; top: 3px; bottom: 3px; left: 0;
+  border-radius: 20px; z-index: 0; pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-accent) 9%, rgba(255, 255, 255, 0.66)),
+    rgba(255, 255, 255, 0.42)
+  );
+  -webkit-backdrop-filter: blur(9px) saturate(165%);
+  backdrop-filter: blur(9px) saturate(165%);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.9),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.045),
+    0 2px 6px rgba(0, 0, 0, 0.10);
+  transition: transform .44s cubic-bezier(.5, 1.28, .5, 1), width .44s cubic-bezier(.5, 1.28, .5, 1),
+    height .44s cubic-bezier(.5, 1.28, .5, 1), border-radius .34s ease;
+  will-change: transform;
+}
+
+/* Scrub gesture (iOS 26 / WhatsApp): press-and-drag the bar and the lens
+   becomes a magnifier bubble that tracks the finger fast, the bar swells
+   and lifts toward the touch, and the icon under the bubble bulges. */
+.tab-lens.is-circular {
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.95),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.6),
+    0 8px 22px rgba(0, 0, 0, 0.20);
+  transition: transform .11s cubic-bezier(.3, .85, .3, 1),
+    width .24s ease, height .24s ease, border-radius .24s ease;
+}
+.material-chrome {
+  transition: padding .3s cubic-bezier(.4, 1.25, .5, 1), transform .3s cubic-bezier(.4, 1.25, .5, 1);
+}
+.material-chrome.is-scrubbing {
+  padding-top: 15px; padding-bottom: 15px;
+  transform: translateY(-9px);
+}
+
+/* — material chrome — the tab bar and input bar float as a translucent
+   layer over scrolling content rather than an opaque strip, so content
+   scrolls underneath and hierarchy reads as depth, not a hard cutoff. The
+   bold top hairline stays (it's a brand cue), only the fill goes glass. */
+.material-chrome {
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .material-chrome { background: var(--color-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* Reduced motion isn't *no* feedback — it's a gentler, non-vestibular
+   equivalent: replace the slide/spring/scale motion with a short opacity
+   cross-fade, since the position/opacity change still aids comprehension
+   (something changed, here's the new state) without any parallax or push. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .screen-in, .tab-panel-in, .slide-in-right, .slide-in-left, .pop-in {
+    animation-name: reduced-fade-in !important;
+    animation-duration: 140ms !important;
+    animation-timing-function: ease !important;
+  }
+  .scan-out {
+    animation-name: reduced-fade-out !important;
+    animation-duration: 120ms !important;
+    animation-timing-function: ease !important;
+  }
+  .btn, .pressable, .tab-btn, .tab-btn svg, .btn svg {
+    transition-duration: 90ms !important;
+  }
+  .btn:not(:disabled):active, .pressable:active { transform: none !important; }
+  .tab-btn:active svg { transform: none !important; }
+}
+@keyframes reduced-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes reduced-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ============================================================================
+   Premium motion system — see src/lib/motion.ts. Spring-ish curves, physical
+   continuity, transform/opacity only, calm (250–450ms). Everything below
+   collapses to a short opacity fade (or nothing) under reduced-motion via the
+   block at the very end of this section.
+   ========================================================================== */
+
+/* — 1. Pane switch (top tabs + Finance sub-tabs). These are lateral moves
+   between sibling panes, not a drill-in navigation stack — so, like iOS's
+   own tab switches, the outgoing pane is NOT receded or parallaxed (that
+   reads as "big navigation" and the full-screen DOM clone it needed was the
+   source of the frame hitch). The incoming pane just does a short, snappy
+   directional slide + crossfade over the opaque ground. Drill-in ("tap a
+   card → its detail") is handled separately by the shared-element morph. */
+@keyframes page-enter-r {
+  from { opacity: 0; transform: translate3d(14px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes page-enter-l {
+  from { opacity: 0; transform: translate3d(-14px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.page-enter-forward { animation: page-enter-r .22s cubic-bezier(.2,.7,.2,1) both; }
+.page-enter-back    { animation: page-enter-l .22s cubic-bezier(.2,.7,.2,1) both; }
+.page-enter-forward, .page-enter-back {
+  position: relative; z-index: 1; will-change: transform, opacity;
+}
+
+/* — 3. Bottom sheets — spring rise, no heavy bounce; the layer behind
+   scales down 1–3% and gets a dim + blur veil. */
+@keyframes sheet-rise {
+  from { transform: translate3d(0, 100%, 0); }
+  60%  { transform: translate3d(0, -0.6%, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes sheet-fall {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, 100%, 0); }
+}
+@keyframes spring-pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.955); }
+}
+@keyframes scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scrim-out { from { opacity: 1; } to { opacity: 0; } }
+.sheet-scrim {
+  position: fixed; inset: 0; z-index: 200;
+  background: color-mix(in srgb, var(--color-neutral-900) 34%, transparent);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  animation: scrim-in .3s ease both;
+}
+.sheet-scrim.is-closing { animation: scrim-out .32s ease both; }
+.sheet-panel {
+  background: var(--color-bg); color: var(--color-text);
+  animation: sheet-rise .42s cubic-bezier(.22,1,.28,1) both;
+  will-change: transform;
+}
+/* Dismissal mirrors the entrance and isn't rushed: bottom sheets glide back
+   down on Apple's sheet curve; full-screen "pages" reverse the spring-pop
+   (shrink + fade) rather than snapping out. */
+.sheet-panel.is-closing { animation: sheet-fall .36s cubic-bezier(.32,.72,0,1) both; }
+.sheet-panel.spring-pop.is-closing { animation: spring-pop-out .3s cubic-bezier(.4,0,1,1) both; }
+/* Applied to the app shell root while any sheet is open. */
+.app-scaled-back {
+  transition: transform .42s cubic-bezier(.22,1,.28,1), filter .42s ease;
+  transform: scale(0.976); transform-origin: 50% 0;
+  filter: brightness(0.94);
+}
+
+/* — 4. Modal "Spring Pop" — 94–96% + slightly transparent → 100% with a
+   tiny overshoot, then settle. Subtle. Reuses .pop-in call sites via an
+   opt-in class so nothing else changes. */
+@keyframes spring-pop {
+  from { opacity: 0; transform: scale(0.95); }
+  70%  { opacity: 1; transform: scale(1.006); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.spring-pop { animation: spring-pop .3s cubic-bezier(.34,1.4,.5,1) both; }
+
+/* — 5. Contextual popovers / dropdowns — grow from the triggering control,
+   not a centred fade. The wrapper sets transform-origin per alignment. */
+@keyframes popover-grow {
+  from { opacity: 0; transform: scale(0.9) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.popover-origin { animation: popover-grow .22s cubic-bezier(.34,1.4,.5,1) both; transform-origin: var(--pop-origin, top center); }
+
+/* — 7. Chart draw — the line path traces on, then dots fade in. Driven once
+   per mount by NetWorthSection via inline stroke-dashoffset + a class. */
+@keyframes chart-draw { to { stroke-dashoffset: 0; } }
+@keyframes chart-fill-in { from { opacity: 0; } to { opacity: 1; } }
+.chart-line-draw {
+  animation: chart-draw .8s cubic-bezier(.16,1,.3,1) both;
+}
+.chart-area-in { animation: chart-fill-in .5s ease .35s both; }
+.chart-dots-in { animation: chart-fill-in .4s ease .55s both; }
+
+/* — 9. Success state — subtle scale, checkmark draws in, settle. */
+@keyframes success-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes success-check-draw { to { stroke-dashoffset: 0; } }
+.success-ring { animation: success-pop .42s cubic-bezier(.34,1.4,.5,1) both; }
+.success-check {
+  stroke-dasharray: 32; stroke-dashoffset: 32;
+  animation: success-check-draw .34s cubic-bezier(.65,0,.35,1) .22s both;
+}
+
+/* — 6. Financial number morph — the tween itself is JS (rAF), this is just a
+   soft colour transition hook for value-change flashes if a caller wants it. */
+.num-morph { transition: color .2s ease; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-forward, .page-enter-back,
+  .sheet-panel, .sheet-panel.is-closing,
+  .spring-pop, .popover-origin, .success-ring {
+    animation-name: reduced-fade-in !important;
+    animation-duration: 120ms !important;
+    animation-timing-function: ease !important;
+  }
+  .sheet-scrim.is-closing { animation: none !important; opacity: 0 !important; }
+  .tab-lens, .tab-lens.is-circular, .material-chrome, .material-chrome.is-scrubbing { transition: none !important; }
+  .sheet-scrim { animation-duration: 100ms !important; }
+  .chart-line-draw, .chart-area-in, .chart-dots-in, .success-check {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+  .app-scaled-back { transition: none !important; transform: none !important; filter: none !important; }
+}
