@@ -35,7 +35,7 @@ export function buildInitialState(): AppState {
       },
       subs: [],
       subDraft: { ...emptySubDraft },
-      goals: [], savingsTarget: '',
+      goals: [], primaryGoal: null, goalDetail: {}, savingsTarget: '',
     },
 
     tab: 'home',

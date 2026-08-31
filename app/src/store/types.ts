@@ -52,6 +52,14 @@ export interface OnboardingState {
   subs: Subscription[];
   subDraft: Subscription;
   goals: string[];
+  /** The one goal that matters most right now (single-select on the 'goals'
+   * step). `null` until chosen. The muted "anything else?" multi-select still
+   * lives in `goals` above. */
+  primaryGoal: string | null;
+  /** Goal-specific follow-up answers, keyed by the stable strings in
+   * GOAL_FOLLOWUP (e.g. `emergencyMonths`, `purchaseTarget`). Cleared whenever
+   * `primaryGoal` changes. */
+  goalDetail: Record<string, string>;
   savingsTarget: string;
 }
 
