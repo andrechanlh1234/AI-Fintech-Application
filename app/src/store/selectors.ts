@@ -2,12 +2,15 @@
 // renderVals() (lines 2345-2790). Pure functions of AppState — no dispatch,
 // no bound handlers. Screens read data from these and bind interactions via
 // useActions() directly (e.g. onClick={() => actions.openBalanceDetail(...)}).
-import type { AppState } from './types';
-import { money, moneyWhole, clamp, todayIso, isoToGroupLabel } from '../lib/format';
+import type { AppState, Subscription } from './types';
+import {
+  money, moneyWhole, clamp, todayIso, isoToGroupLabel,
+  planMonthlyEquivalent, planRemainingInstallments, planRemainingBalance,
+} from '../lib/format';
 import {
   type Transaction, type BudgetCategory, type BalanceEntry, type RecordRow,
 } from '../lib/seedData';
-import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER, txDateIso } from '../lib/constants';
+import { CAT_ICON, CAT_COLOR, NW_GROUP_ICON, rowBadge, deriveTxDate, MONTH_ORDER, txDateIso, FREQ_MONTHLY_FACTOR } from '../lib/constants';
 import {
   buildTaxModel, estimateAnnualIncome, marginalTaxRate, ASSUMED_TAX_RATE,
   TAX_ITEMS_META, type TaxProfile, type TaxItemData,
@@ -557,10 +560,24 @@ export function selectStatsPage(state: AppState) {
 }
 
 export function selectSubscriptions(state: AppState) {
-  const FREQ_MONTHLY_FACTOR: Record<string, number> = { Monthly: 1, Weekly: 4.33, Yearly: 1 / 12, Quarterly: 1 / 3 };
   const subs = state.ob.subs;
-  const monthlyTotal = subs.reduce((s, x) => s + (parseFloat(x.amount) || 0) * (FREQ_MONTHLY_FACTOR[x.frequency] || 1), 0);
-  return { subs, monthlyTotal, yearlyLabel: moneyWhole(monthlyTotal * 12) };
+  const isPlan = (x: Subscription) => x.kind === 'plan';
+  // A plan drops out of active lists/totals the moment it's fully paid
+  // (archived), same as `isComplete` in the spec — it stays in the array.
+  const plans = subs.filter(isPlan);
+  const activePlans = plans.filter((p) => !p.archived && planRemainingInstallments(p) > 0);
+  const subsOnly = subs.filter((x) => !isPlan(x));
+
+  const subsMonthly = subsOnly.reduce((s, x) => s + (parseFloat(x.amount) || 0) * (FREQ_MONTHLY_FACTOR[x.frequency] || 1), 0);
+  // Each ACTIVE plan contributes its monthly-equivalent until payoff.
+  const plansMonthly = activePlans.reduce((s, p) => s + planMonthlyEquivalent(p), 0);
+  const monthlyTotal = subsMonthly + plansMonthly;
+  const plansRemainingBalance = activePlans.reduce((s, p) => s + planRemainingBalance(p), 0);
+
+  return {
+    subs, monthlyTotal, yearlyLabel: moneyWhole(monthlyTotal * 12),
+    plans, activePlans, subsOnly, subsMonthly, plansMonthly, plansRemainingBalance,
+  };
 }
 
 // A compact, real-data-only snapshot sent alongside every AI chat message so
@@ -575,7 +592,7 @@ export function selectAiContext(state: AppState) {
   const chart = selectNetWorthChart(state);
   const { buckets, totalSpent, totalPlan } = selectBudgets(state);
   const tax = selectTaxCenter(state);
-  const { subs, monthlyTotal } = selectSubscriptions(state);
+  const { subsOnly, subsMonthly, activePlans, plansMonthly, plansRemainingBalance } = selectSubscriptions(state);
 
   return {
     netWorth: {
@@ -590,7 +607,12 @@ export function selectAiContext(state: AppState) {
       taxYear: state.taxYear, grossAnnualIncomeEstimate: Math.round(tax.grossAnnualIncome), marginalTaxBracketPct: tax.taxBracketPct,
       reliefsCapturedRM: Math.round(tax.totalCaptured), reliefsCapRM: Math.round(tax.totalCap),
     },
-    subscriptions: { count: subs.length, monthlyTotalRM: Math.round(monthlyTotal) },
+    subscriptions: { count: subsOnly.length, monthlyTotalRM: Math.round(subsMonthly) },
+    installmentPlans: {
+      count: activePlans.length,
+      monthlyTotalRM: Math.round(plansMonthly),
+      totalRemainingRM: Math.round(plansRemainingBalance),
+    },
     profile: {
       maritalStatus: state.ob.marital, dependants: state.ob.dependants,
       employmentStatus: state.ob.employment, taxResidency: state.ob.residency,

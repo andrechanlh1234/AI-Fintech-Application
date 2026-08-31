@@ -136,7 +136,11 @@ export function BudgetsSection() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · {s.category}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>
+                {s.kind === 'plan'
+                  ? `${Number(s.paidInstallments) || 0} of ${Number(s.totalInstallments) || 0} paid · ${s.provider || s.category}`
+                  : `${s.frequency} · ${s.category}`}
+              </div>
             </div>
             <div className="type-numeric" style={{ fontWeight: 600, fontSize: 13.5, flexShrink: 0 }}>RM {moneyWhole(parseFloat(s.amount) || 0)}</div>
           </div>

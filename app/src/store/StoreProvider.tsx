@@ -250,10 +250,11 @@ export function useActions() {
       addInvestmentRow: () => dispatch({ type: 'ADD_INVESTMENT_ROW' }),
       removeInvestmentRow: (idx: number) => dispatch({ type: 'REMOVE_INVESTMENT_ROW', idx }),
 
-      // subscriptions
-      setSubDraft: (field: string, value: string) => dispatch({ type: 'SET_SUB_DRAFT_FIELD', field, value }),
+      // subscriptions & installment plans
+      setSubDraft: (field: string, value: string | number | boolean) => dispatch({ type: 'SET_SUB_DRAFT_FIELD', field, value }),
       addSubscription: () => dispatch({ type: 'ADD_SUBSCRIPTION' }),
       removeSubscription: (idx: number) => dispatch({ type: 'REMOVE_SUBSCRIPTION', idx }),
+      markPlanPaymentMade: (idx: number) => dispatch({ type: 'MARK_PLAN_PAYMENT_MADE', idx }),
       openAddSub: () => dispatch({ type: 'OPEN_ADD_SUB' }),
       closeAddSub: () => dispatch({ type: 'CLOSE_ADD_SUB' }),
 

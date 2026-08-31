@@ -2,7 +2,10 @@
 import type { AppState } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
 import { subBadge, paymentMethodOptions, SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS } from '../../../lib/constants';
-import { money } from '../../../lib/format';
+import {
+  money, moneyWhole, isoToDisplayDate,
+  planPayoffDate, planProgressPct, planRemainingInstallments,
+} from '../../../lib/format';
 import { StepHeader, XIcon } from './shared';
 
 type Actions = ReturnType<typeof useActions>;
@@ -24,6 +27,49 @@ export function SubscriptionsStep({
 
       {state.ob.subs.map((s, i) => {
         const b = subBadge(s.name);
+        if (s.kind === 'plan') {
+          const total = Number(s.totalInstallments) || 0;
+          const paid = Number(s.paidInstallments) || 0;
+          const monthly = moneyWhole((parseFloat(s.amount) || 0));
+          const payoffIso = planPayoffDate(s.startDate, total, s.frequency || 'Monthly');
+          const doneLabel = payoffIso ? isoToDisplayDate(payoffIso).replace(/^\d+\s/, '') : '';
+          const complete = s.archived || planRemainingInstallments(s) <= 0;
+          return (
+            <div key={s.name + i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: 8, background: b.bg, color: b.fg, display: 'flex',
+                alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, fontSize: 13, marginTop: 2,
+              }}>
+                {b.letter}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 5 }}>
+                  RM {monthly}/mo · {paid} of {total} paid{doneLabel ? ` · done ${doneLabel}` : ''}
+                </div>
+                <div style={{ height: 4, borderRadius: 999, background: 'var(--color-neutral-300)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.round(planProgressPct(s) * 100)}%`, background: 'var(--color-accent)' }} />
+                </div>
+                {!complete && (
+                  <button
+                    type="button"
+                    onClick={() => actions.markPlanPaymentMade(i)}
+                    className="pressable"
+                    style={{ all: 'unset', cursor: 'pointer', marginTop: 6, color: 'var(--color-accent-700)', font: '700 11px var(--font-body)' }}
+                  >
+                    Mark payment made
+                  </button>
+                )}
+              </div>
+              <button
+                type="button" onClick={() => actions.removeSubscription(i)} aria-label="Remove" className="pressable"
+                style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)', marginTop: 2 }}
+              >
+                <XIcon size={14} />
+              </button>
+            </div>
+          );
+        }
         return (
           <div key={s.name + i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--color-neutral-300)' }}>
             <div style={{
