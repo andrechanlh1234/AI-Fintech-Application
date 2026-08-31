@@ -362,6 +362,32 @@ export const BUDGET_COMMON_CATEGORIES: Record<string, string[]> = {
   goals: ['Emergency fund'],
 };
 
+// Income-anchored auto-split used by the onboarding "Set your monthly budget"
+// step. `base` is the classic 50 / 30 / 20 split of monthly take-home pay
+// across Needs (fixed) / Lifestyle (flexible) / Savings & goals (goals);
+// `goalNudges` are deltas (fractions of income, each row nets to zero) layered
+// on top of `base` depending on the user's primary goal. The consuming step
+// rounds each slice to the nearest RM10 and drops the rounding remainder into
+// Needs. Not a contract with the store — purely the seed the user then nudges.
+export const BUDGET_TEMPLATES: {
+  base: { needs: number; lifestyle: number; savings: number };
+  goalNudges: Record<string, { needs: number; lifestyle: number; savings: number }>;
+} = {
+  base: { needs: 0.5, lifestyle: 0.3, savings: 0.2 },
+  goalNudges: {
+    // Emergency fund / big purchase: push Savings to ~28%, out of Lifestyle.
+    'Build an emergency fund': { needs: 0, lifestyle: -0.08, savings: 0.08 },
+    'Save for a big purchase': { needs: 0, lifestyle: -0.08, savings: 0.08 },
+    // Debt: +5% into Needs (debt repayments live in the Needs bucket).
+    'Pay off debt': { needs: 0.05, lifestyle: -0.05, savings: 0 },
+    // Investing / retirement: +5% into Savings.
+    'Grow my investments': { needs: 0, lifestyle: -0.05, savings: 0.05 },
+    'Retire comfortably': { needs: 0, lifestyle: -0.05, savings: 0.05 },
+    // Pure tracker: no prescriptive split (the step renders empty rows).
+    'Just track my spending': { needs: 0, lifestyle: 0, savings: 0 },
+  },
+};
+
 export function chipStyle(active: boolean) {
   return {
     bg: active ? 'var(--color-accent)' : 'var(--color-surface)',
