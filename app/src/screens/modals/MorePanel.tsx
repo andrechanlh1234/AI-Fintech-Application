@@ -2,7 +2,7 @@ import { useStore, useActions } from '../../store/StoreProvider';
 import { Toggle } from '../../components/primitives';
 import { selectSubscriptions } from '../../store/selectors';
 import { subBadge } from '../../lib/constants';
-import { money, isoToDisplayDate } from '../../lib/format';
+import { money } from '../../lib/format';
 
 function CloseIcon() {
   return (
@@ -59,10 +59,6 @@ export function MorePanel() {
   // presenting the defaults ("Resident · Single") as if they were selections.
   const chosenTaxParts = [ob.residency, ob.marital].filter(Boolean);
   const obTaxProfileSummary = `${chosenTaxParts.length ? chosenTaxParts.join(' · ') : 'Not set up yet'} · ${state.taxYear}`;
-  const linkedCount = ob.linkedIds.length;
-  const linkedAccountsSummary = linkedCount === 0
-    ? 'No accounts connected yet'
-    : `${linkedCount} account${linkedCount === 1 ? '' : 's'} connected`;
 
   const isPremium = state.subscriptionTier === 'premium';
   const subscriptionTagClass = isPremium ? 'tag-accent' : 'tag-neutral';
@@ -112,8 +108,8 @@ export function MorePanel() {
       <div style={{ borderTop: '1px solid var(--color-divider)' }} />
       <button type="button" onClick={() => { actions.goFinance(); actions.goFinanceNetWorth(); }} className="pressable" style={rowButtonStyle}>
         <div>
-          <div style={{ fontSize: 13.5, fontWeight: 600 }}>Linked accounts</div>
-          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>{linkedAccountsSummary}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600 }}>Accounts &amp; net worth</div>
+          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>View and edit your balances</div>
         </div>
         <ChevronIcon />
       </button>
@@ -210,7 +206,7 @@ export function MorePanel() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.frequency} &middot; next {isoToDisplayDate(s.nextPayment) || '—'}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.frequency} &middot; {s.category}</div>
             </div>
             <div className="type-numeric" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}>RM {money(parseFloat(s.amount) || 0)}</div>
             <button type="button" onClick={() => actions.removeSubscription(i)} aria-label="Remove" className="pressable" style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)' }}>

@@ -195,14 +195,29 @@ figcaption {
    flex row, but without this, WebKit's wide intrinsic rendering of
    `<input type="date">` (Safari/WKWebView only; Chromium shrinks it fine)
    refuses to shrink to fit and overlaps the sibling field instead. */
-.field { min-width: 0; }
-.field label {
+.field { min-width: 0; position: relative; }
+/* Floating "notch" label: sits centred on the field's top border (like the
+   reference Starbucks sign-in). Any example/hint text lives inside the box
+   as the input's placeholder. Scoped to a direct-child <label> so the few
+   advanced editors that wrap the label on a row with a character counter
+   (ReviewStep) keep their stacked layout via the `.field > div > label`
+   rule below. */
+.field > label {
+  position: absolute; top: 0; left: 9px; z-index: 1;
+  transform: translateY(-50%); transform-origin: left center;
+  margin: 0; padding: 0 5px; pointer-events: none;
+  font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: 0.01em;
+  background: var(--color-surface); color: var(--color-text-muted);
+  border-radius: 4px; transition: color .18s ease;
+}
+.field:focus-within > label { color: var(--color-accent-700); }
+.field > div > label {
   display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px;
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 .input {
-  width: 100%; min-width: 0; min-height: 36px; padding: 6px 10px; font: inherit;
-  font-size: 12px; color: var(--color-text); caret-color: var(--color-text);
+  width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; font: inherit;
+  font-size: 13px; color: var(--color-text); caret-color: var(--color-text);
   background: var(--color-surface);
   border: 1px solid var(--color-divider); border-radius: var(--radius-md);
   transition: border-color .2s ease, box-shadow .2s ease;

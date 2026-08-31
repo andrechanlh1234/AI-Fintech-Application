@@ -298,7 +298,7 @@ export const COUNTRY_OPTIONS = [
 // after onboarding, not as an extra page in between.
 export const OB_ORDER = [
   'login', 'source', 'privacy', 'about', 'txIncomeTypes', 'txReliefs', 'txHealth',
-  'goals', 'budget', 'linkAccounts', 'manualSetup', 'subscriptions', 'txDone',
+  'goals', 'budget', 'manualSetup', 'subscriptions', 'txDone',
 ];
 
 export interface IconFlags {

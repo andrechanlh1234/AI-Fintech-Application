@@ -2,7 +2,7 @@
 import type { AppState } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
 import { subBadge, paymentMethodOptions, SUB_FREQUENCY_OPTIONS, SUB_CATEGORY_OPTIONS } from '../../../lib/constants';
-import { money, isoToDisplayDate } from '../../../lib/format';
+import { money } from '../../../lib/format';
 import { StepHeader, XIcon } from './shared';
 
 type Actions = ReturnType<typeof useActions>;
@@ -34,7 +34,7 @@ export function SubscriptionsStep({
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{s.frequency} · Next {isoToDisplayDate(s.nextPayment) || '—'}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{s.frequency} · {s.category}</div>
             </div>
             <div className="type-numeric" style={{ fontSize: 13, fontWeight: 600 }}>RM {money(parseFloat(s.amount) || 0)}</div>
             <button
@@ -47,25 +47,38 @@ export function SubscriptionsStep({
         );
       })}
 
-      <div className="card" style={{ margin: '14px 0', gap: 10 }}>
+      <div className="card" style={{ margin: '14px 0', gap: 14 }}>
         <div style={{ font: '600 12px var(--font-body)' }}>Add a subscription</div>
-        <input className="input" value={draft.name} onChange={(e) => actions.setSubDraft('name', e.target.value)} placeholder="Name (e.g. Netflix)" />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="input" value={draft.amount} onChange={(e) => actions.setSubDraft('amount', e.target.value)} placeholder="Amount (RM)" style={{ flex: 1 }} />
-          <select className="input" value={draft.frequency} onChange={(e) => actions.setSubDraft('frequency', e.target.value)} style={{ flex: 1 }}>
-            {SUB_FREQUENCY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
+        <div className="field">
+          <label>Name</label>
+          <input className="input" value={draft.name} onChange={(e) => actions.setSubDraft('name', e.target.value)} placeholder="e.g. Netflix" />
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input className="input" type="date" value={draft.startDate} onChange={(e) => actions.setSubDraft('startDate', e.target.value)} style={{ flex: 1 }} />
-          <input className="input" type="date" value={draft.nextPayment} onChange={(e) => actions.setSubDraft('nextPayment', e.target.value)} style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Amount (RM)</label>
+            <input className="input" inputMode="decimal" value={draft.amount} onChange={(e) => actions.setSubDraft('amount', e.target.value)} placeholder="e.g. 54.90" />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Frequency</label>
+            <select className="input" value={draft.frequency} onChange={(e) => actions.setSubDraft('frequency', e.target.value)}>
+              {SUB_FREQUENCY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
         </div>
-        <select className="input" value={draft.method} onChange={(e) => actions.setSubDraft('method', e.target.value)}>
-          {paymentMethodOptions(state.ob.manual, draft.method).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-        </select>
-        <select className="input" value={draft.category} onChange={(e) => actions.setSubDraft('category', e.target.value)}>
-          {SUB_CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-        </select>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Payment method</label>
+            <select className="input" value={draft.method} onChange={(e) => actions.setSubDraft('method', e.target.value)}>
+              {paymentMethodOptions(state.ob.manual, draft.method).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Category</label>
+            <select className="input" value={draft.category} onChange={(e) => actions.setSubDraft('category', e.target.value)}>
+              {SUB_CATEGORY_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
+        </div>
         <button type="button" onClick={actions.addSubscription} className="btn btn-secondary" style={{ marginTop: 2 }}>Add subscription</button>
       </div>
 

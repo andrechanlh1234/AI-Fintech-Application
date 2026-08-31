@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectBudgets, selectSubscriptions } from '../../store/selectors';
 import { Card } from '../../components/primitives';
-import { moneyWhole, isoToDisplayDate } from '../../lib/format';
+import { moneyWhole } from '../../lib/format';
 import { BudgetGauge } from './BudgetGauge';
 import { BudgetUtilisationBar } from '../../components/BudgetUtilisationBar';
 import { AddBudgetCategoryForm } from '../../components/AddBudgetCategoryForm';
@@ -136,7 +136,7 @@ export function BudgetsSection() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · Next {isoToDisplayDate(s.nextPayment) || '—'}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{s.frequency} · {s.category}</div>
             </div>
             <div className="type-numeric" style={{ fontWeight: 600, fontSize: 13.5, flexShrink: 0 }}>RM {moneyWhole(parseFloat(s.amount) || 0)}</div>
           </div>

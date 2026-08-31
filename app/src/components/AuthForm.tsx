@@ -58,19 +58,28 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
               If an account exists for <strong>{email.trim()}</strong>, we've emailed a 6-digit
               code. Enter it below with your new password. The code expires in 15 minutes.
             </div>
-            <input
-              className="input" inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code"
-              value={code} required pattern="[0-9]{6}" maxLength={6}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            />
-            <input
-              className="input" type="password" placeholder="New password (min. 8 characters)" value={password}
-              required minLength={8} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)}
-            />
-            <input
-              className="input" type="password" placeholder="Confirm new password" value={confirmPassword}
-              required minLength={8} autoComplete="new-password" onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+            <div className="field">
+              <label>Reset code</label>
+              <input
+                className="input" inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code"
+                value={code} required pattern="[0-9]{6}" maxLength={6}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              />
+            </div>
+            <div className="field">
+              <label>New password</label>
+              <input
+                className="input" type="password" placeholder="Min. 8 characters" value={password}
+                required minLength={8} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label>Confirm password</label>
+              <input
+                className="input" type="password" placeholder="Re-enter new password" value={confirmPassword}
+                required minLength={8} autoComplete="new-password" onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
             {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
             <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
               {busy ? 'Please wait…' : 'Reset password'}
@@ -87,10 +96,13 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
             <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 2 }}>
               Enter your email and we'll send a code to reset your password.
             </div>
-            <input
-              className="input" type="email" placeholder="Email" value={email} required autoComplete="email"
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="field">
+              <label>Email address</label>
+              <input
+                className="input" type="email" placeholder="you@example.com" value={email} required autoComplete="email"
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
             {error && <div style={{ fontSize: 12, color: 'var(--color-danger-700)' }}>{error}</div>}
             <button type="submit" className="btn btn-primary btn-lg" disabled={busy} style={{ marginTop: 4 }}>
               {busy ? 'Please wait…' : 'Send reset code'}
@@ -119,15 +131,21 @@ export function AuthForm({ onSuccess }: { onSuccess: () => void }) {
           Log in
         </label>
       </div>
-      <input
-        className="input" type="email" placeholder="Email" value={email} required autoComplete="email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="input" type="password" placeholder="Password (min. 8 characters)" value={password} required
-        minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <div className="field">
+        <label>Email address</label>
+        <input
+          className="input" type="email" placeholder="you@example.com" value={email} required autoComplete="email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+      <div className="field">
+        <label>Password</label>
+        <input
+          className="input" type="password" placeholder="Min. 8 characters" value={password} required
+          minLength={8} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
       {mode === 'login' && (
         <button
           type="button" onClick={() => { setMode('forgot'); setError(null); }} className="pressable"

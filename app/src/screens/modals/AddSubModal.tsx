@@ -60,17 +60,6 @@ export function AddSubModal() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <div className="field" style={{ flex: 1 }}>
-          <label>Start date</label>
-          <input className="input" type="date" value={draft.startDate} onChange={(e) => actions.setSubDraft('startDate', e.target.value)} />
-        </div>
-        <div className="field" style={{ flex: 1 }}>
-          <label>Next payment</label>
-          <input className="input" type="date" value={draft.nextPayment} onChange={(e) => actions.setSubDraft('nextPayment', e.target.value)} />
-        </div>
-      </div>
-
       <div className="field" style={{ marginBottom: 12 }}>
         <label>Payment method</label>
         <select className="input" value={draft.method} onChange={(e) => actions.setSubDraft('method', e.target.value)}>

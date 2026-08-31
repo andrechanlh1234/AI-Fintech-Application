@@ -9,15 +9,13 @@ import { AuthForm } from '../../components/AuthForm';
 import { googleLoginUrl } from '../../lib/api';
 import { computeAge, sanitizeRaw } from '../../lib/format';
 import { useState } from 'react';
-import { LinkAccountsStep } from './steps/LinkAccountsStep';
 import { ManualSetupStep } from './steps/ManualSetupStep';
 import { SubscriptionsStep } from './steps/SubscriptionsStep';
 import { BudgetSetupStep } from './steps/BudgetSetupStep';
 
-function computeOrder(multipleIncome: string | null, setupMethod: string | null): string[] {
+function computeOrder(multipleIncome: string | null): string[] {
   return OB_ORDER.filter((k) => {
     if (k === 'txIncomeTypes') return multipleIncome === 'Yes';
-    if (k === 'manualSetup') return setupMethod === 'manual';
     return true;
   });
 }
@@ -35,12 +33,12 @@ export function OnboardingFlow() {
       : 'Google sign-in didn’t go through — use email for now, or try again.';
   });
 
-  // `order` drives actual navigation (goNext/goBack/nextAfter) and includes
+  // `order` drives actual navigation (goNext/goBack) and includes
   // every step. The visible "Step X of N" counter excludes the final
   // "You're all set" screen, which doesn't show a counter of its own —
   // so every other step's denominator reflects the count a user actually
   // experiences as "steps to fill in," not the raw array length.
-  const order = computeOrder(ob.multipleIncome, ob.setupMethod);
+  const order = computeOrder(ob.multipleIncome);
   const idx = order.indexOf(state.obStep);
   const visibleOrder = order.filter((k) => k !== 'txDone');
   const visibleIdx = visibleOrder.indexOf(state.obStep);
@@ -59,13 +57,6 @@ export function OnboardingFlow() {
   const goBack = () => {
     if (idx > 0) actions.obBack(order[idx - 1]);
   };
-  const nextAfter = (current: string, overrides: { multipleIncome?: string | null; setupMethod?: string | null }) => {
-    const ord = computeOrder(overrides.multipleIncome ?? ob.multipleIncome, overrides.setupMethod ?? ob.setupMethod);
-    const i = ord.indexOf(current);
-    return i >= 0 && i < ord.length - 1 ? ord[i + 1] : ord[ord.length - 1];
-  };
-  const chooseManual = () => actions.chooseManualMethod(nextAfter('linkAccounts', { setupMethod: 'manual' }));
-  const chooseLink = () => actions.chooseLinkMethod(nextAfter('linkAccounts', { setupMethod: 'link' }));
 
   const hasReliefProfile = ob.reliefs.length > 0;
   const obDoneSubtitle = hasReliefProfile
@@ -395,10 +386,6 @@ export function OnboardingFlow() {
 
         {state.obStep === 'budget' && (
           <BudgetSetupStep state={state} actions={actions} progress={progress} onBack={goBack} onSkip={goNext} onContinue={goNext} />
-        )}
-
-        {state.obStep === 'linkAccounts' && (
-          <LinkAccountsStep state={state} actions={actions} progress={progress} onBack={goBack} onSkip={goNext} onChooseManual={chooseManual} onChooseLink={chooseLink} />
         )}
 
         {state.obStep === 'manualSetup' && (
