@@ -206,7 +206,11 @@ export function MorePanel() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{s.frequency} &middot; {s.category}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                {s.kind === 'plan'
+                  ? `${Number(s.paidInstallments) || 0} of ${Number(s.totalInstallments) || 0} paid · ${s.provider || s.category}`
+                  : <>{s.frequency} &middot; {s.category}</>}
+              </div>
             </div>
             <div className="type-numeric" style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}>RM {money(parseFloat(s.amount) || 0)}</div>
             <button type="button" onClick={() => actions.removeSubscription(i)} aria-label="Remove" className="pressable" style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', color: 'var(--color-text-muted)' }}>

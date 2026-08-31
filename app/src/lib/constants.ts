@@ -369,3 +369,10 @@ export function chipStyle(active: boolean) {
     borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
   };
 }
+
+// Installment-plan (BNPL / credit-card EPP) options — see the Subscription
+// type's `kind: 'plan'` fields. Providers cover the common Malaysian BNPL
+// apps plus a generic credit-card easy-payment-plan and an "Other" catch-all;
+// tenures are the usual months-of-instalment choices offered at checkout.
+export const INSTALLMENT_PROVIDER_OPTS = ['Atome', 'SPayLater', 'Grab PayLater', 'Shopee', 'Credit card EPP', 'Other'];
+export const INSTALLMENT_TENURE_OPTS = [3, 6, 12, 18, 24];

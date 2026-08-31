@@ -1,4 +1,5 @@
 // Ported from Cukai v7.dc.html money()/moneyWhole()/clamp().
+import { FREQ_MONTHLY_FACTOR } from './constants';
 
 export function money(n: number): string {
   if (!Number.isFinite(n)) n = 0; // never render the literal "NaN" in a money field
@@ -169,6 +170,65 @@ export function computeAge(dobIso: string): number | null {
     (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
   if (beforeBirthday) age--;
   return age >= 0 ? age : null;
+}
+
+// ---- Installment plans -----------------------------------------------------
+// Pure derivations for a Subscription with kind === 'plan'. Nothing here is
+// ever stored: remaining installments/balance, payoff date, progress and the
+// monthly-equivalent are all recomputed from the plan's stored fields
+// (amount = per-installment charge, totalInstallments, paidInstallments,
+// startDate, frequency). MVP is flat / 0% — interestRate is display-only.
+interface PlanLike {
+  amount: string;
+  frequency: string;
+  startDate?: string;
+  totalInstallments?: number;
+  paidInstallments?: number;
+}
+
+// max(0, totalInstallments − paidInstallments)
+export function planRemainingInstallments(plan: PlanLike): number {
+  return Math.max(0, (Number(plan.totalInstallments) || 0) - (Number(plan.paidInstallments) || 0));
+}
+
+// remainingInstallments × per-installment amount (flat, 0% — MVP)
+export function planRemainingBalance(plan: PlanLike): number {
+  return planRemainingInstallments(plan) * (parseFloat(plan.amount) || 0);
+}
+
+// paidInstallments / totalInstallments, clamped to 0..1 (0 when no tenure).
+export function planProgressPct(plan: PlanLike): number {
+  const total = Number(plan.totalInstallments) || 0;
+  if (total <= 0) return 0;
+  return clamp((Number(plan.paidInstallments) || 0) / total, 0, 1);
+}
+
+// per-installment amount × the frequency's monthly factor.
+export function planMonthlyEquivalent(plan: PlanLike): number {
+  return (parseFloat(plan.amount) || 0) * (FREQ_MONTHLY_FACTOR[plan.frequency] ?? 1);
+}
+
+// startDate + totalInstallments × interval(frequency), as ISO "YYYY-MM-DD".
+// Returns '' for a missing/invalid start date or a non-positive tenure —
+// callers show nothing rather than a fabricated date.
+export function planPayoffDate(startDateIso: string, totalInstallments: number, frequency: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startDateIso || '');
+  if (!m || !(totalInstallments > 0)) return '';
+  const [, y, mo, d] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d));
+  for (let i = 0; i < totalInstallments; i++) {
+    switch (frequency) {
+      case 'Weekly': date.setDate(date.getDate() + 7); break;
+      case 'Quarterly': date.setMonth(date.getMonth() + 3); break;
+      case 'Yearly': date.setFullYear(date.getFullYear() + 1); break;
+      case 'Monthly':
+      default: date.setMonth(date.getMonth() + 1); break;
+    }
+  }
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
 }
 
 // Day-group header label for a transaction list row: "Today"/"Yesterday"

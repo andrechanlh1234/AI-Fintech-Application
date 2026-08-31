@@ -9,6 +9,10 @@ import type { AppState } from './types';
 
 const emptySubDraft = {
   name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment',
+  // Installment-plan fields — all sane defaults, kind: 'subscription' so a
+  // fresh draft is a plain subscription until the Add sheet's toggle flips it.
+  kind: 'subscription' as const, provider: 'Atome', totalAmount: '',
+  totalInstallments: 3, paidInstallments: 0, interestRate: '0', archived: false,
 };
 
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
