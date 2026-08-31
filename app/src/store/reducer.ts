@@ -11,7 +11,7 @@ import {
 import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
-import { mapOcrCategory, CAT_ICON } from '../lib/constants';
+import { mapOcrCategory, CAT_ICON, GOAL_FOLLOWUP } from '../lib/constants';
 import { materializeRecurring } from '../lib/recurring';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
@@ -34,6 +34,15 @@ function clampCap(n: unknown): number {
   const v = Number(n);
   if (!Number.isFinite(v) || v <= 0) return 0;
   return Math.min(v, MAX_BUDGET_CAP);
+}
+
+// A couple of primary money goals imply a MONTHLY savings figure once their
+// follow-up is filled in (see GOAL_FOLLOWUP.monthlySavings) — mirror it into
+// ob.savingsTarget so the budget step keeps reading one string. Goals with no
+// monthly implication (emergency fund) leave it blank.
+function deriveObSavingsTarget(primaryGoal: string | null, detail: Record<string, string>): string {
+  const cfg = primaryGoal ? GOAL_FOLLOWUP[primaryGoal] : undefined;
+  return cfg?.monthlySavings ? cfg.monthlySavings(detail) : '';
 }
 
 /** The slice of scan-flow state that must be wiped whenever the receipt
@@ -64,6 +73,7 @@ export type Action =
   | { type: 'SET_OB_FIELD'; field: string; value: unknown }
   | { type: 'SET_OB_OTHER'; field: string; value: string }
   | { type: 'TOGGLE_OB_ARRAY'; field: 'incomeTypes' | 'reliefs' | 'goals'; value: string }
+  | { type: 'SET_OB_GOAL_DETAIL'; key: string | null; value?: string }
   | { type: 'OB_NEXT'; nextStep: string }
   | { type: 'OB_BACK'; prevStep: string }
   | { type: 'OB_FINISH' }
@@ -300,6 +310,18 @@ export function reducer(state: AppState, action: Action): AppState {
       const arr = state.ob[action.field];
       const next = arr.includes(action.value) ? arr.filter((v) => v !== action.value) : [...arr, action.value];
       return { ...state, ob: { ...state.ob, [action.field]: next } };
+    }
+    case 'SET_OB_GOAL_DETAIL': {
+      // key === null → the primary goal changed: wipe every follow-up answer
+      // and any monthly savings figure derived from the previous goal.
+      if (action.key === null) {
+        return { ...state, ob: { ...state.ob, goalDetail: {}, savingsTarget: '' } };
+      }
+      const goalDetail = { ...state.ob.goalDetail, [action.key]: action.value ?? '' };
+      return {
+        ...state,
+        ob: { ...state.ob, goalDetail, savingsTarget: deriveObSavingsTarget(state.ob.primaryGoal, goalDetail) },
+      };
     }
     case 'OB_NEXT':
       return { ...state, obStep: action.nextStep };
