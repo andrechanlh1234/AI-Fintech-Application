@@ -12,7 +12,8 @@ function BackIcon() {
 
 /** Content-only — a parent renders this inside a full BottomSheet gated on
  * state.taxProfileOpen. Edits the same ob.* fields the onboarding tax-setup
- * steps ('about', 'txReliefs', 'txHealth') collect, through the same
+ * steps ('about' — which now folds in the old disability/housing-loan
+ * questions — and 'txReliefs') collect, through the same
  * actions.setOb/toggleObArray dispatches, so there's exactly one place the
  * profile behind Tax Center's relief eligibility actually lives. */
 export function TaxProfileModal() {
