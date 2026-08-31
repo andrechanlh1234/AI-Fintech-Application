@@ -1,7 +1,7 @@
 // Reducer ported from Cukai v7.dc.html's action methods (lines 2069-2343).
 // Each Action variant corresponds 1:1 to an original `this.xyz = (...) => this.setState(...)` method,
 // so screen components can call `actions.xyz(...)` exactly as the original template called `{{xyz}}`.
-import type { AppState, ManualData, BalanceDraft, TxDraft } from './types';
+import type { AppState, ManualData, BalanceDraft, TxDraft, Subscription } from './types';
 import { mkCategory, mkItem, defaultNetWorthSeed, type ReviewItem, type Transaction } from '../lib/seedData';
 import { upsertMerchantMemory, lookupMerchantMemory } from '../lib/merchantMemory';
 import {
@@ -11,7 +11,7 @@ import {
 import { uid } from '../lib/ids';
 import { clamp, isoToDisplayDate, displayDateToIso, computeNextPayment, todayIso, todayDisplayDate, dateGroupFor, parseDisplayDate } from '../lib/format';
 import { categoryToReliefKey } from '../lib/taxEngine';
-import { mapOcrCategory, CAT_ICON } from '../lib/constants';
+import { mapOcrCategory, CAT_ICON, GOAL_FOLLOWUP } from '../lib/constants';
 import { materializeRecurring } from '../lib/recurring';
 import { buildTrialData, emptyTrialData } from '../lib/trialData';
 import { applySyncPayload, type SyncPayload } from './initialState';
@@ -34,6 +34,15 @@ function clampCap(n: unknown): number {
   const v = Number(n);
   if (!Number.isFinite(v) || v <= 0) return 0;
   return Math.min(v, MAX_BUDGET_CAP);
+}
+
+// A couple of primary money goals imply a MONTHLY savings figure once their
+// follow-up is filled in (see GOAL_FOLLOWUP.monthlySavings) — mirror it into
+// ob.savingsTarget so the budget step keeps reading one string. Goals with no
+// monthly implication (emergency fund) leave it blank.
+function deriveObSavingsTarget(primaryGoal: string | null, detail: Record<string, string>): string {
+  const cfg = primaryGoal ? GOAL_FOLLOWUP[primaryGoal] : undefined;
+  return cfg?.monthlySavings ? cfg.monthlySavings(detail) : '';
 }
 
 /** The slice of scan-flow state that must be wiped whenever the receipt
@@ -64,6 +73,7 @@ export type Action =
   | { type: 'SET_OB_FIELD'; field: string; value: unknown }
   | { type: 'SET_OB_OTHER'; field: string; value: string }
   | { type: 'TOGGLE_OB_ARRAY'; field: 'incomeTypes' | 'reliefs' | 'goals'; value: string }
+  | { type: 'SET_OB_GOAL_DETAIL'; key: string | null; value?: string }
   | { type: 'OB_NEXT'; nextStep: string }
   | { type: 'OB_BACK'; prevStep: string }
   | { type: 'OB_FINISH' }
@@ -132,9 +142,10 @@ export type Action =
   | { type: 'ADD_INVESTMENT_ROW' }
   | { type: 'REMOVE_INVESTMENT_ROW'; idx: number }
 
-  | { type: 'SET_SUB_DRAFT_FIELD'; field: string; value: string }
+  | { type: 'SET_SUB_DRAFT_FIELD'; field: string; value: string | number | boolean }
   | { type: 'ADD_SUBSCRIPTION' }
   | { type: 'REMOVE_SUBSCRIPTION'; idx: number }
+  | { type: 'MARK_PLAN_PAYMENT_MADE'; idx: number }
   | { type: 'OPEN_ADD_SUB' } | { type: 'CLOSE_ADD_SUB' }
 
   | { type: 'OPEN_BALANCE_DETAIL'; listKey: string; id: string } | { type: 'CLOSE_BALANCE_DETAIL' }
@@ -300,6 +311,18 @@ export function reducer(state: AppState, action: Action): AppState {
       const arr = state.ob[action.field];
       const next = arr.includes(action.value) ? arr.filter((v) => v !== action.value) : [...arr, action.value];
       return { ...state, ob: { ...state.ob, [action.field]: next } };
+    }
+    case 'SET_OB_GOAL_DETAIL': {
+      // key === null → the primary goal changed: wipe every follow-up answer
+      // and any monthly savings figure derived from the previous goal.
+      if (action.key === null) {
+        return { ...state, ob: { ...state.ob, goalDetail: {}, savingsTarget: '' } };
+      }
+      const goalDetail = { ...state.ob.goalDetail, [action.key]: action.value ?? '' };
+      return {
+        ...state,
+        ob: { ...state.ob, goalDetail, savingsTarget: deriveObSavingsTarget(state.ob.primaryGoal, goalDetail) },
+      };
     }
     case 'OB_NEXT':
       return { ...state, obStep: action.nextStep };
@@ -536,22 +559,72 @@ export function reducer(state: AppState, action: Action): AppState {
       if ((action.field === 'startDate' || action.field === 'frequency') && nextDraft.startDate) {
         nextDraft.nextPayment = computeNextPayment(nextDraft.startDate, nextDraft.frequency);
       }
+      // Installment plan: keep the per-installment `amount` auto-filled from
+      // total ÷ count whenever either changes. A direct edit to `amount`
+      // itself doesn't hit this branch, so a manual override sticks until
+      // total / count change again (same pattern as nextPayment above).
+      if ((action.field === 'totalAmount' || action.field === 'totalInstallments') && nextDraft.kind === 'plan') {
+        const total = parseFloat(String(nextDraft.totalAmount)) || 0;
+        const count = Number(nextDraft.totalInstallments) || 0;
+        if (total > 0 && count > 0) nextDraft.amount = (Math.round((total / count) * 100) / 100).toFixed(2);
+      }
       return { ...state, ob: { ...state.ob, subDraft: nextDraft } };
     }
     case 'ADD_SUBSCRIPTION': {
       const d = state.ob.subDraft;
       // Reject a missing name or a non-positive amount — a negative amount
       // would render as positive (money() abs's it) while quietly subtracting
-      // from the monthly/yearly subscription totals.
+      // from the monthly/yearly subscription totals. `amount` is the
+      // per-installment charge for a plan, so the same guard applies.
       if (!d.name || !(parseFloat(d.amount) > 0)) return state;
+      const isPlan = d.kind === 'plan';
+      // A plan with no tenure isn't a plan — reject rather than store one
+      // that divides by zero everywhere downstream.
+      if (isPlan && !(Number(d.totalInstallments) > 0)) return state;
+      const total = Number(d.totalInstallments) || 0;
+      const paid = Math.max(0, Math.min(Number(d.paidInstallments) || 0, total));
+      const record: Subscription = isPlan
+        ? {
+            kind: 'plan',
+            name: d.name, amount: d.amount, frequency: d.frequency || 'Monthly',
+            startDate: d.startDate, nextPayment: d.nextPayment, method: d.method, category: d.category,
+            provider: d.provider || 'Other', totalAmount: d.totalAmount || '',
+            totalInstallments: total, paidInstallments: paid,
+            interestRate: d.interestRate || '0',
+            archived: paid >= total,
+          }
+        : {
+            kind: 'subscription',
+            name: d.name, amount: d.amount, frequency: d.frequency,
+            startDate: d.startDate, nextPayment: d.nextPayment, method: d.method, category: d.category,
+          };
       return {
         ...state,
-        ob: { ...state.ob, subs: [...state.ob.subs, d], subDraft: { name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment' } },
+        ob: {
+          ...state.ob,
+          subs: [...state.ob.subs, record],
+          subDraft: {
+            name: '', amount: '', frequency: 'Monthly', startDate: '', nextPayment: '', method: 'Cash', category: 'Entertainment',
+            kind: 'subscription' as const, provider: 'Atome', totalAmount: '',
+            totalInstallments: 3, paidInstallments: 0, interestRate: '0', archived: false,
+          },
+        },
         addSubOpen: false,
       };
     }
     case 'REMOVE_SUBSCRIPTION':
       return { ...state, ob: { ...state.ob, subs: state.ob.subs.filter((_, i) => i !== action.idx) } };
+    case 'MARK_PLAN_PAYMENT_MADE': {
+      // Bump paidInstallments on the plan at idx (no-op on a subscription or
+      // an already-complete plan) and archive it once the last payment lands.
+      const subs = state.ob.subs.map((s, i) => {
+        if (i !== action.idx || s.kind !== 'plan') return s;
+        const total = Number(s.totalInstallments) || 0;
+        const paid = Math.min(total, (Number(s.paidInstallments) || 0) + 1);
+        return { ...s, paidInstallments: paid, archived: paid >= total };
+      });
+      return { ...state, ob: { ...state.ob, subs } };
+    }
     case 'OPEN_ADD_SUB':
       return { ...state, addSubOpen: true };
     case 'CLOSE_ADD_SUB':

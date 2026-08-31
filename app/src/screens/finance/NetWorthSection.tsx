@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, useActions } from '../../store/StoreProvider';
-import { selectNetWorth, selectNetWorthChart, type NwRow } from '../../store/selectors';
+import { selectNetWorth, selectNetWorthChart, selectSubscriptions, type NwRow } from '../../store/selectors';
 import { money, moneyWhole } from '../../lib/format';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
 import { animate, captureSharedOrigin, prefersReducedMotion, DUR, EASE_DECEL } from '../../lib/motion';
@@ -68,6 +68,10 @@ export function NetWorthSection() {
   const actions = useActions();
   const nw = selectNetWorth(state);
   const chart = selectNetWorthChart(state);
+  // Σ remaining balance of active installment plans — a derived, read-only
+  // liability figure (plans live in ob.subs, not the manual liability rows),
+  // shown only when there's an outstanding balance.
+  const { activePlans, plansRemainingBalance } = selectSubscriptions(state);
 
   const netWorthDeltaText = 'RM ' + moneyWhole(Math.abs(chart.delta)) + ' (' + chart.deltaPct.toFixed(1) + '%)';
 
@@ -335,6 +339,20 @@ export function NetWorthSection() {
             )}
           </div>
         ))}
+
+        {plansRemainingBalance > 0 && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontWeight: 500, fontSize: 16 }}>Installment plans</span>
+                <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  Remaining balance · {activePlans.length} active
+                </span>
+              </span>
+              <span className="type-numeric" style={{ fontWeight: 700, fontSize: 14 }}>RM {money(plansRemainingBalance)}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

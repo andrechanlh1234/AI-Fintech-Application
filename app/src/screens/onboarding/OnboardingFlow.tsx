@@ -2,23 +2,54 @@
 // Not wrapped in the app's tab shell — this owns its own full-page layout.
 import { useStore, useActions } from '../../store/StoreProvider';
 import {
-  OB_ORDER, SOURCE_OPTS, RELIEF_OPTS, INCOME_TYPE_OPTS, INCOME_RANGE_OPTS, EMPLOYMENT_OPTS, GOAL_OPTS, COUNTRY_OPTIONS,
+  OB_ORDER, SOURCE_OPTS, RELIEF_OPTS, INCOME_TYPE_OPTS, INCOME_RANGE_OPTS, EMPLOYMENT_OPTS,
+  PRIMARY_GOAL_OPTS, GOAL_FOLLOWUP, COUNTRY_OPTIONS,
 } from '../../lib/constants';
 import { StepHeader, ChipRow, OtherInput, singleOpts, multiOpts, CheckIcon } from './steps/shared';
 import { AuthForm } from '../../components/AuthForm';
 import { googleLoginUrl } from '../../lib/api';
-import { computeAge, sanitizeRaw } from '../../lib/format';
-import { useState } from 'react';
+import { computeAge } from '../../lib/format';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { ManualSetupStep } from './steps/ManualSetupStep';
 import { SubscriptionsStep } from './steps/SubscriptionsStep';
 import { BudgetSetupStep } from './steps/BudgetSetupStep';
 
-function computeOrder(multipleIncome: string | null): string[] {
-  return OB_ORDER.filter((k) => {
-    if (k === 'txIncomeTypes') return multipleIncome === 'Yes';
-    return true;
-  });
+// Small ink-on-border section title used inside the one-page `about` step.
+function SubTitle({ children }: { children: ReactNode }) {
+  return <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 18, margin: '0 0 4px' }}>{children}</div>;
 }
+
+// Grey helper line under a control.
+function Helper({ children }: { children: ReactNode }) {
+  return <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.45 }}>{children}</div>;
+}
+
+// Small bold label above a control (matches the existing inline pattern used
+// throughout this step).
+function MiniLabel({ children }: { children: ReactNode }) {
+  return <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>{children}</div>;
+}
+
+// Full-width segmented control (Resident/Non-resident, Yes/No, 3/6/12) — the
+// same button styling the residency toggle already used, factored out so the
+// several new reveals in `about` and `goals` share it.
+function Segmented({ opts, value, onSelect }: { opts: string[]; value: string | null; onSelect: (v: string) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 10 }}>
+      {singleOpts(opts, value, onSelect).map((opt) => (
+        <button
+          key={opt.label} type="button" onClick={opt.onClick} className="pressable"
+          style={{ flex: 1, padding: 10, borderRadius: 'var(--radius-md)', cursor: 'pointer', font: '600 13px var(--font-body)', border: `1.5px solid ${opt.borderColor}`, background: opt.bg, color: opt.color }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const RULE: CSSProperties = { borderTop: '1px solid var(--color-divider)', margin: '22px 0' };
+const MINOR_RULE: CSSProperties = { borderTop: '1px solid var(--color-divider)', opacity: 0.6, margin: '18px 0' };
 
 export function OnboardingFlow() {
   const { state } = useStore();
@@ -33,20 +64,15 @@ export function OnboardingFlow() {
       : 'Google sign-in didn’t go through — use email for now, or try again.';
   });
 
-  // `order` drives actual navigation (goNext/goBack) and includes
-  // every step. The visible "Step X of N" counter excludes the final
-  // "You're all set" screen, which doesn't show a counter of its own —
-  // so every other step's denominator reflects the count a user actually
-  // experiences as "steps to fill in," not the raw array length.
-  const order = computeOrder(ob.multipleIncome);
+  // `order` drives actual navigation (goNext/goBack). There are no longer any
+  // conditional steps — the old `txIncomeTypes`/`txHealth` reveals now live
+  // inline inside `about` — so it's just OB_ORDER. The visible "Step X of N"
+  // counter excludes the final "You're all set" screen, which doesn't show a
+  // counter of its own.
+  const order = OB_ORDER;
   const idx = order.indexOf(state.obStep);
   const visibleOrder = order.filter((k) => k !== 'txDone');
   const visibleIdx = visibleOrder.indexOf(state.obStep);
-  // Denominator is the full path length (every conditional step counted), so
-  // it stays fixed for the whole flow. Previously it was `visibleOrder.length`,
-  // which changed mid-onboarding — "Step 9 of 10" became "Step 10 of 11" the
-  // moment the user chose manual setup. A skipped number reads far better
-  // than a moving total.
   const totalSteps = OB_ORDER.filter((k) => k !== 'txDone').length;
   const progress = `Step ${visibleIdx + 1} of ${totalSteps}`;
 
@@ -56,6 +82,17 @@ export function OnboardingFlow() {
   };
   const goBack = () => {
     if (idx > 0) actions.obBack(order[idx - 1]);
+  };
+
+  // Primary money goal is single-select. Re-tapping the current one clears it.
+  // Any change wipes the goal-specific follow-up (ob.goalDetail) and the
+  // derived ob.savingsTarget, and drops the goal from the muted "anything
+  // else?" multi-select if it was there.
+  const pickPrimaryGoal = (label: string) => {
+    const next = ob.primaryGoal === label ? null : label;
+    actions.setOb('primaryGoal', next);
+    actions.setObGoalDetail(null);
+    if (next && ob.goals.includes(next)) actions.toggleObArray('goals', next);
   };
 
   const hasReliefProfile = ob.reliefs.length > 0;
@@ -217,11 +254,14 @@ export function OnboardingFlow() {
         {state.obStep === 'about' && (
           <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <StepHeader progress={progress} onBack={goBack} onSkip={goNext} />
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>Tell us about yourself</div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>A few basics so we can personalise things.</div>
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label>Name</label>
-              <input className="input" value={ob.name} onChange={(e) => actions.setOb('name', e.target.value)} placeholder="Aina Natasha" />
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>Tell us about you</div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>This builds your tax profile and the reliefs you can claim. About a minute.</div>
+
+            {/* ---- Section 1 — Personal ---- */}
+            <SubTitle>Personal</SubTitle>
+            <div className="field" style={{ marginTop: 12, marginBottom: 12 }}>
+              <label>Full name</label>
+              <input className="input" value={ob.name} onChange={(e) => actions.setOb('name', e.target.value)} placeholder="Nurul Aisyah binti Ahmad" />
             </div>
             {/* Uneven split + explicit minWidth:0 on each column: WebKit renders
                 <input type="date"> at a wide intrinsic size that a bare
@@ -229,7 +269,7 @@ export function OnboardingFlow() {
                 overlapping Country. Date gets the larger share (it holds
                 day/month/year plus the native picker icon); the wider gap
                 keeps clear air between them. */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 4 }}>
               <div className="field" style={{ flex: 5, minWidth: 0 }}>
                 <label>Date of birth</label>
                 <input type="date" className="input" value={ob.dob} onChange={(e) => actions.setOb('dob', e.target.value)} />
@@ -244,84 +284,102 @@ export function OnboardingFlow() {
                 </select>
               </div>
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
-              <label>Occupation</label>
-              <input className="input" value={ob.occupation} onChange={(e) => actions.setOb('occupation', e.target.value)} placeholder="e.g. Product designer" />
+
+            <div style={RULE} />
+
+            {/* ---- Section 2 — Work & income ---- */}
+            <div className="tag tag-tax" style={{ alignSelf: 'flex-start', marginBottom: 10 }}>Work</div>
+            <SubTitle>What you do</SubTitle>
+            <div style={{ display: 'flex', gap: 16, marginTop: 12, marginBottom: 16 }}>
+              <div className="field" style={{ flex: 1, minWidth: 0 }}>
+                <label>Occupation</label>
+                <input className="input" value={ob.occupation} onChange={(e) => actions.setOb('occupation', e.target.value)} placeholder="e.g. Product designer" />
+              </div>
+              <div className="field" style={{ flex: 1, minWidth: 0 }}>
+                <label>Income source</label>
+                <input className="input" value={ob.employer} onChange={(e) => actions.setOb('employer', e.target.value)} placeholder="e.g. Petronas, or your business name" />
+              </div>
             </div>
-            <div className="field" style={{ marginBottom: 20 }}>
+
+            <MiniLabel>Employment status</MiniLabel>
+            <ChipRow opts={singleOpts(EMPLOYMENT_OPTS, ob.employment, (label) => actions.setOb('employment', label))} chipStyleOverride={{ padding: '9px 14px' }} style={{ marginBottom: 12 }} />
+            {ob.employment === 'Other' && <OtherInput value={ob.otherText.employment || ''} onChange={(v) => actions.setObOther('employment', v)} style={{ marginBottom: 16 }} />}
+
+            <div className="field" style={{ marginTop: 4 }}>
               <label>Monthly income</label>
               <select className="input" value={ob.income} onChange={(e) => actions.setOb('income', e.target.value)}>
                 {INCOME_RANGE_OPTS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
 
-            <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 20 }} />
+            <div style={RULE} />
+
+            {/* ---- Section 3 — Your tax situation ---- */}
             <div className="tag tag-tax" style={{ alignSelf: 'flex-start', marginBottom: 10 }}>Tax Setup</div>
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>A bit about your tax situation</div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>This personalises your Tax Center.</div>
+            <SubTitle>Your tax situation</SubTitle>
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '6px 0 18px' }}>We use this to match you to the right residency rules, rebates and reliefs.</div>
 
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Tax residency</div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-              {singleOpts(['Resident', 'Non-resident'], ob.residency, (label) => actions.setOb('residency', label)).map((opt) => (
-                <button
-                  key={opt.label} type="button" onClick={opt.onClick} className="pressable"
-                  style={{ flex: 1, padding: 10, borderRadius: 'var(--radius-md)', cursor: 'pointer', font: '600 13px var(--font-body)', border: `1.5px solid ${opt.borderColor}`, background: opt.bg, color: opt.color }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <MiniLabel>Tax residency</MiniLabel>
+            <Segmented opts={['Resident', 'Non-resident']} value={ob.residency} onSelect={(label) => actions.setOb('residency', label)} />
+            <Helper>You're usually a tax resident if you're in Malaysia 182 days or more a year.</Helper>
+
+            <div style={{ marginTop: 18 }}>
+              <MiniLabel>Marital status</MiniLabel>
+              <ChipRow opts={singleOpts(['Single', 'Married', 'Divorced', 'Other'], ob.marital, (label) => actions.setOb('marital', label))} chipStyleOverride={{ padding: '9px 14px' }} style={{ marginBottom: 8 }} />
+              {ob.marital === 'Other' && <OtherInput value={ob.otherText.marital || ''} onChange={(v) => actions.setObOther('marital', v)} style={{ marginBottom: 8 }} />}
             </div>
 
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Marital status</div>
-            <ChipRow opts={singleOpts(['Single', 'Married', 'Divorced', 'Other'], ob.marital, (label) => actions.setOb('marital', label))} chipStyleOverride={{ padding: '9px 14px' }} style={{ marginBottom: 8 }} />
-            {ob.marital === 'Other' && <OtherInput value={ob.otherText.marital || ''} onChange={(v) => actions.setObOther('marital', v)} style={{ marginBottom: 18 }} />}
-
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Dependants</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 22 }}>
-              {singleOpts(['0', '1', '2', '3', '4+'], ob.dependants, (label) => actions.setOb('dependants', label)).map((opt) => (
-                <button
-                  key={opt.label} type="button" onClick={opt.onClick} className="pressable"
-                  style={{ width: 42, height: 42, borderRadius: '50%', cursor: 'pointer', font: '600 13px var(--font-body)', border: `1.5px solid ${opt.borderColor}`, background: opt.bg, color: opt.color }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ borderTop: '1px solid var(--color-divider)', marginBottom: 20 }} />
-
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Employment status</div>
-            <ChipRow opts={singleOpts(EMPLOYMENT_OPTS, ob.employment, (label) => actions.setOb('employment', label))} chipStyleOverride={{ padding: '9px 14px' }} style={{ marginBottom: 16 }} />
-            {ob.employment === 'Other' && <OtherInput value={ob.otherText.employment || ''} onChange={(v) => actions.setObOther('employment', v)} style={{ marginBottom: 16 }} />}
-
-            <div className="field" style={{ marginBottom: 18 }}>
-              <label>Employer / source of income (optional)</label>
-              <input className="input" value={ob.employer} onChange={(e) => actions.setOb('employer', e.target.value)} placeholder="e.g. Petronas, or your business name" />
+            <div style={{ marginTop: 18 }}>
+              <MiniLabel>Children or dependants</MiniLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {singleOpts(['0', '1', '2', '3', '4+'], ob.dependants, (label) => actions.setOb('dependants', label)).map((opt) => (
+                  <button
+                    key={opt.label} type="button" onClick={opt.onClick} className="pressable"
+                    style={{ width: 42, height: 42, borderRadius: '50%', cursor: 'pointer', font: '600 13px var(--font-body)', border: `1.5px solid ${opt.borderColor}`, background: opt.bg, color: opt.color }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have income besides your salary?</div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-              {singleOpts(['Yes', 'No'], ob.multipleIncome, (label) => actions.setOb('multipleIncome', label)).map((opt) => (
-                <button
-                  key={opt.label} type="button" onClick={opt.onClick} className="pressable"
-                  style={{ flex: 1, padding: 10, borderRadius: 'var(--radius-md)', cursor: 'pointer', font: '600 13px var(--font-body)', border: `1.5px solid ${opt.borderColor}`, background: opt.bg, color: opt.color }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div style={{ flex: 1 }} />
-            <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
-          </div>
-        )}
+            <div style={MINOR_RULE} />
 
-        {state.obStep === 'txIncomeTypes' && (
-          <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <StepHeader progress={progress} onBack={goBack} onSkip={goNext} />
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>What other income do you have?</div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>Select all that apply.</div>
-            <ChipRow opts={multiOpts(INCOME_TYPE_OPTS, ob.incomeTypes, (label) => actions.toggleObArray('incomeTypes', label))} chipStyleOverride={{ padding: '10px 16px' }} />
-            {ob.incomeTypes.includes('Other') && <OtherInput value={ob.otherText.incomeTypes || ''} onChange={(v) => actions.setObOther('incomeTypes', v)} style={{ marginTop: 12 }} />}
-            <div style={{ flex: 1 }} />
+            <MiniLabel>Do you earn money outside your main job?</MiniLabel>
+            <Segmented opts={['Yes', 'No']} value={ob.multipleIncome} onSelect={(label) => actions.setOb('multipleIncome', label)} />
+            <Helper>Your main job is what you entered above. This is about extra income — side gigs, rent, dividends — which is taxed differently and has its own reliefs.</Helper>
+            {ob.multipleIncome === 'Yes' && (
+              <div style={{ marginTop: 14 }}>
+                <MiniLabel>Which kinds?</MiniLabel>
+                <ChipRow opts={multiOpts(INCOME_TYPE_OPTS, ob.incomeTypes, (label) => actions.toggleObArray('incomeTypes', label))} chipStyleOverride={{ padding: '9px 14px' }} />
+                {ob.incomeTypes.includes('Other') && <OtherInput value={ob.otherText.incomeTypes || ''} onChange={(v) => actions.setObOther('incomeTypes', v)} style={{ marginTop: 10 }} />}
+              </div>
+            )}
+
+            <div style={{ marginTop: 18 }}>
+              <MiniLabel>Do you or a dependant have an OKU-registered disability?</MiniLabel>
+              <Segmented opts={['Yes', 'No']} value={ob.hasDisability} onSelect={(label) => actions.setOb('hasDisability', label)} />
+              <Helper>Unlocks the disabled-individual and disabled-dependant reliefs.</Helper>
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <MiniLabel>Do you have a housing loan on your first home?</MiniLabel>
+              <Segmented opts={['Yes', 'No']} value={ob.hasHousingLoan} onSelect={(label) => actions.setOb('hasHousingLoan', label)} />
+              {ob.hasHousingLoan === 'Yes' && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="field">
+                    <label>Home price</label>
+                    <input
+                      className="input" inputMode="numeric" value={ob.housingPrice}
+                      onChange={(e) => actions.setOb('housingPrice', e.target.value.replace(/[^\d]/g, ''))} placeholder="e.g. 480000"
+                    />
+                  </div>
+                  <Helper>Sets which housing-loan interest relief tier you fall into.</Helper>
+                </div>
+              )}
+            </div>
+
+            <div style={{ flex: 1, minHeight: 24 }} />
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
           </div>
         )}
@@ -338,48 +396,67 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {state.obStep === 'txHealth' && (
-          <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <StepHeader progress={progress} onBack={goBack} onSkip={goNext} />
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>A couple more things</div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>
-              This helps us personalise which tax categories we surface for you — we'll skip anything that doesn't apply.
-            </div>
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you or a dependant have a registered disability?</div>
-            <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasDisability, (label) => actions.setOb('hasDisability', label))} chipStyleOverride={{ padding: '9px 16px' }} style={{ marginBottom: 20 }} />
-            <div style={{ font: '600 12px var(--font-body)', marginBottom: 8 }}>Do you have a housing loan on your first home?</div>
-            <ChipRow opts={singleOpts(['Yes', 'No'], ob.hasHousingLoan, (label) => actions.setOb('hasHousingLoan', label))} chipStyleOverride={{ padding: '9px 16px' }} />
-            {ob.hasHousingLoan === 'Yes' && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ font: '600 12px var(--font-body)', marginBottom: 6 }}>What was the home’s purchase price? (RM)</div>
-                <input
-                  className="input"
-                  inputMode="numeric"
-                  value={ob.housingPrice}
-                  onChange={(e) => actions.setOb('housingPrice', e.target.value.replace(/[^\d]/g, ''))}
-                  placeholder="e.g. 480000"
-                />
-                <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.45 }}>
-                  Sets your housing-loan interest relief tier (RM7,000 / RM5,000 / none by price).
-                </div>
-              </div>
-            )}
-            <div style={{ flex: 1 }} />
-            <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
-          </div>
-        )}
-
         {state.obStep === 'goals' && (
           <div className="screen-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <StepHeader progress={progress} onBack={goBack} onSkip={goNext} />
-            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>What are your goals?</div>
-            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>Select all that apply — this helps us set up your budget.</div>
-            <ChipRow opts={multiOpts(GOAL_OPTS, ob.goals, (label) => actions.toggleObArray('goals', label))} chipStyleOverride={{ padding: '10px 16px' }} style={{ marginBottom: 20 }} />
-            <div className="field" style={{ marginBottom: 18 }}>
-              <label>Monthly savings target (optional)</label>
-              <input className="input" inputMode="decimal" value={ob.savingsTarget} onChange={(e) => actions.setOb('savingsTarget', sanitizeRaw(e.target.value))} placeholder="e.g. 1000" />
+            <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 23, marginBottom: 6 }}>What's your main money goal?</div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 20 }}>Pick the one that matters most right now. Cukai shapes your budget and nudges around it.</div>
+
+            <ChipRow opts={singleOpts(PRIMARY_GOAL_OPTS, ob.primaryGoal, pickPrimaryGoal)} chipStyleOverride={{ padding: '10px 16px' }} />
+
+            {ob.primaryGoal && (GOAL_FOLLOWUP[ob.primaryGoal]?.fields.length ?? 0) > 0 && (
+              <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {GOAL_FOLLOWUP[ob.primaryGoal].fields.map((f) => {
+                  const val = ob.goalDetail[f.key] ?? '';
+                  const label = f.optional ? `${f.label} (optional)` : f.label;
+                  if (f.kind === 'segmented') {
+                    return (
+                      <div key={f.key}>
+                        <MiniLabel>{label}</MiniLabel>
+                        <Segmented opts={f.options ?? []} value={val || null} onSelect={(v) => actions.setObGoalDetail(f.key, v)} />
+                      </div>
+                    );
+                  }
+                  if (f.kind === 'select') {
+                    return (
+                      <div key={f.key} className="field">
+                        <label>{label}</label>
+                        <select className="input" value={val} onChange={(e) => actions.setObGoalDetail(f.key, e.target.value)}>
+                          <option value="" disabled>Choose…</option>
+                          {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={f.key} className="field">
+                      <label>{label}</label>
+                      <input
+                        className="input"
+                        inputMode={f.kind === 'number' ? 'numeric' : undefined}
+                        value={val}
+                        onChange={(e) => actions.setObGoalDetail(f.key, f.kind === 'number' ? e.target.value.replace(/[^\d]/g, '') : e.target.value)}
+                        placeholder={f.placeholder}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ marginTop: 26 }}>
+              <div style={{ font: '600 12px var(--font-body)', color: 'var(--color-text-muted)', marginBottom: 8 }}>Working on anything else?</div>
+              <ChipRow
+                opts={multiOpts(
+                  PRIMARY_GOAL_OPTS.filter((g) => g !== ob.primaryGoal),
+                  ob.goals,
+                  (label) => actions.toggleObArray('goals', label),
+                )}
+                chipStyleOverride={{ padding: '7px 12px', fontSize: 12, opacity: 0.9 }}
+              />
             </div>
-            <div style={{ flex: 1 }} />
+
+            <div style={{ flex: 1, minHeight: 24 }} />
             <button type="button" onClick={goNext} className="btn btn-primary btn-lg">Continue</button>
           </div>
         )}

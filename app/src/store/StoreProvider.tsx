@@ -66,7 +66,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistState(state);
     // Persist whenever any user-editable slice of state changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.primaryGoal, state.ob.goalDetail, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths]);
 
   // Recompute the real net-worth timeline whenever a dated balance row or
   // entry changes — this is what makes the Finance > Net worth chart plot
@@ -90,7 +90,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths, state.authUser]);
+  }, [state.ob.manual, state.ob.subs, state.ob.name, state.ob.dob, state.ob.country, state.ob.occupation, state.ob.income, state.ob.residency, state.ob.marital, state.ob.dependants, state.ob.employment, state.ob.employer, state.ob.hasDisability, state.ob.hasHousingLoan, state.ob.approxIncome, state.ob.multipleIncome, state.ob.incomeTypes, state.ob.reliefs, state.ob.goals, state.ob.primaryGoal, state.ob.goalDetail, state.ob.savingsTarget, state.finance.buckets, state.appStage, state.theme, state.netWorthSeed, state.transactions, state.receipts, state.netWorthHistory, state.userMode, state.recurGeneratedMonths, state.authUser]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
@@ -128,6 +128,9 @@ export function useActions() {
       setOb: (field: string, value: unknown) => dispatch({ type: 'SET_OB_FIELD', field, value }),
       setObOther: (field: string, value: string) => dispatch({ type: 'SET_OB_OTHER', field, value }),
       toggleObArray: (field: 'incomeTypes' | 'reliefs' | 'goals', value: string) => dispatch({ type: 'TOGGLE_OB_ARRAY', field, value }),
+      // Keyed goal follow-up storage (ob.goalDetail). Pass key === null to
+      // clear every answer when the primary goal changes.
+      setObGoalDetail: (key: string | null, value?: string) => dispatch({ type: 'SET_OB_GOAL_DETAIL', key, value }),
       obNext: (nextStep: string) => dispatch({ type: 'OB_NEXT', nextStep }),
       obBack: (prevStep: string) => dispatch({ type: 'OB_BACK', prevStep }),
       obFinish: () => dispatch({ type: 'OB_FINISH' }),
@@ -247,10 +250,11 @@ export function useActions() {
       addInvestmentRow: () => dispatch({ type: 'ADD_INVESTMENT_ROW' }),
       removeInvestmentRow: (idx: number) => dispatch({ type: 'REMOVE_INVESTMENT_ROW', idx }),
 
-      // subscriptions
-      setSubDraft: (field: string, value: string) => dispatch({ type: 'SET_SUB_DRAFT_FIELD', field, value }),
+      // subscriptions & installment plans
+      setSubDraft: (field: string, value: string | number | boolean) => dispatch({ type: 'SET_SUB_DRAFT_FIELD', field, value }),
       addSubscription: () => dispatch({ type: 'ADD_SUBSCRIPTION' }),
       removeSubscription: (idx: number) => dispatch({ type: 'REMOVE_SUBSCRIPTION', idx }),
+      markPlanPaymentMade: (idx: number) => dispatch({ type: 'MARK_PLAN_PAYMENT_MADE', idx }),
       openAddSub: () => dispatch({ type: 'OPEN_ADD_SUB' }),
       closeAddSub: () => dispatch({ type: 'CLOSE_ADD_SUB' }),
 

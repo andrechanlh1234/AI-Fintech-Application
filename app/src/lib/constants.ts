@@ -296,8 +296,12 @@ export const COUNTRY_OPTIONS = [
 // starting-net-worth summary step was removed outright — the number is
 // still shown to the user, just as the real Home dashboard immediately
 // after onboarding, not as an extra page in between.
+// The old standalone 'txIncomeTypes' and 'txHealth' steps are gone too —
+// their questions fold into 'about' as inline conditional reveals, so there
+// are no longer any conditional steps in this list (it maps 1:1 to the
+// screens a user walks through).
 export const OB_ORDER = [
-  'login', 'source', 'privacy', 'about', 'txIncomeTypes', 'txReliefs', 'txHealth',
+  'login', 'source', 'privacy', 'about', 'txReliefs',
   'goals', 'budget', 'manualSetup', 'subscriptions', 'txDone',
 ];
 
@@ -362,6 +366,32 @@ export const BUDGET_COMMON_CATEGORIES: Record<string, string[]> = {
   goals: ['Emergency fund'],
 };
 
+// Income-anchored auto-split used by the onboarding "Set your monthly budget"
+// step. `base` is the classic 50 / 30 / 20 split of monthly take-home pay
+// across Needs (fixed) / Lifestyle (flexible) / Savings & goals (goals);
+// `goalNudges` are deltas (fractions of income, each row nets to zero) layered
+// on top of `base` depending on the user's primary goal. The consuming step
+// rounds each slice to the nearest RM10 and drops the rounding remainder into
+// Needs. Not a contract with the store — purely the seed the user then nudges.
+export const BUDGET_TEMPLATES: {
+  base: { needs: number; lifestyle: number; savings: number };
+  goalNudges: Record<string, { needs: number; lifestyle: number; savings: number }>;
+} = {
+  base: { needs: 0.5, lifestyle: 0.3, savings: 0.2 },
+  goalNudges: {
+    // Emergency fund / big purchase: push Savings to ~28%, out of Lifestyle.
+    'Build an emergency fund': { needs: 0, lifestyle: -0.08, savings: 0.08 },
+    'Save for a big purchase': { needs: 0, lifestyle: -0.08, savings: 0.08 },
+    // Debt: +5% into Needs (debt repayments live in the Needs bucket).
+    'Pay off debt': { needs: 0.05, lifestyle: -0.05, savings: 0 },
+    // Investing / retirement: +5% into Savings.
+    'Grow my investments': { needs: 0, lifestyle: -0.05, savings: 0.05 },
+    'Retire comfortably': { needs: 0, lifestyle: -0.05, savings: 0.05 },
+    // Pure tracker: no prescriptive split (the step renders empty rows).
+    'Just track my spending': { needs: 0, lifestyle: 0, savings: 0 },
+  },
+};
+
 export function chipStyle(active: boolean) {
   return {
     bg: active ? 'var(--color-accent)' : 'var(--color-surface)',
@@ -369,3 +399,86 @@ export function chipStyle(active: boolean) {
     borderColor: active ? 'var(--color-accent)' : 'var(--color-neutral-400)',
   };
 }
+
+// ---- Money goals (onboarding 'goals' step) ---------------------------------
+// The 'goals' step now asks for ONE primary goal (single-select) plus a short
+// goal-specific follow-up, and keeps the old free multi-select as a muted
+// "anything else?" row. PRIMARY_GOAL_OPTS is just GOAL_OPTS re-exported under
+// the name the new single-select uses; the muted secondary row reuses the
+// same list minus whatever the primary goal is.
+export const PRIMARY_GOAL_OPTS = GOAL_OPTS;
+
+export interface GoalFollowupField {
+  /** Stable key under ob.goalDetail — never localise this. */
+  key: string;
+  /** Short (2–3 word) floating-notch label for `.field` inputs, or the small
+   * section label for a segmented control. */
+  label: string;
+  kind: 'number' | 'text' | 'select' | 'segmented';
+  /** Example text — always the input's placeholder, never the label. */
+  placeholder?: string;
+  /** Choices for `select` / `segmented`. */
+  options?: string[];
+  optional?: boolean;
+}
+
+export interface GoalFollowup {
+  fields: GoalFollowupField[];
+  /** If this primary goal implies a MONTHLY savings figure, how to derive it
+   * from the collected detail — the result is written into ob.savingsTarget
+   * (kept as a string) so the budget step can still read it. Goals with no
+   * monthly implication (emergency fund — a total, not a monthly) omit this
+   * and leave ob.savingsTarget blank. */
+  monthlySavings?: (detail: Record<string, string>) => string;
+}
+
+const PURCHASE_WHEN_MONTHS: Record<string, number> = {
+  'Within 6 months': 6,
+  '6–12 months': 9,
+  '1–2 years': 18,
+  '2+ years': 36,
+};
+
+export const GOAL_FOLLOWUP: Record<string, GoalFollowup> = {
+  'Build an emergency fund': {
+    fields: [
+      { key: 'emergencyMonths', label: 'Months to cover', kind: 'segmented', options: ['3', '6', '12'] },
+    ],
+  },
+  'Pay off debt': {
+    fields: [
+      { key: 'debtAmount', label: 'Amount owed', kind: 'number', placeholder: 'e.g. 20000' },
+      { key: 'debtMonthly', label: 'Monthly repayment', kind: 'number', placeholder: 'e.g. 800', optional: true },
+    ],
+  },
+  'Save for a big purchase': {
+    fields: [
+      { key: 'purchaseWhat', label: 'What for', kind: 'text', placeholder: 'e.g. house deposit', optional: true },
+      { key: 'purchaseTarget', label: 'Target amount', kind: 'number', placeholder: 'e.g. 50000' },
+      { key: 'purchaseWhen', label: 'By when', kind: 'select', options: ['Within 6 months', '6–12 months', '1–2 years', '2+ years'] },
+    ],
+    monthlySavings: (d) => {
+      const target = parseFloat(d.purchaseTarget || '');
+      const months = PURCHASE_WHEN_MONTHS[d.purchaseWhen || ''] || 0;
+      return Number.isFinite(target) && target > 0 && months > 0 ? String(Math.round(target / months)) : '';
+    },
+  },
+  'Grow my investments': {
+    fields: [
+      { key: 'investMonthly', label: 'Monthly amount', kind: 'number', placeholder: 'e.g. 500' },
+    ],
+  },
+  'Retire comfortably': {
+    fields: [
+      { key: 'retireAge', label: 'Retirement age', kind: 'number', placeholder: 'e.g. 60' },
+    ],
+  },
+  'Just track my spending': { fields: [] },
+};
+
+// Installment-plan (BNPL / credit-card EPP) options — see the Subscription
+// type's `kind: 'plan'` fields. Providers cover the common Malaysian BNPL
+// apps plus a generic credit-card easy-payment-plan and an "Other" catch-all;
+// tenures are the usual months-of-instalment choices offered at checkout.
+export const INSTALLMENT_PROVIDER_OPTS = ['Atome', 'SPayLater', 'Grab PayLater', 'Shopee', 'Credit card EPP', 'Other'];
+export const INSTALLMENT_TENURE_OPTS = [3, 6, 12, 18, 24];

@@ -4,12 +4,43 @@ import type { Receipt, ReceiptDraft, ReceiptLineItemDraft } from '../lib/receipt
 
 export interface Subscription {
   name: string;
+  /** For a plan (kind === 'plan') this is the per-installment charge, not
+   * the financed total (that's `totalAmount`). */
   amount: string;
   frequency: string;
   startDate: string;
   nextPayment: string;
   method: string;
   category: string;
+
+  // ---- installment plans -------------------------------------------------
+  // An installment plan is the same record as a subscription, discriminated
+  // by `kind` — a fixed number of payments with a shrinking balance
+  // (Malaysian BNPL: Atome, SPayLater, Grab PayLater, Shopee; credit-card
+  // EPP). Every field below is OPTIONAL so existing persisted subscriptions
+  // (which have none of them) stay valid, and so a plain subscription simply
+  // leaves them unset. All derived figures (remaining installments/balance,
+  // payoff date, progress, monthly-equivalent) are computed in
+  // lib/format.ts / selectors — never stored.
+  /** Absent or 'subscription' for a recurring subscription; 'plan' for a
+   * fixed-term installment plan. */
+  kind?: 'subscription' | 'plan';
+  /** plan only — BNPL provider / financier, e.g. 'Atome' or 'Credit card
+   * EPP' (see INSTALLMENT_PROVIDER_OPTS). */
+  provider?: string;
+  /** plan only — the total financed amount as a free-text RM string;
+   * reference/display only. */
+  totalAmount?: string;
+  /** plan only — the tenure: how many scheduled payments in total. */
+  totalInstallments?: number;
+  /** plan only — how many installments have been paid so far. */
+  paidInstallments?: number;
+  /** plan only — flat interest rate as a string; display-only for the MVP
+   * (remaining balance is computed flat at 0%). Defaults to '0'. */
+  interestRate?: string;
+  /** plan only — set true once every installment is paid; an archived plan
+   * stays in ob.subs but drops out of active lists and monthly totals. */
+  archived?: boolean;
 }
 
 export interface ManualData {
@@ -52,6 +83,14 @@ export interface OnboardingState {
   subs: Subscription[];
   subDraft: Subscription;
   goals: string[];
+  /** The one goal that matters most right now (single-select on the 'goals'
+   * step). `null` until chosen. The muted "anything else?" multi-select still
+   * lives in `goals` above. */
+  primaryGoal: string | null;
+  /** Goal-specific follow-up answers, keyed by the stable strings in
+   * GOAL_FOLLOWUP (e.g. `emergencyMonths`, `purchaseTarget`). Cleared whenever
+   * `primaryGoal` changes. */
+  goalDetail: Record<string, string>;
   savingsTarget: string;
 }
 
