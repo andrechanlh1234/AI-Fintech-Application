@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent, type TransitionEvent as ReactTransitionEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent, type TransitionEvent as ReactTransitionEvent } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 
 /**
@@ -10,7 +10,7 @@ import { prefersReducedMotion } from '../lib/motion';
  * edge. Off-screen pages are only mounted while a gesture or slide is in
  * flight; the rest of the time it's a single pane and the track is inert.
  *
- * Notes from the version that felt disjointed / stuck:
+ * Notes from earlier versions that felt disjointed / stuck / flickery:
  *  - only one page was mounted, so a committed swipe just swapped the
  *    content and let a separate 14px slide play — the incoming page
  *    "appeared" instead of arriving connected. Now it's a shared track.
@@ -18,15 +18,26 @@ import { prefersReducedMotion } from '../lib/motion';
  *    mid-drag; a nested scroll container with the default `touch-action`
  *    made WebKit cancel the whole gesture. Neither is used here, and each
  *    scroll container sets `touch-action: pan-y` itself.
- *
- * Touch / pen only (desktop taps the bar). `touch-action: pan-y` keeps
- * vertical scrolling native; the gesture engages only once movement is
- * clearly horizontal, never on a horizontally-scrollable strip or anything
- * marked `data-no-swipe`. Disabled while a full-screen overlay is open;
- * honours reduced-motion.
+ *  - whenever the neighbour pane mounts, `base`'s slot in the track shifts
+ *    (it's now pane 2 of 2, not the only one) — setting that repositioning
+ *    from a `requestAnimationFrame` left one real paint where the *wrong*
+ *    pane sat centred, i.e. the flash/flicker on every tab change. A
+ *    `useLayoutEffect` now re-pins the track to the mathematically correct
+ *    spot synchronously, before the browser ever paints that frame.
+ *  - `transform` was partly React-controlled (`undefined` when idle) and
+ *    partly set by hand during a gesture; React clears a style property
+ *    that drops out of its own `style` object between renders, which was
+ *    stomping the hand-set value. It's 100% imperative now.
  */
 
-const SLIDE = 'transform .32s cubic-bezier(.3,.72,.15,1)';
+// Nearly-full-width taps/flicks glide over ~300ms; a swipe already carried
+// most of the way home only needs to cover what's left, so it finishes
+// quickly instead of feeling like it restarts at a fixed pace.
+function glideMs(distance: number, width: number): number {
+  const frac = Math.min(1, Math.abs(distance) / Math.max(1, width));
+  return Math.round(140 + frac * 190);
+}
+const EASE = 'cubic-bezier(.3,.72,.15,1)';
 
 export function SwipeablePages({
   index, count, renderPage, onIndexChange, disabled = false,
@@ -58,14 +69,24 @@ export function SwipeablePages({
     return peek > base ? [base, peek] : [peek, base];
   };
 
-  const setX = (px: number, animate: boolean) => {
+  const setX = (px: number, ms: number | null) => {
     const t = track.current;
     if (!t) return;
-    t.style.transition = animate ? SLIDE : 'none';
+    t.style.transition = ms ? `transform ${ms}ms ${EASE}` : 'none';
     t.style.transform = `translate3d(${px}px,0,0)`;
   };
   const restX = () => -order().indexOf(base) * g.current.w;
   const slotX = (i: number) => -order().indexOf(i) * g.current.w;
+
+  // Whenever the mounted pane order changes (a neighbour appears or
+  // disappears), `base`'s slot in the track can move — re-pin the track to
+  // the correct position for the *live* drag offset synchronously, before
+  // paint, so that never reads as a jump. Runs at the start of a gesture
+  // (peek just mounted) and at the end (peek just cleared); never mid-slide.
+  useLayoutEffect(() => {
+    setX(restX() + g.current.dx, null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peek, base]);
 
   const finish = (target: number) => {
     anim.current = false;
@@ -76,38 +97,45 @@ export function SwipeablePages({
       setBase(target);
       if (target !== index) onIndexChange(target);
     }
+    // Always drop the neighbour — the layout effect (keyed on [peek, base])
+    // pins the track to the correct resting transform before the next paint.
     setPeek(null);
-    setX(0, false);
   };
 
   const glideTo = (target: number, fromDrag: boolean) => {
     const clamped = Math.max(0, Math.min(count - 1, target));
     g.current.w = viewport.current?.offsetWidth || 1;
+
+    if (g.current.reduce) { finish(clamped); return; } // instant swap, no track motion at all
+
     anim.current = true;
     pending.current = clamped;
     // Fallback: if the transform doesn't actually change (finger dragged
     // the whole way), `transitionend` never fires — don't freeze the pager.
     window.setTimeout(() => { if (anim.current && pending.current === clamped) finish(clamped); }, 420);
 
+    const w = g.current.w;
     if (clamped === base) {                       // cancelled — settle back to centre
-      if (g.current.reduce || !track.current) { finish(base); return; }
-      track.current.style.transition = SLIDE;
+      if (!track.current) { finish(base); return; }
+      const from = restX() + g.current.dx;
+      const to = restX();
+      track.current.style.transition = 'none';
+      track.current.style.transform = `translate3d(${from}px,0,0)`;
       void track.current.offsetWidth;
-      setX(restX(), true);
+      setX(to, glideMs(to - from, w));
       return;
     }
 
-    setPeek(clamped);                             // ensure both panes are mounted + ordered
-    const armAndRun = () => {
-      if (g.current.reduce || !track.current) { finish(clamped); return; }
-      if (!fromDrag) setX(slotX(base), false);    // a tap starts from base centred
-      track.current.style.transition = SLIDE;
-      void track.current.offsetWidth;             // commit the start position before animating
-      setX(slotX(clamped), true);
-    };
-    // freshly-mounted peek pane needs a layout pass first; a drag is already painted
-    if (fromDrag) requestAnimationFrame(armAndRun);
-    else requestAnimationFrame(() => requestAnimationFrame(armAndRun));
+    setPeek(clamped);                              // mounts the neighbour; layout effect pins the start frame
+    requestAnimationFrame(() => {
+      if (!track.current) { finish(clamped); return; }
+      const from = fromDrag ? restX() + g.current.dx : slotX(base);
+      const to = slotX(clamped);
+      track.current.style.transition = 'none';
+      track.current.style.transform = `translate3d(${from}px,0,0)`;
+      void track.current.offsetWidth;              // commit the start position before animating
+      setX(to, glideMs(to - from, w));
+    });
   };
 
   // Tab-bar tap / programmatic tab change → slide to it.
@@ -156,7 +184,7 @@ export function SwipeablePages({
       s.axis = 'h';
       s.dir = mx < 0 ? 1 : -1;                 // swipe left → go to next
       const nb = base + s.dir;
-      setPeek(nb >= 0 && nb < count ? nb : null);
+      setPeek(nb >= 0 && nb < count ? nb : null);   // layout effect pins the resulting start frame
       if (track.current) track.current.style.willChange = 'transform';
     }
 
@@ -166,7 +194,7 @@ export function SwipeablePages({
 
     const edge = (base + s.dir < 0 || base + s.dir >= count);
     s.dx = edge ? mx * 0.35 : mx;               // rubber-band past the ends
-    if (!s.reduce) setX(restX() + s.dx, false);
+    if (!s.reduce) setX(restX() + s.dx, null);
   };
 
   const onPointerUp = () => {
@@ -205,7 +233,7 @@ export function SwipeablePages({
       <div
         ref={track}
         onTransitionEnd={onTransitionEnd}
-        style={{ position: 'relative', minHeight: 'inherit', transform: moving ? undefined : 'none' }}
+        style={{ position: 'relative', minHeight: 'inherit' }}
       >
         {panes.map((i, k) => (
           <div
