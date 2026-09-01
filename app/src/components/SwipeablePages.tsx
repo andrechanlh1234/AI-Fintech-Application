@@ -36,8 +36,11 @@ import { prefersReducedMotion } from '../lib/motion';
  * collapses every glide to an instant snap.
  */
 
-const GLIDE_DURATION = 32;
-const GLIDE_FRICTION = 0.8;
+// A hair slower than Embla's default (25) so it doesn't feel abrupt, but
+// back on the default friction (0.68) — the higher 0.8 carried momentum
+// past the snap point and settled back, which read as "bouncy".
+const GLIDE_DURATION = 27;
+const GLIDE_FRICTION = 0.68;
 
 function startsOnScrollable(target: EventTarget | null, root: HTMLElement): boolean {
   let n = target as HTMLElement | null;
