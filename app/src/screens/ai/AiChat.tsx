@@ -121,7 +121,7 @@ function MessageBubble({ m, onReply }: { m: AiMessage; onReply: (q: { from: 'use
   );
 }
 
-export function AiChat() {
+export function AiChat({ active = true }: { active?: boolean }) {
   const { state } = useStore();
   const actions = useActions();
 
@@ -158,9 +158,11 @@ export function AiChat() {
   // Don't pop the keyboard just for opening the AI page — let the user tap
   // the field when they're ready. Once a conversation is going, though,
   // refocus after each reply so they can keep typing without re-tapping.
+  // `active` guards the case where this screen is mounted only as the
+  // off-screen half of a tab swipe — it must not grab focus then.
   useEffect(() => {
-    if (isChat && !state.aiTyping && state.aiMessages.length > 0) focusInput();
-  }, [isChat, state.aiTyping, state.aiMessages.length]);
+    if (active && isChat && !state.aiTyping && state.aiMessages.length > 0) focusInput();
+  }, [active, isChat, state.aiTyping, state.aiMessages.length]);
 
   // Keep the conversation pinned to the latest line as messages arrive and
   // as the keyboard opens/closes.
@@ -189,7 +191,7 @@ export function AiChat() {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19 }}>AI Assistant</div>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>AI Assistant</div>
         <button
           type="button"
           onClick={actions.toggleAiView}
