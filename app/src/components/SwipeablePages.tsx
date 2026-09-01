@@ -1,29 +1,36 @@
-import { useRef, type ReactNode, type PointerEvent as ReactPointerEvent, type TransitionEvent as ReactTransitionEvent } from 'react';
+import { useLayoutEffect, useRef, type ReactNode, type PointerEvent as ReactPointerEvent, type TransitionEvent as ReactTransitionEvent } from 'react';
 import { prefersReducedMotion } from '../lib/motion';
 
 /**
- * Horizontal swipe between the top-level tabs, in the tab-bar order
+ * Horizontal swipe between the top-level tabs, in tab-bar order
  * (Home, Finance, Tax, AI). Only the current page is mounted, so the drag
- * moves that one page under the finger; on a committed swipe it hands the
- * incoming page's motion to PageTransition and springs the wrapper home
- * from wherever the finger let go, so the two read as one continuous move.
+ * moves that one page under the finger; a committed swipe drops the drag
+ * transform and lets PageTransition slide the incoming page in.
  *
- * Performance + robustness notes (this replaced a version that re-rendered
- * the whole app tree on every pointermove, which is what made it "glitchy"):
- *  - the drag transform is written straight to the node's style, never
- *    through React state — zero re-renders during a swipe.
- *  - touch / pen only. A mouse drag never navigates (desktop uses the tab
- *    bar), so stray click-drags can't fire it.
- *  - `touch-action: pan-y` keeps vertical scrolling native; the gesture only
- *    engages once movement is clearly horizontal.
- *  - a press that begins inside a horizontally-scrollable strip (chip rows,
- *    charts) or anything marked `data-no-swipe` is ignored.
- *  - the spring-back transition is armed with a forced reflow before the
- *    transform changes, so it always animates instead of snapping.
- *  - prefers-reduced-motion: no drag transform, just the navigation.
+ * Things that were making the earlier version stick / feel glitchy, and
+ * what fixed them:
+ *  - it only covered the content-height area, so a swipe started low on a
+ *    short page hit dead space → the wrapper is now `100dvh - tab-bar`.
+ *  - it called `setPointerCapture` on touch, which on iOS WebKit can stop
+ *    `pointermove` firing mid-drag → removed (touch pointers capture
+ *    implicitly anyway).
+ *  - it drove the transform through React state, re-rendering the whole app
+ *    tree per move → the transform is now written straight to the node.
+ *  - the spring-back could be armed in the same frame as the value change
+ *    and never run → forced reflow between the two.
+ *  - a cancelled gesture could leave a stale transform → `pointercancel`
+ *    and every tab change now hard-reset it.
+ *
+ * Touch / pen only (desktop uses the tab bar). `touch-action: pan-y` keeps
+ * vertical scrolling native; the gesture only takes over once movement is
+ * clearly horizontal, and never when it starts on a horizontally
+ * scrollable strip or anything marked `data-no-swipe`. A screen with its
+ * own nested scroll container must also set `touch-action: pan-y` on it, or
+ * WebKit claims (then cancels) the horizontal drag and the swipe dies on
+ * that tab. Off while an overlay is open; honours reduced-motion.
  */
 
-const SETTLE = 'transform .28s cubic-bezier(.22,1,.28,1)';
+const SETTLE = 'transform .26s cubic-bezier(.22,1,.28,1)';
 
 export function SwipeablePages({
   index, count, onNavigate, disabled = false, children,
@@ -35,43 +42,39 @@ export function SwipeablePages({
   children: ReactNode;
 }) {
   const el = useRef<HTMLDivElement>(null);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const axis = useRef<'?' | 'h' | 'v'>('?');
-  const dx = useRef(0);
-  const lastX = useRef(0);
-  const lastT = useRef(0);
-  const vel = useRef(0);
+  const g = useRef({
+    startX: 0, startY: 0, lastX: 0, lastT: 0, vel: 0, dx: 0,
+    axis: 'idle' as 'idle' | 'undecided' | 'h' | 'v',
+    reduce: false,
+  });
 
-  const paint = (x: number) => {
+  // After a committed swipe `index` changes and the pane remounts via
+  // PageTransition — make certain no drag transform is left on the wrapper.
+  useLayoutEffect(() => {
     const n = el.current;
-    if (!n) return;
-    n.style.transform = x ? `translate3d(${x}px,0,0)` : '';
-  };
+    if (n && g.current.axis !== 'h') { n.style.transform = ''; n.style.transition = ''; n.style.willChange = ''; }
+  }, [index]);
 
-  // Spring the wrapper back to rest, guaranteeing the transition actually
-  // runs (set it, force a reflow, then change the value).
-  const springHome = () => {
+  const rest = (animate: boolean) => {
     const n = el.current;
+    g.current.axis = 'idle';
     if (!n) return;
-    if (prefersReducedMotion()) { n.style.transition = 'none'; n.style.transform = ''; n.style.willChange = ''; return; }
-    n.style.transition = SETTLE;
-    void n.offsetWidth; // eslint-disable-line no-unused-expressions -- forced reflow
-    n.style.transform = '';
-    n.style.willChange = 'transform';
+    if (animate && !g.current.reduce) {
+      n.style.transition = SETTLE;
+      void n.offsetWidth;               // force reflow so the transition actually runs
+      n.style.transform = '';
+    } else {
+      n.style.transition = 'none';
+      n.style.transform = '';
+      n.style.willChange = '';
+    }
   };
 
-  const finish = (target: number | null) => {
-    axis.current = '?';
-    if (target !== null) onNavigate(target);
-    springHome();
-  };
-
-  const blocked = (target: EventTarget | null): boolean => {
-    let node = target as HTMLElement | null;
+  const startsOnScrollable = (t: EventTarget | null) => {
+    let node = t as HTMLElement | null;
     while (node && node !== el.current) {
       if (node.dataset && node.dataset.noSwipe !== undefined) return true;
-      const s = window.getComputedStyle(node);
+      const s = getComputedStyle(node);
       if ((s.overflowX === 'auto' || s.overflowX === 'scroll') && node.scrollWidth > node.clientWidth + 1) return true;
       node = node.parentElement;
     }
@@ -80,58 +83,58 @@ export function SwipeablePages({
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (disabled || (e.pointerType !== 'touch' && e.pointerType !== 'pen')) return;
-    if (blocked(e.target)) return;
-    startX.current = lastX.current = e.clientX;
-    startY.current = e.clientY;
-    lastT.current = e.timeStamp;
-    vel.current = 0;
-    dx.current = 0;
-    axis.current = '?';
+    if (startsOnScrollable(e.target)) return;
+    const s = g.current;
+    s.startX = s.lastX = e.clientX;
+    s.startY = e.clientY;
+    s.lastT = e.timeStamp;
+    s.vel = 0; s.dx = 0;
+    s.axis = 'undecided';
+    s.reduce = prefersReducedMotion();
     if (el.current) el.current.style.transition = 'none';
   };
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (axis.current === 'v') return;
-    if (axis.current === '?') {
-      const mx = e.clientX - startX.current;
-      const my = e.clientY - startY.current;
-      if (Math.abs(mx) < 14 && Math.abs(my) < 14) return;
-      if (Math.abs(my) >= Math.abs(mx)) { axis.current = 'v'; return; } // vertical — let the page scroll
-      axis.current = 'h';
-      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* not supported */ }
+    const s = g.current;
+    if (s.axis === 'idle' || s.axis === 'v') return;
+
+    const mx = e.clientX - s.startX;
+    const my = e.clientY - s.startY;
+
+    if (s.axis === 'undecided') {
+      if (Math.abs(mx) < 12 && Math.abs(my) < 12) return;
+      if (Math.abs(mx) <= Math.abs(my)) { s.axis = 'v'; return; }   // vertical — leave it to native scroll
+      s.axis = 'h';
       if (el.current) el.current.style.willChange = 'transform';
     }
 
-    const dt = e.timeStamp - lastT.current;
-    if (dt > 0) vel.current = (e.clientX - lastX.current) / dt;
-    lastX.current = e.clientX;
-    lastT.current = e.timeStamp;
+    const dt = e.timeStamp - s.lastT;
+    if (dt > 0) s.vel = (e.clientX - s.lastX) / dt;
+    s.lastX = e.clientX;
+    s.lastT = e.timeStamp;
 
-    let d = e.clientX - startX.current;
-    if ((d > 0 && index === 0) || (d < 0 && index === count - 1)) d *= 0.35; // rubber-band at the ends
-    dx.current = d;
-    if (!prefersReducedMotion()) paint(d);
-    e.preventDefault();
+    let d = mx;
+    if ((d > 0 && index === 0) || (d < 0 && index === count - 1)) d *= 0.35;   // rubber-band at the ends
+    s.dx = d;
+    if (!s.reduce && el.current) el.current.style.transform = `translate3d(${d}px,0,0)`;
   };
 
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (axis.current !== 'h') { axis.current = '?'; return; }
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
-    const width = el.current?.offsetWidth || 1;
-    const d = dx.current;
-    const target = d > 0 ? index - 1 : index + 1;
-    const commit = (Math.abs(d) > width * 0.25 || Math.abs(vel.current) > 0.45)
-      && target >= 0 && target < count;
-    finish(commit ? target : null);
+  const onPointerUp = () => {
+    const s = g.current;
+    if (s.axis !== 'h') { rest(false); return; }
+    const w = el.current?.offsetWidth || 1;
+    const target = s.dx > 0 ? index - 1 : index + 1;
+    const commit = (Math.abs(s.dx) > w * 0.22 || Math.abs(s.vel) > 0.4) && target >= 0 && target < count;
+    if (commit) {
+      rest(false);            // drop our transform instantly — PageTransition owns the incoming slide
+      onNavigate(target);
+    } else {
+      rest(true);             // spring back to centre
+    }
   };
 
-  const onPointerCancel = () => {
-    if (axis.current === 'h') springHome();
-    axis.current = '?';
-  };
+  const onPointerCancel = () => { rest(false); };
 
-  // Clear the transition/hint once the spring settles (guard against
-  // transitionend bubbling up from a child).
   const onTransitionEnd = (e: ReactTransitionEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget && e.propertyName === 'transform' && el.current) {
       el.current.style.transition = 'none';
@@ -147,7 +150,7 @@ export function SwipeablePages({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
       onTransitionEnd={onTransitionEnd}
-      style={{ touchAction: 'pan-y' }}
+      style={{ minHeight: 'calc(100dvh - 104px)', touchAction: 'pan-y' }}
     >
       {children}
     </div>

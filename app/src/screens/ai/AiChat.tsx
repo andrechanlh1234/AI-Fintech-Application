@@ -90,6 +90,7 @@ function MessageBubble({ m, onReply }: { m: AiMessage; onReply: (q: { from: 'use
         <ReplyGlyph color="var(--color-text-muted)" />
       </div>
       <div
+        data-no-swipe
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -176,6 +177,10 @@ export function AiChat() {
         // the keyboard is up, shrink by its height instead so the input
         // sits just above it (nothing else in the app shifts).
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        // A nested `overflow` container with the browser's default
+        // touch-action was letting WebKit claim (and then cancel) a
+        // horizontal drag here, which killed the tab swipe on this tab.
+        touchAction: 'pan-y',
         minHeight: `calc(100dvh - ${kbInset > 0 ? 22 : 134}px - ${kbInset}px)`,
         // Track the iOS keyboard's own timing/curve so the input rises
         // with it, not a beat behind.
@@ -280,10 +285,9 @@ export function AiChat() {
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div
             ref={scrollRef}
-            data-no-swipe
             style={{
               flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14,
-              overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+              overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y',
               justifyContent: hasNoMessages ? 'center' : 'flex-start',
             }}
           >
