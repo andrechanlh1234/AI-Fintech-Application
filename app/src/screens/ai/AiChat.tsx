@@ -190,7 +190,7 @@ export function AiChat({ active = true }: { active?: boolean }) {
         padding: 'calc(env(safe-area-inset-top) + 16px) 16px 12px',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>AI Assistant</div>
         <button
           type="button"

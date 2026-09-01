@@ -39,8 +39,8 @@ export function TaxCenter() {
 
   return (
     <PageShell>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 10 }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19, whiteSpace: 'nowrap', flexShrink: 0, paddingTop: 6 }}>Tax Center</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 10 }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22, whiteSpace: 'nowrap', flexShrink: 0 }}>Tax Center</div>
         <YearPicker year={selectedYear} years={TAX_YEAR_OPTIONS} onChange={(y) => actions.setTaxYear('YA' + y)} />
       </div>
 
