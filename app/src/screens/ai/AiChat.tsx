@@ -90,6 +90,7 @@ function MessageBubble({ m, onReply }: { m: AiMessage; onReply: (q: { from: 'use
         <ReplyGlyph color="var(--color-text-muted)" />
       </div>
       <div
+        data-no-swipe
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -120,7 +121,7 @@ function MessageBubble({ m, onReply }: { m: AiMessage; onReply: (q: { from: 'use
   );
 }
 
-export function AiChat() {
+export function AiChat({ active = true }: { active?: boolean }) {
   const { state } = useStore();
   const actions = useActions();
 
@@ -154,12 +155,24 @@ export function AiChat() {
   // (kb) takes over the instant it arrives.
   const kbInset = kb > 0 ? kb : (inputFocused ? lastKbHeight : 0);
 
-  // Don't pop the keyboard just for opening the AI page — let the user tap
-  // the field when they're ready. Once a conversation is going, though,
-  // refocus after each reply so they can keep typing without re-tapping.
+  // Refocus the input only right after a *new* message lands (a reply came
+  // in, or the user just sent one) so they can keep typing without
+  // re-tapping. Never on opening the AI tab: with the pager mounting every
+  // tab, this effect's deps also fire when `active` flips true, and firing
+  // `focusInput()` then popped the keyboard the moment the page appeared.
+  const prevMsgCount = useRef(state.aiMessages.length);
   useEffect(() => {
-    if (isChat && !state.aiTyping && state.aiMessages.length > 0) focusInput();
-  }, [isChat, state.aiTyping, state.aiMessages.length]);
+    const grew = state.aiMessages.length > prevMsgCount.current;
+    prevMsgCount.current = state.aiMessages.length;
+    if (grew && active && isChat && !state.aiTyping) focusInput();
+  }, [active, isChat, state.aiTyping, state.aiMessages.length]);
+
+  // Leaving the AI tab (swipe or tab tap) drops focus so the keyboard
+  // dismisses and the column springs back — otherwise the input stays
+  // focused off-screen and the keyboard is still up over Home/Finance.
+  useEffect(() => {
+    if (!active) inputRef.current?.blur();
+  }, [active]);
 
   // Keep the conversation pinned to the latest line as messages arrive and
   // as the keyboard opens/closes.
@@ -176,15 +189,22 @@ export function AiChat() {
         // the keyboard is up, shrink by its height instead so the input
         // sits just above it (nothing else in the app shifts).
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        minHeight: `calc(100dvh - ${kbInset > 0 ? 22 : 134}px - ${kbInset}px)`,
+        // A nested `overflow` container with the browser's default
+        // touch-action was letting WebKit claim (and then cancel) a
+        // horizontal drag here, which killed the tab swipe on this tab.
+        touchAction: 'pan-y',
+        // Keyboard down: leave just enough for the floating tab bar (its
+        // ~101px footprint from the bottom edge plus a little breathing
+        // room) — 134 left a visibly dead gap under the input box.
+        minHeight: `calc(100dvh - ${kbInset > 0 ? 22 : 112}px - ${kbInset}px)`,
         // Track the iOS keyboard's own timing/curve so the input rises
         // with it, not a beat behind.
         transition: 'min-height .34s cubic-bezier(0.17, 0.59, 0.4, 1)',
         padding: 'calc(env(safe-area-inset-top) + 16px) 16px 12px',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 19 }}>AI Assistant</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexShrink: 0 }}>
+        <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>AI Assistant</div>
         <button
           type="button"
           onClick={actions.toggleAiView}
@@ -280,10 +300,9 @@ export function AiChat() {
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div
             ref={scrollRef}
-            data-no-swipe
             style={{
               flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 14,
-              overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+              overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y',
               justifyContent: hasNoMessages ? 'center' : 'flex-start',
             }}
           >
