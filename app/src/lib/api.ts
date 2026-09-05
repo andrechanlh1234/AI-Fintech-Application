@@ -30,6 +30,21 @@ function setToken(token: string | null) {
   } catch { /* ignore */ }
 }
 
+/** Thrown by request() for any non-ok response. Callers that only want a
+ * readable message can keep treating this as a plain Error (it is one);
+ * callers that need to react to *which* error it was (e.g. a 409 sync
+ * conflict) can check `status` / `detail`. */
+export class ApiError extends Error {
+  status: number;
+  detail?: unknown;
+  constructor(message: string, status: number, detail?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
 async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   let res: Response;
   try {
@@ -39,11 +54,19 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   }
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
+    let detail: unknown;
     try {
       const body = await res.json();
-      if (body?.detail) message = body.detail;
+      detail = body?.detail;
+      // Most endpoints throw a plain string detail; PUT /state's 409
+      // throws a {message, updated_at} object instead so the caller can
+      // recover the current version, not just read a message.
+      if (typeof detail === 'string') message = detail;
+      else if (detail && typeof detail === 'object' && typeof (detail as { message?: unknown }).message === 'string') {
+        message = (detail as { message: string }).message;
+      }
     } catch { /* non-JSON error body */ }
-    throw new Error(message);
+    throw new ApiError(message, res.status, detail);
   }
   return res.json() as Promise<T>;
 }
@@ -121,18 +144,29 @@ export async function fetchMe(): Promise<AuthUser> {
   return request<AuthUser>('/auth/me', { headers: authHeaders() });
 }
 
-export async function fetchRemoteState(): Promise<Partial<SyncPayload> | null> {
-  const data = await request<{ state: Partial<SyncPayload> | null }>('/state', { headers: authHeaders() });
-  return data.state;
+export interface RemoteState { state: Partial<SyncPayload> | null; updatedAt: string | null }
+
+export async function fetchRemoteState(): Promise<RemoteState> {
+  const data = await request<{ state: Partial<SyncPayload> | null; updated_at: string | null }>('/state', { headers: authHeaders() });
+  return { state: data.state, updatedAt: data.updated_at };
 }
 
-export async function pushRemoteState(payload: SyncPayload): Promise<void> {
-  if (!getToken()) return;
-  await request('/state', {
+/** Pushes local state to the account's server copy. `expectedUpdatedAt`
+ * must be the `updatedAt` this client last saw (from fetchRemoteState or a
+ * prior pushRemoteState) — the server rejects the write with a 409
+ * ApiError if its stored value has moved since, rather than silently
+ * overwriting newer data with older data (bug-report H2, deep half).
+ * Resolves the new `updatedAt` on success (null when there was no token
+ * to push with — a no-op). Callers should react to a 409 by re-pulling
+ * remote state rather than retrying the same push. */
+export async function pushRemoteState(payload: SyncPayload, expectedUpdatedAt: string | null): Promise<string | null> {
+  if (!getToken()) return null;
+  const data = await request<{ ok: boolean; updated_at: string }>('/state', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ state: payload }),
+    body: JSON.stringify({ state: payload, expected_updated_at: expectedUpdatedAt }),
   });
+  return data.updated_at;
 }
 
 export interface ScannedLineItem {

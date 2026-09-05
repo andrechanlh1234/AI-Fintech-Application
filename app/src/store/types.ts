@@ -212,6 +212,13 @@ export interface AppState {
   addSubOpen: boolean;
   taxProfileOpen: boolean;
   authUser: { id: string; email: string } | null;
+  /** The server's `updated_at` for this account's last-known synced state
+   * (from GET /state or a successful PUT /state), echoed back on the next
+   * push so the server can detect and reject a write that's racing a
+   * newer one instead of silently overwriting it. Never part of
+   * SyncPayload -- this is sync bookkeeping, not user data (bug-report H2,
+   * deep half). */
+  remoteVersion: string | null;
   authPanelOpen: boolean;
   scanError: string | null;
   legalOpen: 'privacy' | 'terms' | null;

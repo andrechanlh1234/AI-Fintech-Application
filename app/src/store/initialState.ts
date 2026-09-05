@@ -76,7 +76,7 @@ export function buildInitialState(): AppState {
     settingsToggles: { budgetAlerts: true, taxReminders: true, weeklySummary: false },
     donateOpen: false, donateDone: false, donateAmount: '10',
     budgetItemDetailOpen: null, addSubOpen: false, taxProfileOpen: false, donutExpanded: false,
-    authUser: null, authPanelOpen: false, scanError: null, legalOpen: null,
+    authUser: null, remoteVersion: null, authPanelOpen: false, scanError: null, legalOpen: null,
     balanceDetailOpen: null, balanceDraft: { mode: 'add', amount: '', desc: '', date: '' },
     historyOpen: null,
     investDetailOpen: null, expandedNwGroup: null,

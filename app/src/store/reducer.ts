@@ -192,6 +192,7 @@ export type Action =
   | { type: 'SAVE_RECEIPT' } | { type: 'SCAN_ANOTHER' } | { type: 'VIEW_IN_TAX' }
 
   | { type: 'SET_AUTH_USER'; user: AuthUser | null }
+  | { type: 'SET_REMOTE_VERSION'; version: string | null }
   | { type: 'OAUTH_LOGIN_COMPLETE' }
   | { type: 'APPLY_REMOTE_STATE'; payload: Partial<SyncPayload> }
   | { type: 'OPEN_AUTH_PANEL' } | { type: 'CLOSE_AUTH_PANEL' }
@@ -1062,6 +1063,8 @@ export function reducer(state: AppState, action: Action): AppState {
     // ---- accounts ----
     case 'SET_AUTH_USER':
       return { ...state, authUser: action.user };
+    case 'SET_REMOTE_VERSION':
+      return { ...state, remoteVersion: action.version };
     case 'OAUTH_LOGIN_COMPLETE':
       // Mirrors AuthForm's onSuccess={goNext} for the redirect-based Google
       // flow, which has no callback site to hook that into directly. Only

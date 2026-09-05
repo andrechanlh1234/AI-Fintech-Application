@@ -8,7 +8,7 @@ import {
   getToken, fetchMe, fetchRemoteState, pushRemoteState, scanReceiptImage, captureOAuthTokenFromUrl,
   signup as apiSignup, login as apiLogin, logout as apiLogout,
   forgotPassword as apiForgotPassword, resetPassword as apiResetPassword,
-  requestAiReply, uploadStatement, type ScannedStatementRecord,
+  requestAiReply, uploadStatement, ApiError, type ScannedStatementRecord,
 } from '../lib/api';
 import { isoToDisplayDate } from '../lib/format';
 import { uid } from '../lib/ids';
@@ -47,7 +47,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const user = await fetchMe();
-        const remote = await fetchRemoteState();
+        const { state: remote, updatedAt } = await fetchRemoteState();
         // Dispatch SET_AUTH_USER only *after* the remote pull resolves, in the
         // same batch as APPLY_REMOTE_STATE. Setting authUser earlier arms the
         // debounced push effect below; if the GET then takes >800ms it would
@@ -55,6 +55,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // data on the server before it's ever loaded (H2).
         dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+        dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt });
         if (justSignedInViaGoogle) dispatch({ type: 'OAUTH_LOGIN_COMPLETE' });
       } catch {
         apiLogout(); // expired/invalid token — fall back to local-only silently
@@ -85,8 +86,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!state.authUser) return;
     if (pushTimer.current) clearTimeout(pushTimer.current);
     const payload = buildSyncPayload(state);
+    const expectedVersion = state.remoteVersion;
     pushTimer.current = setTimeout(() => {
-      pushRemoteState(payload).catch(() => { /* offline / server down — localStorage still has it */ });
+      pushRemoteState(payload, expectedVersion)
+        .then((updatedAt) => dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt }))
+        .catch(async (err) => {
+          if (err instanceof ApiError && err.status === 409) {
+            // Another tab/device (or a slow request racing a fresh one)
+            // wrote first. Adopt the server's newer state instead of
+            // silently having lost this push -- retrying with a payload
+            // built from data the server has already moved past would
+            // just conflict again (bug-report H2, deep half).
+            try {
+              const { state: remote, updatedAt } = await fetchRemoteState();
+              if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+              dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt });
+            } catch { /* offline / server down — the next edit's push will retry */ }
+            return;
+          }
+          /* offline / server down — localStorage still has it */
+        });
     }, 800);
     return () => { if (pushTimer.current) clearTimeout(pushTimer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -400,15 +419,17 @@ export function useActions() {
       // null and the guest state is legitimately adopted into the new account.
       authSignup: async (email: string, password: string) => {
         const user = await apiSignup(email, password);
-        const remote = await fetchRemoteState();
+        const { state: remote, updatedAt } = await fetchRemoteState();
         dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+        dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt });
       },
       authLogin: async (email: string, password: string) => {
         const user = await apiLogin(email, password);
-        const remote = await fetchRemoteState();
+        const { state: remote, updatedAt } = await fetchRemoteState();
         dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+        dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt });
       },
       authLogout: () => {
         // Drop the token *and* the persisted blob, then reload to a clean
@@ -429,9 +450,10 @@ export function useActions() {
       // does: pull the account's synced state before announcing the user.
       completePasswordReset: async (email: string, code: string, newPassword: string) => {
         const user = await apiResetPassword(email.trim(), code.trim(), newPassword);
-        const remote = await fetchRemoteState();
+        const { state: remote, updatedAt } = await fetchRemoteState();
         dispatch({ type: 'SET_AUTH_USER', user });
         if (remote) dispatch({ type: 'APPLY_REMOTE_STATE', payload: remote });
+        dispatch({ type: 'SET_REMOTE_VERSION', version: updatedAt });
       },
       setUserMode: (mode: 'developer' | 'customer') => dispatch({ type: 'SET_USER_MODE', mode }),
     };
