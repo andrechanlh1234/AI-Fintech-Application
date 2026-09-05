@@ -178,20 +178,15 @@ export interface AiMessage {
 }
 export interface AiHistoryItem { id: string; title: string; date: string; preview: string; messages: AiMessage[] }
 
-export const AI_CHAT_HISTORY: AiHistoryItem[] = [
-  { id: 'c1', title: 'Lifestyle relief room left', date: '6 Aug', preview: "You've used RM 2,180 of your RM 2,500 Lifestyle cap...", messages: [
-    { from: 'user', text: 'How much Lifestyle relief do I have left?' },
-    { from: 'ai', text: "You've captured RM 2,180 of your RM 2,500 Lifestyle cap this year — RM 320 remaining. Your Popular Bookstore receipt from this week already counts toward it." },
-  ] },
-  { id: 'c2', title: 'Am I on track this month?', date: '2 Aug', preview: "You're RM 540 under budget with a week left...", messages: [
-    { from: 'user', text: 'Am I on track with my budget this month?' },
-    { from: 'ai', text: "You're RM 540 under your RM 8,500 monthly budget with about a week left. Dining is your fastest-growing category — worth a look if you want to stay ahead." },
-  ] },
-  { id: 'c3', title: 'Net worth trend', date: '28 Jul', preview: 'Your net worth is up over the last 12 months...', messages: [
-    { from: 'user', text: "What's my net worth trend look like?" },
-    { from: 'ai', text: 'Your net worth has trended upward over the last 12 months, driven mainly by growth in your investment accounts outpacing new liabilities. Want the assets vs liabilities breakdown?' },
-  ] },
-];
+// No fabricated chat history. The previous fixed sample list rendered
+// under "Past conversations" for every user regardless of state — a
+// brand-new account saw threads quoting "RM 2,180 of your RM 2,500
+// Lifestyle cap" etc. as if they were its own. There is no per-user
+// conversation persistence yet (openAiHistoryChat just replays a message
+// array; nothing is stored per thread), so the honest default is an
+// empty list + an empty state in AiChat. Re-populate this from real
+// stored conversations when that exists. Bug-report H3.
+export const AI_CHAT_HISTORY: AiHistoryItem[] = [];
 
 // Offline fallback used only when the Gemini backend can't be reached (no
 // network, backend down, or the call errored). It must NOT invent figures —

@@ -26,6 +26,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
 
 from backend import auth
+from backend.cors import allowed_origins
 from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
 from backend.db import get_conn, init_db
@@ -40,7 +41,7 @@ app.include_router(google_oauth_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "capacitor://localhost"],
+    allow_origins=allowed_origins(),
     # Also allow any private-LAN IP on the dev port, so a phone on the same
     # wifi/hotspot as this machine can reach the backend for real-device
     # testing without needing this list updated every time the network

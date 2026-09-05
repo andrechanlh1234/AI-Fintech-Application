@@ -25,17 +25,20 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      // Self-destroying SW: it unregisters itself and deletes every cache it
-      // ever created, on the next load. `autoUpdate` alone kept installed
-      // clients (the Capacitor iOS WKWebView, an installed iOS PWA) pinned
-      // to a stale precache -- the update-and-reload handshake is unreliable
-      // in WKWebView and in iOS standalone mode, so edits never showed up on
-      // device even after a fresh build+install. This app ships its assets
-      // locally in the Capacitor build and is served no-store by the dev
-      // server, so an offline precache buys nothing here and only causes
-      // stale-content bugs. Flip back to a normal precache SW only when
-      // there's a real hosted deployment that needs offline support.
-      selfDestroying: true,
+      // Precaching, auto-updating SW. It was previously self-destroying
+      // because the only "deployment" was a Cloudflare quick tunnel that
+      // served modules `no-store`, and iOS WKWebView / installed-PWA
+      // clients pinned a stale precache with no reliable update handshake.
+      // The app is now hosted on Render with content-hashed, properly
+      // cached production assets, so `registerType: 'autoUpdate'` + the
+      // manual `virtual:pwa-register` call in main.tsx give a silent
+      // update-and-reload, and precaching the shell lets the installed PWA
+      // boot offline. `app/ios` shares this same `dist/` build (no
+      // separate Capacitor config), so the Capacitor app gets the same SW
+      // -- if stale-content bugs resurface there, split the build (a
+      // Capacitor-only env flag back to `selfDestroying: true`) rather
+      // than reverting this for the hosted web deploy.
+      selfDestroying: false,
       // The default injected registration script just calls .register()
       // with no update handling at all -- a new SW would install and (per
       // the workbox self.skipWaiting()/clientsClaim() this registerType

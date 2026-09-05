@@ -268,31 +268,45 @@ export function AiChat({ active = true }: { active?: boolean }) {
             Past conversations
           </div>
           <div style={{ borderTop: '1px solid var(--color-divider)' }} />
-          {AI_CHAT_HISTORY.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => actions.openAiHistoryChat(c.messages)}
-              className="pressable"
+          {AI_CHAT_HISTORY.length === 0 ? (
+            <div
               style={{
-                all: 'unset',
-                display: 'block',
-                width: '100%',
-                cursor: 'pointer',
-                padding: '13px 0',
-                borderBottom: '1px solid var(--color-neutral-300)',
-                boxSizing: 'border-box',
+                padding: '28px 8px',
+                textAlign: 'center',
+                fontSize: 12.5,
+                color: 'var(--color-text-muted)',
+                lineHeight: 1.5,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 3 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{c.title}</div>
-                <div style={{ fontSize: 11, color: 'var(--color-text-muted)', flexShrink: 0 }}>{c.date}</div>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {c.preview}
-              </div>
-            </button>
-          ))}
+              No past conversations yet.<br />Start a new one above.
+            </div>
+          ) : (
+            AI_CHAT_HISTORY.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => actions.openAiHistoryChat(c.messages)}
+                className="pressable"
+                style={{
+                  all: 'unset',
+                  display: 'block',
+                  width: '100%',
+                  cursor: 'pointer',
+                  padding: '13px 0',
+                  borderBottom: '1px solid var(--color-neutral-300)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 3 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{c.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', flexShrink: 0 }}>{c.date}</div>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {c.preview}
+                </div>
+              </button>
+            ))
+          )}
         </div>
       )}
 
