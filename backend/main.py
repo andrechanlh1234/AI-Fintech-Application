@@ -27,6 +27,7 @@ from pydantic import BaseModel, EmailStr
 
 from backend import auth
 from backend.cors import allowed_origins
+from backend.state_sync import ConflictError, check_expected_version
 from backend.state_validation import exceeds_max_depth
 from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
@@ -91,6 +92,17 @@ class AuthResponse(BaseModel):
 
 class StatePayload(BaseModel):
     state: dict | None = None
+    # The `updated_at` this client last saw (from GET /state or a prior
+    # PUT's response) -- echoed back so the server can detect a write
+    # racing a newer one and reject it instead of silently overwriting
+    # (bug-report H2, deep half). None on a client's very first write, when
+    # there is nothing yet to have last seen.
+    expected_updated_at: str | None = None
+
+
+class StateResponse(BaseModel):
+    state: dict | None = None
+    updated_at: str | None = None
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -204,11 +216,13 @@ def me(user_id: str = Depends(current_user_id)):
 
 # ---- state sync endpoints ----
 
-@app.get("/state", response_model=StatePayload)
+@app.get("/state", response_model=StateResponse)
 def get_state(user_id: str = Depends(current_user_id)):
     with get_conn() as conn:
-        row = conn.execute("SELECT state_json FROM user_state WHERE user_id = %s", (user_id,)).fetchone()
-    return {"state": json.loads(row["state_json"]) if row else None}
+        row = conn.execute("SELECT state_json, updated_at FROM user_state WHERE user_id = %s", (user_id,)).fetchone()
+    if not row:
+        return {"state": None, "updated_at": None}
+    return {"state": json.loads(row["state_json"]), "updated_at": row["updated_at"]}
 
 
 @app.put("/state")
@@ -222,15 +236,37 @@ def put_state(body: StatePayload, user_id: str = Depends(current_user_id)):
     # of storing it (bug-report M7).
     if exceeds_max_depth(body.state):
         raise HTTPException(413, "State payload too deeply nested")
+
     with get_conn() as conn:
-        conn.execute(
-            """
-            INSERT INTO user_state (user_id, state_json, updated_at) VALUES (%s, %s, %s)
-            ON CONFLICT(user_id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at
-            """,
-            (user_id, serialized, datetime.now(timezone.utc).isoformat()),
-        )
-    return {"ok": True}
+        row = conn.execute("SELECT updated_at FROM user_state WHERE user_id = %s", (user_id,)).fetchone()
+        current_updated_at = row["updated_at"] if row else None
+        try:
+            check_expected_version(current_updated_at, body.expected_updated_at)
+        except ConflictError as exc:
+            raise HTTPException(
+                409,
+                {"message": "state changed since you last loaded it — reload before saving again", "updated_at": exc.current_updated_at},
+            ) from exc
+
+        now = datetime.now(timezone.utc).isoformat()
+        if row is None:
+            conn.execute(
+                "INSERT INTO user_state (user_id, state_json, updated_at) VALUES (%s, %s, %s)",
+                (user_id, serialized, now),
+            )
+        else:
+            # Re-checks the version atomically against the database's
+            # current committed value, closing the gap between the SELECT
+            # above and this UPDATE -- a second write landing in that
+            # window updates `updated_at` first, so this WHERE clause then
+            # matches zero rows instead of clobbering it.
+            result = conn.execute(
+                "UPDATE user_state SET state_json = %s, updated_at = %s WHERE user_id = %s AND updated_at = %s",
+                (serialized, now, user_id, current_updated_at),
+            )
+            if result.rowcount == 0:
+                raise HTTPException(409, {"message": "state changed since you last loaded it — reload before saving again"})
+    return {"ok": True, "updated_at": now}
 
 
 # ---- receipt OCR ----
