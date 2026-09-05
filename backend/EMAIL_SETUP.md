@@ -1,54 +1,89 @@
-# Setting up the "Welcome to Cukai" email (free)
+# Setting up the "Welcome to Cukai" and password-reset emails
 
-The code side is done — this is what you need to do to get a real welcome
-email sending when someone creates an account.
+The code side is done — this is what you need to do to get real emails
+sending. There are two options; **use Gmail until you own a domain**, then
+switch to Resend later if you want higher sending volume.
 
-## 1. Create a free Resend account
+## Option A: Gmail (recommended for now — no domain needed)
 
-1. Go to https://resend.com and sign up (free tier: 3,000 emails/month,
-   100/day — plenty for this).
-2. In the dashboard, go to **API Keys** → **Create API Key**. Copy it —
-   like the Google client secret, it's shown once.
+Sends using your own real Gmail address via an "App Password" — a
+16-character code Google generates that lets one specific app sign in
+without your actual Gmail password. It can deliver to **any** real
+recipient today, unlike Resend below before a domain is verified.
 
-## 2. Put it in `backend/.env`
+### 1. Turn on 2-Step Verification (if not already on)
 
-Add to `backend/.env` (create it if it doesn't exist yet — see
-`backend/GOOGLE_OAUTH_SETUP.md` if you're setting that up too):
+App Passwords only exist once 2-Step Verification is on for your Google
+Account: https://myaccount.google.com/security → **2-Step Verification**.
+
+### 2. Create an App Password
+
+1. Go to https://myaccount.google.com/apppasswords (or Security → 2-Step
+   Verification → **App passwords**, if the direct link asks you to sign
+   in again).
+2. Name it something like "Cukai backend".
+3. Google shows a 16-character password **once** — copy it now.
+
+### 3. Put both values in `backend/.env`
 
 ```
-RESEND_API_KEY=re_your_key_here
+GMAIL_ADDRESS=your.address@gmail.com
+GMAIL_APP_PASSWORD=the16charcodefromgoogle
 ```
 
-## 3. Restart the backend
+(No spaces — Google displays it in groups of 4 for readability, but paste
+it with or without the spaces, both work.)
+
+### 4. Restart the backend
 
 ```bash
 backend/.venv/bin/uvicorn backend.main:app --reload --port 8000
 ```
 
-That's enough to start sending. Without `RESEND_API_KEY` set, signup still
-works completely normally — it just silently skips sending the email (you'll
-see "Welcome email not configured — skipped" in the backend's terminal
-output), so you can leave this unconfigured for a while with no downside.
+Emails now send as `Cukai <your.address@gmail.com>` via Gmail's own
+servers. Every recipient's inbox will show your real Gmail address as the
+sender — that's expected until you own a domain (Option B).
 
-## Important: sandbox sending limit
+### On Render (production)
 
-Until you verify your own domain with Resend, the default sender
-(`onboarding@resend.dev`) can **only deliver to the email address you
-signed up to Resend with** — every other recipient is silently accepted by
-the API but never actually delivered. This is a Resend account restriction,
-not a bug here. If you test signup with a different email and nothing
-arrives, this is almost certainly why.
+In the Render dashboard → `cukai-api` service → **Environment**, add
+`GMAIL_ADDRESS` and `GMAIL_APP_PASSWORD` the same way you added
+`FRONTEND_URL`. `render.yaml` already declares both keys, but Render only
+prompts for brand-new Blueprint keys on a fresh apply — for an
+already-running service, add them directly in the dashboard.
 
-To send to real, arbitrary users:
+## Option B: Resend (switch to this once you own a domain)
 
-1. **Domain** → **Add Domain** in the Resend dashboard, add the DNS
-   records it gives you (at your domain registrar).
-2. Once verified, set `RESEND_FROM` in `backend/.env` to an address on
-   that domain, e.g.:
+1. Go to https://resend.com and sign up (free tier: 3,000 emails/month,
+   100/day).
+2. In the dashboard: **API Keys** → **Create API Key**. Copy it — like
+   the Google client secret, it's shown once.
+3. **Domain** → **Add Domain**, add the DNS records Resend gives you at
+   your domain registrar, wait for it to verify.
+4. Put in `backend/.env`:
    ```
+   RESEND_API_KEY=re_your_key_here
    RESEND_FROM=Cukai <hello@yourdomain.com>
    ```
-   (defaults to `Cukai <onboarding@resend.dev>` if unset.)
+
+**Important:** until that domain is verified, Resend's sandbox sender
+(`onboarding@resend.dev`) can only deliver to the email address you
+signed up to Resend with — every other recipient is silently accepted by
+the API but never actually delivered. This is a Resend account
+restriction, not a bug here.
+
+**Gmail takes priority when both are configured** — set both
+`GMAIL_ADDRESS`/`GMAIL_APP_PASSWORD` and `RESEND_API_KEY`, and Gmail is
+what actually sends. Remove the Gmail env vars once you're ready to
+switch to Resend.
+
+## Neither configured?
+
+Signup and password reset still work completely normally — sending is
+silently skipped (you'll see a "not configured — skipped" line in the
+backend's terminal output; a password-reset code is logged there instead
+so you can still test the flow locally). No downside to leaving this
+unconfigured for a while.
 
 ## Optional: social links in the email footer
 

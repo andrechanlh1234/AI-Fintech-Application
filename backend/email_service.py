@@ -1,18 +1,29 @@
 """Transactional email — currently just the "Welcome to Cukai" email sent
 once, on first-time account creation (not on every login).
 
-Uses Resend (https://resend.com) — a plain HTTP API, no SDK needed. Config
-via the RESEND_API_KEY env var (see backend/.env, loaded by main.py via
-python-dotenv before this module is imported). If it's unset, sending is
-skipped with a log line — signup must never fail because email delivery
-did, the same "degrades gracefully when unconfigured" contract the Google
-OAuth integration already holds (see backend/google_oauth.py).
+Two transports, tried in this order, each degrading to the next when
+unconfigured — signup must never fail because email delivery isn't set
+up, the same contract the Google OAuth integration already holds (see
+backend/google_oauth.py):
 
-See backend/EMAIL_SETUP.md for how to obtain an API key.
+1. **Gmail SMTP** (a real Gmail account + an App Password) — no domain
+   needed, so this is the practical option before Cukai owns a domain.
+   Can send to any real recipient today.
+2. **Resend** (https://resend.com) — a plain HTTP API, no SDK needed.
+   Kept for later: once a domain is verified there, Resend is the more
+   scalable choice. Until a domain is verified, Resend's free tier can
+   only deliver to the address you signed up to Resend with — every
+   other recipient is silently accepted but never delivered.
+3. Neither configured — sending is skipped with a log line.
+
+See backend/EMAIL_SETUP.md for how to set up either one.
 """
 
 import logging
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import httpx
 
@@ -24,6 +35,8 @@ if not logger.handlers:
     logger.addHandler(logging.StreamHandler())
     logger.propagate = False
 
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM = os.environ.get("RESEND_FROM", "Cukai <onboarding@resend.dev>")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
@@ -131,10 +144,22 @@ def _reset_html(code: str) -> str:
 """
 
 
-def _send(to_email: str, subject: str, html: str, log_label: str) -> None:
-    if not RESEND_API_KEY:
-        logger.info("%s not configured — skipped (%s)", log_label, to_email)
-        return
+def _send_via_gmail(to_email: str, subject: str, html: str, log_label: str) -> None:
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"Cukai <{GMAIL_ADDRESS}>"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html, "html"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+            server.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_ADDRESS, [to_email], msg.as_string())
+    except Exception:
+        # Sending an email is never allowed to break the request that triggered it.
+        logger.exception("%s failed to send via Gmail to %s", log_label, to_email)
+
+
+def _send_via_resend(to_email: str, subject: str, html: str, log_label: str) -> None:
     try:
         res = httpx.post(
             "https://api.resend.com/emails",
@@ -145,8 +170,17 @@ def _send(to_email: str, subject: str, html: str, log_label: str) -> None:
         if res.status_code >= 400:
             logger.warning("%s to %s failed: %s %s", log_label, to_email, res.status_code, res.text)
     except Exception:
-        # Sending an email is never allowed to break the request that triggered it.
         logger.exception("%s failed to send to %s", log_label, to_email)
+
+
+def _send(to_email: str, subject: str, html: str, log_label: str) -> None:
+    if GMAIL_ADDRESS and GMAIL_APP_PASSWORD:
+        _send_via_gmail(to_email, subject, html, log_label)
+        return
+    if RESEND_API_KEY:
+        _send_via_resend(to_email, subject, html, log_label)
+        return
+    logger.info("%s not configured — skipped (%s)", log_label, to_email)
 
 
 def send_welcome_email(to_email: str, name: str | None) -> None:
@@ -154,9 +188,10 @@ def send_welcome_email(to_email: str, name: str | None) -> None:
 
 
 def send_password_reset_email(to_email: str, code: str) -> None:
-    if not RESEND_API_KEY:
+    email_configured = (GMAIL_ADDRESS and GMAIL_APP_PASSWORD) or RESEND_API_KEY
+    if not email_configured:
         # Dev affordance: with no email provider configured the code would
-        # otherwise be unreachable. Never logged once RESEND_API_KEY is set
-        # (then it's actually emailed instead).
+        # otherwise be unreachable. Never logged once a transport above is
+        # configured (then it's actually emailed instead).
         logger.info("Password reset code for %s: %s", to_email, code)
     _send(to_email, "Your Cukai password reset code", _reset_html(code), "Password reset email")
