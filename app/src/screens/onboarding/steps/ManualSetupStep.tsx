@@ -4,6 +4,7 @@ import type { AppState } from '../../../store/types';
 import type { ManualData } from '../../../store/types';
 import type { useActions } from '../../../store/StoreProvider';
 import { moneyWhole, formatWithCommas } from '../../../lib/format';
+import { computeInvestmentsSummary } from '../../../lib/investments';
 import { AmountKeypadSheet, KeypadField } from '../../../components/AmountKeypadSheet';
 import { StepHeader, PlusIcon, XIcon } from './shared';
 
@@ -112,12 +113,7 @@ export function ManualSetupStep({
   const totalCash = sumOb(m.bankAccounts);
   const totalCcOwed = sumOb(m.creditCards);
   const hasAnyInvestment = m.investments.some((r) => r.name);
-  const investmentsValue = m.investments.reduce((s, r) => (r.name ? s + (parseFloat(r.qty) || 0) * (parseFloat(r.cur) || 0) : s), 0);
-  const investmentsGain = m.investments.reduce((s, r) => {
-    if (!r.name) return s;
-    const q = parseFloat(r.qty) || 0, b = parseFloat(r.buy) || 0, c = parseFloat(r.cur) || 0;
-    return s + (q * c - q * b);
-  }, 0);
+  const { value: investmentsValue, gain: investmentsGain } = computeInvestmentsSummary(m.investments);
   const investGainColor = investmentsGain >= 0 ? 'var(--color-accent-700)' : 'var(--color-danger-700)';
   const investGainSign = investmentsGain >= 0 ? '+' : '−';
 
