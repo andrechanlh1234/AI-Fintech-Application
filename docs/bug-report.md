@@ -4,6 +4,17 @@ Date: 2026-08-28
 Scope: read/test only (no application code changed). Frontend `app/`, backend `backend/`, OCR `pipeline/`.
 Method: ran every existing check (Step 1), static logic review of store/lib/backend (Step 2), live UI walkthrough on `npm run dev` incl. fresh guest onboarding, invalid inputs, tax toggle, budgets, record, AI chat, settings/theme, dark mode (Step 3).
 
+## Resolution — 2026-09-05
+
+Re-checked against `main` (see `docs/superpowers/specs/2026-09-04-highprio-bugfix-and-render-cors-deploy-design.md`):
+
+- **C1, H1, H4 — fixed** by the 2026-09-02 merge (`fix/qa-findings-2026-08-28`).
+- **H2 — client race fixed** by the same merge (`SET_AUTH_USER` now dispatched only after the remote pull resolves). The server-side `PUT /state` optimistic-concurrency guard is still open — deferred to the infra-security work (`docs/superpowers/specs/2026-08-29-infra-security-plan.md`).
+- **H3 — fixed.** `aiCraftReply()` was already figure-free; `AI_CHAT_HISTORY` (still fabricated, rendered live as "Past conversations") was emptied in the 2026-09-05 merge, with an empty state added.
+- **M8** (fabricated notifications) — already fixed (`NOTIFICATIONS = []`), noted here since it's referenced above alongside H3.
+
+All other Medium/Low findings below are still open.
+
 ---
 
 ## Step 1 — existing checks (all PASS)
