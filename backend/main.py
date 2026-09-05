@@ -27,6 +27,7 @@ from pydantic import BaseModel, EmailStr
 
 from backend import auth
 from backend.cors import allowed_origins
+from backend.state_validation import exceeds_max_depth
 from backend.ai_chat import AiNotConfigured, generate_ai_reply
 from backend.ai_chat import logger as ai_logger
 from backend.db import get_conn, init_db
@@ -215,6 +216,12 @@ def put_state(body: StatePayload, user_id: str = Depends(current_user_id)):
     serialized = json.dumps(body.state)
     if len(serialized) > MAX_STATE_BYTES:
         raise HTTPException(413, "State payload too large")
+    # state_json is an opaque blob by design (no schema mirroring the
+    # frontend shape -- see db.py), but a pathologically nested small
+    # payload slips past the size cap above untouched. Reject it instead
+    # of storing it (bug-report M7).
+    if exceeds_max_depth(body.state):
+        raise HTTPException(413, "State payload too deeply nested")
     with get_conn() as conn:
         conn.execute(
             """
