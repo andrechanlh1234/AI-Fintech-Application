@@ -4,6 +4,7 @@
 pdfplumber>=0.11
 pytesseract>=0.3.10
 Pillow>=10.4
+pillow-heif>=0.18  # HEIC/HEIF receipt photos -- iPhone's default format; see receipt_ocr.py
 fastapi>=0.115
 uvicorn>=0.32
 python-multipart>=0.0.12  # required by FastAPI for UploadFile parsing

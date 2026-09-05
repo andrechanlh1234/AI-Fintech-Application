@@ -121,6 +121,25 @@ export const CATEGORY_GROUP_BG = {
   others: '#E3E3E3',
 } as const;
 
+const CATEGORY_GROUP_OF: Record<string, keyof typeof CATEGORY_GROUP_BG> = Object.fromEntries([
+  ...ESSENTIAL_CATEGORIES.map((c) => [c, 'essential'] as const),
+  ...LIFESTYLE_CATEGORIES.map((c) => [c, 'lifestyle'] as const),
+  ...MONEY_CATEGORIES.map((c) => [c, 'money'] as const),
+  ...OTHERS_CATEGORIES.map((c) => [c, 'others'] as const),
+]);
+
+/** How CategoryPickerOverlay itself renders a given category -- its group's
+ * circle colour + its emoji -- for anywhere else that needs to preview a
+ * category the same way (e.g. ReviewStep's inline Category row) instead of
+ * improvising a different look. Falls back to the 'others' grey for a
+ * category with no group (the legacy 'Health'/'Lifestyle' aliases, or
+ * 'Income', neither ever offered as a receipt category but still valid
+ * data on an old record). */
+export function categoryChip(cat: string): { bg: string; emoji: string } {
+  const group = CATEGORY_GROUP_OF[cat] ?? 'others';
+  return { bg: CATEGORY_GROUP_BG[group], emoji: CAT_EMOJI[cat] || CAT_EMOJI.Other };
+}
+
 export const NW_GROUP_ICON: Record<string, string> = {
   cash: '💵',
   invest: '📈',

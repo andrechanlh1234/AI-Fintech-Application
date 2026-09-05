@@ -23,7 +23,7 @@ export function ProcessingStep({ photoUrl }: { photoUrl: string | null }) {
             <span style={{ animation: 'dotBlink 1.4s infinite .2s' }}>.</span>
             <span style={{ animation: 'dotBlink 1.4s infinite .4s' }}>.</span>
           </span>
-          <span style={{ font: '400 12px var(--font-body)', color: 'rgba(255,255,255,0.5)' }}>Cukai is finding the merchant, amount and category</span>
+          <span style={{ font: '400 12px var(--font-body)', color: 'rgba(255,255,255,0.5)' }}>Cukai&rsquo;s sleuthing out the merchant, amount and category</span>
         </div>
       </div>
     </div>
