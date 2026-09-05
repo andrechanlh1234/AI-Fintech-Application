@@ -45,6 +45,10 @@ services:
         sync: false
       - key: FRONTEND_URL           # https://cukai-web.onrender.com (fill after first deploy)
         sync: false
+      - key: GMAIL_ADDRESS          # the Gmail address welcome/reset emails send from (see backend/EMAIL_SETUP.md)
+        sync: false
+      - key: GMAIL_APP_PASSWORD     # a Gmail "App Password" (Google Account -> Security -> App passwords), NOT the real Gmail password
+        sync: false
 
   # ---------------------------------------------------------------------------
   # Frontend — Vite/React PWA, served as a static site (always free on Render)

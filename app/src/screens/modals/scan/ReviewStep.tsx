@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 import { useStore, useActions } from '../../../store/StoreProvider';
 import { selectReceiptReview } from '../../../store/selectors';
-import { iconFlags } from '../../../lib/constants';
-import { TxIcon } from '../../../components/TransactionRow';
+import { categoryChip } from '../../../lib/constants';
 import { ReceiptLineItemsEditor } from '../../../components/ReceiptLineItemsEditor';
 import { formatWithCommas } from '../../../lib/format';
 import { AmountKeypadSheet } from '../../../components/AmountKeypadSheet';
-import { DateField } from './shared';
+import { DateField, SelectField } from './shared';
 import { CategoryPickerOverlay } from './CategoryPickerOverlay';
 import { RELIEF_INFO } from '../../../lib/taxEngine';
 
@@ -118,13 +117,12 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
           </div>
           <div className="field" style={{ flex: 1, marginBottom: 0 }}>
             <label>Payment method</label>
-            <select
-              className="input picker-field"
+            <SelectField
               value={PAYMENT_METHODS.includes(state.scanPaymentMethod) ? state.scanPaymentMethod : 'Cash'}
-              onChange={(e) => actions.setScanPaymentMethod(e.target.value)}
-            >
-              {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+              options={PAYMENT_METHODS}
+              onChange={actions.setScanPaymentMethod}
+              ariaLabel="Payment method"
+            />
           </div>
         </div>
 
@@ -164,8 +162,13 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
           >
             <span style={{ fontSize: 12, color: 'color-mix(in srgb, var(--color-text) 70%, transparent)' }}>Category</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--color-neutral-200)', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <TxIcon tx={{ ...iconFlags(draft.quickCategory), hasBrand: false, badgeLetter: '' }} />
+              {/* Same circle colour + emoji CategoryPickerOverlay itself
+                  renders for this category (via categoryChip) -- this used
+                  to be TxIcon in a flat grey circle, which is the right
+                  look for a transaction row but didn't match what tapping
+                  this row actually opens into (bug report, 2026-09-05). */}
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: categoryChip(draft.quickCategory).bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, lineHeight: 1 }}>
+                {categoryChip(draft.quickCategory).emoji}
               </span>
               <span style={{ font: '600 13.5px var(--font-body)', color: 'var(--color-text)' }}>{draft.quickCategory}</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
@@ -311,13 +314,12 @@ export function ReviewStep({ onClose, onImportPhoto, photoUrl }: {
         {draft.mode === 'quick' ? 'Save receipt' : `Confirm ${state.lineItemDrafts.length || ''} transaction${state.lineItemDrafts.length === 1 ? '' : 's'}`}
       </button>
 
-      {categoryPickerOpen && (
-        <CategoryPickerOverlay
-          value={draft.quickCategory}
-          onSelect={(cat) => actions.setReceiptDraftField('quickCategory', cat)}
-          onClose={() => setCategoryPickerOpen(false)}
-        />
-      )}
+      <CategoryPickerOverlay
+        open={categoryPickerOpen}
+        value={draft.quickCategory}
+        onSelect={(cat) => actions.setReceiptDraftField('quickCategory', cat)}
+        onClose={() => setCategoryPickerOpen(false)}
+      />
 
       <AmountKeypadSheet
         open={amountSheetOpen}

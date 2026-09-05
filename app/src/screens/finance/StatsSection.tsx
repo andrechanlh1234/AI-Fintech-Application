@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useStore, useActions } from '../../store/StoreProvider';
 import { selectStatsPage } from '../../store/selectors';
 import { Card } from '../../components/primitives';
@@ -10,16 +11,28 @@ function StatsCategoryDetail() {
   const data = selectStatsPage(state);
   if (!state.statsCategoryDetail) return null;
 
-  return (
+  // Portalled to document.body -- same reasoning as components/BottomSheet.tsx
+  // ("Portals to document.body so an ancestor transform can't trap it"). This
+  // used to be position:absolute, on the assumption of sitting "inside the
+  // (position:relative) page-transition wrapper". That wrapper is real
+  // (App.tsx's AppShell), but it is no longer the nearest containing block:
+  // the Finance tab renders inside SwipeablePages' Embla carousel, which
+  // positions its slides with a CSS `transform` -- and a `transform` on ANY
+  // ancestor (even position:static, per spec) becomes the containing block
+  // for an absolutely/fixed positioned descendant. So inset:0 was resolving
+  // against Embla's own (transformed, off-screen-by-design) slide track
+  // instead of the viewport, rendering this whole screen hundreds of pixels
+  // off to the side -- invisible, while the tab bar still correctly hid
+  // itself for it (App.tsx's showTabBar), reading as "nothing happened and
+  // the tab bar vanished" (bug report, 2026-09-05). Portalling escapes the
+  // transformed subtree entirely, same fix BottomSheet already relies on.
+  return createPortal(
     <div
       className="screen-in"
       style={{
-        // This overlay is nested inside the (position:relative) page-transition
-        // wrapper, which already sits below the Finance header + safe area —
-        // so it must NOT re-add env(safe-area-inset-top) or the header ends up
-        // pushed toward the middle of the screen.
-        position: 'absolute', inset: 0, zIndex: 47, background: 'var(--color-bg)',
-        display: 'flex', flexDirection: 'column', padding: '4px 20px 24px', boxSizing: 'border-box', overflow: 'auto',
+        position: 'fixed', inset: 0, zIndex: 47, background: 'var(--color-bg)',
+        display: 'flex', flexDirection: 'column',
+        padding: 'calc(env(safe-area-inset-top) + 16px) 20px 24px', boxSizing: 'border-box', overflow: 'auto',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -45,7 +58,8 @@ function StatsCategoryDetail() {
       {data.statsCategoryDetailTx.length === 0 && (
         <div style={{ padding: '24px 4px', fontSize: 14, color: 'var(--color-text-muted)' }}>No transactions in this period.</div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

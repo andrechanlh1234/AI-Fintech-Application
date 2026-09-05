@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import {
   CAT_EMOJI, CATEGORY_GROUP_BG, ESSENTIAL_CATEGORIES, LIFESTYLE_CATEGORIES, MONEY_CATEGORIES, OTHERS_CATEGORIES,
 } from '../../../lib/constants';
+import { prefersReducedMotion } from '../../../lib/motion';
 
 const SECTIONS: { title: string; categories: string[]; bg: string }[] = [
   { title: 'Essential spending', categories: ESSENTIAL_CATEGORIES, bg: CATEGORY_GROUP_BG.essential },
@@ -12,14 +14,40 @@ const SECTIONS: { title: string; categories: string[]; bg: string }[] = [
 /** Full-page category grid, opened from ReviewStep's Category row. Not a
  * scanStep -- purely local UI state on the caller (categoryPickerOpen) so
  * closing it (via a selection or the back chevron) always lands back on
- * the exact in-progress review screen with zero reducer involvement. */
-export function CategoryPickerOverlay({ value, onSelect, onClose }: {
+ * the exact in-progress review screen with zero reducer involvement.
+ *
+ * Always mounted; `open` controls visibility. It used to be a plain
+ * `{categoryPickerOpen && <CategoryPickerOverlay/>}` in the caller, which
+ * entered with slide-in-right but vanished in a single frame the instant a
+ * category was tapped -- no exit animation ran at all, since a conditional
+ * unmount gives one no chance to. Mirrors components/BottomSheet.tsx /
+ * ScanFlow.tsx's rendered/closing pattern: enter is derived during render,
+ * exit is a timeout that unmounts only once the slide-out has actually
+ * played (bug report, 2026-09-05: "the animation flashes, too quick"). */
+export function CategoryPickerOverlay({ open, value, onSelect, onClose }: {
+  open: boolean;
   value: string;
   onSelect: (cat: string) => void;
   onClose: () => void;
 }) {
+  const [rendered, setRendered] = useState(open);
+  if (open && !rendered) setRendered(true);
+  const closing = rendered && !open;
+
+  useEffect(() => {
+    if (!closing) return;
+    const ms = prefersReducedMotion() ? 120 : 300;
+    const t = setTimeout(() => setRendered(false), ms);
+    return () => clearTimeout(t);
+  }, [closing]);
+
+  if (!rendered) return null;
+
   return (
-    <div className="screen-in" style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'auto' }}>
+    <div
+      className={`slide-in-right${closing ? ' slide-out-right' : ''}`}
+      style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'auto' }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(env(safe-area-inset-top) + 16px) 20px 8px' }}>
         <button
           type="button"
