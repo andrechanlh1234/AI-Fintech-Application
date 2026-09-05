@@ -196,19 +196,25 @@ figcaption {
    `<input type="date">` (Safari/WKWebView only; Chromium shrinks it fine)
    refuses to shrink to fit and overlaps the sibling field instead. */
 .field { min-width: 0; position: relative; }
-/* Floating "notch" label: sits centred on the field's top border (like the
-   reference Starbucks sign-in). Any example/hint text lives inside the box
-   as the input's placeholder. Scoped to a direct-child <label> so the few
-   advanced editors that wrap the label on a row with a character counter
-   (ReviewStep) keep their stacked layout via the `.field > div > label`
-   rule below. */
+/* Plain stacked label, sitting above the field on the page's own
+   background -- no notch chip. This used to float centred on the field's
+   top border like a Material outlined input (the "Starbucks sign-in"
+   reference), with its own `background: var(--color-surface)` patch to
+   punch a gap in the border under the text. That patch was only ever a
+   near-match for whatever sat behind it (the page background one theme
+   token off from the field's own), so it read as a faint but real stray
+   white box behind every field label in the app (bug report, 2026-09-05).
+   Stacking it as normal flow removes the background entirely instead of
+   chasing a closer color match -- same visual language as the sibling
+   `.field > div > label` rule below, just merged into one. Any
+   example/hint text still lives inside the box as the input's
+   placeholder. Scoped to a direct-child <label> so the few advanced
+   editors that wrap the label on a row with a character counter
+   (ReviewStep) keep their stacked layout via that rule instead. */
 .field > label {
-  position: absolute; top: 0; left: 9px; z-index: 1;
-  transform: translateY(-50%); transform-origin: left center;
-  margin: 0; padding: 0 5px; pointer-events: none;
-  font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: 0.01em;
-  background: var(--color-surface); color: var(--color-text-muted);
-  border-radius: 4px; transition: color .18s ease;
+  display: block; margin: 0 0 5px 2px; padding: 0; pointer-events: none;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent); transition: color .18s ease;
 }
 .field:focus-within > label { color: var(--color-accent-700); }
 .field > div > label {
@@ -430,6 +436,21 @@ select.input { -webkit-appearance: none; appearance: none; }
 }
 .scan-out { animation: screen-out .3s cubic-bezier(.16,1,.3,1) both; }
 
+/* Reverse of slide-in-right, for a pushed screen (e.g. CategoryPickerOverlay)
+   leaving back the way it came. Without this, closing such a screen (a
+   plain conditional unmount, no exit class at all) vanishes in a single
+   frame -- fine for something that was never meant to feel like a real
+   navigation, but jarring for a full "screen" push that entered with
+   slide-in-right and is expected to leave just as gracefully (bug report,
+   2026-09-05: "the animation flashes, too quick"). Placed after
+   .slide-in-right so its `animation` wins when both classes are on the
+   element during close, same technique as .screen-in/.scan-out above. */
+@keyframes slide-out-right {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(28px); }
+}
+.slide-out-right { animation: slide-out-right .3s cubic-bezier(.16,1,.3,1) both; }
+
 /* Progress/relief bars fill smoothly instead of snapping to their width. */
 .bar-fill { transition: width .6s cubic-bezier(.16,1,.3,1); }
 
@@ -527,7 +548,7 @@ select.input { -webkit-appearance: none; appearance: none; }
     animation-duration: 140ms !important;
     animation-timing-function: ease !important;
   }
-  .scan-out {
+  .scan-out, .slide-out-right {
     animation-name: reduced-fade-out !important;
     animation-duration: 120ms !important;
     animation-timing-function: ease !important;

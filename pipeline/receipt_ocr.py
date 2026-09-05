@@ -9,7 +9,8 @@ fails for any reason, so a scan never comes back empty just because a cloud
 call had a bad moment.
 """
 
-import mimetypes
+import io
+import logging
 import re
 from datetime import date, datetime
 
@@ -17,6 +18,25 @@ from PIL import Image, ImageOps
 
 from pipeline.categorize import categorize, relief_tag_for
 from pipeline.models import Record, ReceiptLineItem, ReceiptScanResult
+
+# Registers a Pillow plugin for HEIC/HEIF -- the format iPhones save photos
+# in by default since iOS 11. A receipt shot fresh through this app's own
+# in-app camera is always re-encoded to JPEG client-side (CaptureStep.tsx),
+# but "Choose from Photos or Files" hands over whatever the picked photo's
+# original file actually is, which for most iPhones is HEIC. Without this,
+# Image.open() below raises UnidentifiedImageError for every such photo --
+# uncaught (see process_receipt_image), surfacing as "Could not read this
+# receipt" for what the user rightly sees as a perfectly normal receipt
+# (bug report, 2026-09-05). Degrades gracefully if the plugin is ever
+# missing: HEIC uploads would fail again, but every other format still works.
+try:
+    import pillow_heif
+
+    pillow_heif.register_heif_opener()
+except ImportError:
+    pass
+
+logger = logging.getLogger("cukai.ocr")
 
 TOTAL_LINE_RE = re.compile(r"(total|jumlah|amount due|grand total)", re.IGNORECASE)
 # Tesseract commonly inserts a stray space right after the decimal point on
@@ -52,17 +72,38 @@ MIN_OCR_WIDTH = 1400
 TESSERACT_CONFIG = "--psm 6"
 
 
-def preprocess(image_path: str) -> Image.Image:
+def normalize_to_jpeg(file_bytes: bytes) -> bytes:
+    """Re-encodes any image Pillow can open (JPEG/PNG/WEBP/HEIC-via-plugin/...)
+    as a plain JPEG, applying EXIF orientation first. Both OCR tiers below
+    run on this normalized copy instead of the raw upload -- one format
+    every downstream step (Gemini's inline_data, Tesseract) is known to
+    handle, rather than trusting the phone's own format/mimetype (bug
+    report, 2026-09-05: HEIC uploads -- and their mimetypes.guess_type
+    fallback of "image/jpeg" when the guess fails, which is simply wrong
+    for HEIC bytes -- broke both tiers at once). Raises whatever Pillow
+    raises if the bytes aren't a decodable image at all; the caller decides
+    how to surface that.
+    """
+    img = Image.open(io.BytesIO(file_bytes))
+    img = ImageOps.exif_transpose(img)
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    out = io.BytesIO()
+    img.save(out, format="JPEG", quality=92)
+    return out.getvalue()
+
+
+def preprocess(file_bytes: bytes) -> Image.Image:
     """Grayscale + autocontrast + upscale — cheap preprocessing that
     measurably helps Tesseract on phone-camera receipt photos (uneven
     lighting, low contrast, and — for anything already downscaled before
     reaching this pipeline — too few pixels per character)."""
-    img = Image.open(image_path)
-    # Phone cameras (iPhone in particular) very commonly store the photo's
-    # actual pixel data unrotated and record the intended orientation as
-    # EXIF metadata instead — PIL doesn't apply that automatically, so
-    # without this, a portrait photo taken on a real phone gets OCR'd
-    # sideways or upside down, silently producing garbage text.
+    img = Image.open(io.BytesIO(file_bytes))
+    # Belt-and-suspenders: normalize_to_jpeg (above) already applies EXIF
+    # orientation, but preprocess() is cheap to call directly too (as the
+    # existing tests do, pre-normalization), so it re-applies its own —
+    # exif_transpose on an already-transposed image (no EXIF tag left) is a
+    # no-op, not a double rotation.
     img = ImageOps.exif_transpose(img)
     img = img.convert("L")
     img = ImageOps.autocontrast(img)
@@ -72,11 +113,11 @@ def preprocess(image_path: str) -> Image.Image:
     return img
 
 
-def extract_text(image_path: str) -> tuple[str, float]:
+def extract_text(file_bytes: bytes) -> tuple[str, float]:
     """Returns (text, avg_word_confidence in 0-1)."""
     import pytesseract
 
-    img = preprocess(image_path)
+    img = preprocess(file_bytes)
     text = pytesseract.image_to_string(img, config=TESSERACT_CONFIG)
     data = pytesseract.image_to_data(img, config=TESSERACT_CONFIG, output_type=pytesseract.Output.DICT)
     confidences = [int(c) for c in data["conf"] if c not in ("-1", -1)]
@@ -317,19 +358,32 @@ def _receipt_result_from_vision_fields(fields: dict, raw_text: str = "") -> Rece
 def process_receipt_image(image_path: str) -> ReceiptScanResult:
     from backend.ocr_provider import VisionOCRNotConfigured, extract_receipt_fields
 
+    with open(image_path, "rb") as f:
+        original_bytes = f.read()
+
+    # Normalize once, up front, so both tiers below see the same known-good
+    # JPEG bytes regardless of what the phone actually handed over (see
+    # normalize_to_jpeg's docstring). If even Pillow can't decode it at all
+    # (corrupt upload, or a format pillow-heif doesn't cover either), fall
+    # through on the original bytes -- the vision tier reads raw bytes and
+    # may still manage; if not, its own except below still catches it, and
+    # only then does Tesseract's attempt below become the one that reports
+    # the real "can't read this file" error.
     try:
-        with open(image_path, "rb") as f:
-            file_bytes = f.read()
-        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
-        fields = extract_receipt_fields(file_bytes, mime_type)
+        file_bytes = normalize_to_jpeg(original_bytes)
+    except Exception:
+        logger.warning("Could not normalize upload to JPEG — using the original bytes as-is")
+        file_bytes = original_bytes
+
+    try:
+        fields = extract_receipt_fields(file_bytes, "image/jpeg")
         return _receipt_result_from_vision_fields(fields)
     except VisionOCRNotConfigured:
         pass
     except Exception:
-        import logging
-        logging.getLogger("cukai.ocr").exception("Vision OCR failed — falling back to Tesseract")
+        logger.exception("Vision OCR failed — falling back to Tesseract")
 
-    text, ocr_confidence = extract_text(image_path)
+    text, ocr_confidence = extract_text(file_bytes)
     record = parse_receipt_text(text, ocr_confidence)
     # Tesseract has no way to separate individual items -- it only ever
     # recovers one total for the whole receipt -- so the fallback path

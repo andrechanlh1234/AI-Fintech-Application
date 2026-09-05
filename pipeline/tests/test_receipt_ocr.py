@@ -1,5 +1,12 @@
+import io
+import os
+
+import pytest
+from PIL import Image
+
 from pipeline.receipt_ocr import (
     _receipt_result_from_vision_fields,
+    normalize_to_jpeg,
     parse_receipt_text,
     process_receipt_image,
 )
@@ -29,6 +36,42 @@ def test_process_receipt_image_tesseract_fallback_returns_single_line_item():
     assert result.line_items[0].amount == 66.40
     assert result.line_items[0].category == "Medical"
     assert result.confidence > 0
+
+
+def test_normalize_to_jpeg_round_trips_a_plain_image():
+    img = Image.new("RGB", (40, 20), color=(200, 100, 50))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    out = normalize_to_jpeg(buf.getvalue())
+    decoded = Image.open(io.BytesIO(out))
+    assert decoded.format == "JPEG"
+    assert decoded.size == (40, 20)
+
+
+def test_normalize_to_jpeg_raises_on_undecodable_bytes():
+    with pytest.raises(Exception):
+        normalize_to_jpeg(b"this is not an image")
+
+
+def test_process_receipt_image_reads_a_heic_photo():
+    # Regression test for the "receipt unable to be read" bug report
+    # (2026-09-05): a receipt picked from the iOS Photos library (HEIC by
+    # default since iOS 11, unlike a fresh in-app camera capture which is
+    # always JPEG) used to raise PIL.UnidentifiedImageError uncaught,
+    # surfacing as a 422 for what the user rightly saw as a perfectly
+    # normal receipt. Re-encodes the same synthetic fixture the other tests
+    # use as real HEIC bytes (pillow_heif can both decode and encode) and
+    # asserts the exact same pipeline that works for a JPEG/PNG upload also
+    # works for this one, rather than raising.
+    png_path = generate()
+    img = Image.open(png_path).convert("RGB")
+    heic_path = os.path.join(os.path.dirname(png_path), "sample_receipt_regression.heic")
+    img.save(heic_path, format="HEIF")
+
+    result = process_receipt_image(heic_path)
+
+    assert "guardian" in result.vendor.lower()
+    assert result.total == 66.40
 
 
 def test_receipt_result_from_vision_fields_maps_line_items():

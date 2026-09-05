@@ -395,8 +395,9 @@ export function ReviewFlow() {
           }}
         />
       )}
-      {curItem && categoryPickerOpen && (
+      {curItem && (
         <CategoryPickerOverlay
+          open={categoryPickerOpen}
           value={curItem.cat}
           onSelect={(cat) => patch({ cat, taxDeductible: categoryToReliefKey(cat) != null })}
           onClose={() => setCategoryPickerOpen(false)}
