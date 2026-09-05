@@ -12,12 +12,12 @@ Deliberately not behind our own auth — these two routes are how a browser
 """
 
 import os
-import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import httpx
+import jwt
 from fastapi import APIRouter, BackgroundTasks
 from fastapi.responses import RedirectResponse
 
@@ -36,24 +36,51 @@ CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8000/auth/google/callback")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
-# CSRF state tokens, held in memory. Fine for a single-process local dev
-# server; a multi-process production deployment would need a shared store
-# (e.g. Redis) instead, since a request can land on a different worker.
-_PENDING_STATES: set[str] = set()
+# CSRF `state`, signed and stateless rather than held in an in-memory set.
+# A set worked for a single always-on dev process, but on Render's
+# free-tier instance -- which spins down after ~15 min idle and recycles on
+# its own -- a login started right before a restart came back with an
+# empty set on the other side: /auth/google/callback saw a `state` it had
+# never heard of, redirected with oauth_error=bad_state, and the user
+# landed back on the login screen with no visible reason why (bug report,
+# 2026-09-04). A signed token verifies on its own, so it survives a restart
+# between the two requests same as it would across two different workers.
+#
+# Reuses the session-token secret/algorithm (backend/auth.py) but the two
+# are never interchangeable: this module only accepts a token whose
+# `purpose` claim is "oauth_state", and auth.decode_token() only accepts
+# one with no `purpose` claim at all -- see its docstring.
+STATE_TTL_SECONDS = 600  # 10 minutes -- generous for the Google consent screen
+
+
+def _create_state() -> str:
+    payload = {
+        "purpose": "oauth_state",
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=STATE_TTL_SECONDS),
+    }
+    return jwt.encode(payload, auth.SECRET, algorithm=auth.ALGORITHM)
+
+
+def _verify_state(state: str | None) -> bool:
+    if not state:
+        return False
+    try:
+        payload = jwt.decode(state, auth.SECRET, algorithms=[auth.ALGORITHM])
+    except jwt.PyJWTError:
+        return False
+    return payload.get("purpose") == "oauth_state"
 
 
 @router.get("/auth/google/login")
 def google_login():
     if not CLIENT_ID:
         return RedirectResponse(f"{FRONTEND_URL}/?oauth_error=not_configured")
-    state = secrets.token_urlsafe(16)
-    _PENDING_STATES.add(state)
     params = {
         "client_id": CLIENT_ID,
         "redirect_uri": REDIRECT_URI,
         "response_type": "code",
         "scope": "openid email profile",
-        "state": state,
+        "state": _create_state(),
         "access_type": "online",
         "prompt": "select_account",
     }
@@ -66,9 +93,8 @@ async def google_callback(
 ):
     if error or not code:
         return RedirectResponse(f"{FRONTEND_URL}/?oauth_error={error or 'missing_code'}")
-    if not state or state not in _PENDING_STATES:
+    if not _verify_state(state):
         return RedirectResponse(f"{FRONTEND_URL}/?oauth_error=bad_state")
-    _PENDING_STATES.discard(state)
 
     async with httpx.AsyncClient() as client:
         token_res = await client.post(
