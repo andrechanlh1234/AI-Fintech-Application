@@ -6,14 +6,18 @@ Method: ran every existing check (Step 1), static logic review of store/lib/back
 
 ## Resolution — 2026-09-05
 
-Re-checked against `main` (see `docs/superpowers/specs/2026-09-04-highprio-bugfix-and-render-cors-deploy-design.md`):
+Full re-audit of all 26 findings against `main`. Result: **24 of 26 fixed** (17 already landed in intervening merges between 2026-08-28 and 2026-09-05, before this audit; 9 fixed directly in this pass). 2 remain open, both deliberately deferred rather than missed.
 
-- **C1, H1, H4 — fixed** by the 2026-09-02 merge (`fix/qa-findings-2026-08-28`).
-- **H2 — client race fixed** by the same merge (`SET_AUTH_USER` now dispatched only after the remote pull resolves). The server-side `PUT /state` optimistic-concurrency guard is still open — deferred to the infra-security work (`docs/superpowers/specs/2026-08-29-infra-security-plan.md`).
-- **H3 — fixed.** `aiCraftReply()` was already figure-free; `AI_CHAT_HISTORY` (still fabricated, rendered live as "Past conversations") was emptied in the 2026-09-05 merge, with an empty state added.
-- **M8** (fabricated notifications) — already fixed (`NOTIFICATIONS = []`), noted here since it's referenced above alongside H3.
+**Critical / High**
+- **C1, H1, H4** — already fixed (2026-09-02 merge, `fix/qa-findings-2026-08-28`).
+- **H2** — client race already fixed (same merge): `SET_AUTH_USER` now dispatched only after the remote pull resolves. The server-side `PUT /state` optimistic-concurrency guard is **still open**, deferred to the infra-security work (`docs/superpowers/specs/2026-08-29-infra-security-plan.md`) — it needs a real `updated_at`/version scheme, not a quick patch.
+- **H3** — fixed 2026-09-05: `aiCraftReply()` was already figure-free; the still-fabricated `AI_CHAT_HISTORY` ("Past conversations") was emptied, with an empty state added.
 
-All other Medium/Low findings below are still open.
+**Medium** — all fixed. M1–M6, M8–M11 already fixed in intervening merges (tax double-count, over-cap overflow, budget/subscription input validation, logout state clearing, OCR rate-limit/size caps, fabricated notifications, seed identity, timezone, onboarding step count). **M7** (`PUT /state` accepts unvalidated JSON) fixed 2026-09-05: `MAX_STATE_BYTES` already capped size; added a depth guard (`backend/state_validation.py`) for the "small but pathologically nested" gap that size alone doesn't catch. Full schema validation mirroring the frontend shape was deliberately not done — `state_json` is an opaque blob by design (`db.py`) and a shadow schema would fight that.
+
+**Low** — all fixed. L1–L4, L6–L10 already fixed in intervening merges (dead consent links, tax-year range, bracket copy, date-year clamping, savings-target field redesigned + sanitized, dark-theme sheet tokens, rate-limit sweep, lint warnings, US-bank mock removed). **L5** (investment gain shown as full value with no buy price) fixed 2026-09-05: extracted `lib/investments.ts:computeInvestmentsSummary()`, applying the same `hasBuyPrice` guard `InvestDetailModal.tsx` already used per-row to the onboarding aggregate that had been missed.
+
+Also fixed 2026-09-05, found during this pass and not in the original 26: **OAuth CSRF `state`** was an in-memory set that a Render free-tier restart between `/auth/google/login` and `/auth/google/callback` could wipe, silently failing Google sign-in — moved to a signed, stateless token (`backend/google_oauth.py`).
 
 ---
 
